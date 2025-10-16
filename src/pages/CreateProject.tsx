@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Globe, Lightbulb, Loader2, Zap, BarChart3 } from "lucide-react";
+import { MarkdownContent } from "@/components/MarkdownContent";
 
 const CreateProject = () => {
   const navigate = useNavigate();
@@ -281,10 +282,16 @@ const CreateProject = () => {
                   </div>
 
                   {extractedData && (
-                    <Card className="p-4 bg-success/10 border-success">
-                      <div className="space-y-2">
-                        <p className="font-semibold text-success">✓ Analysis Complete</p>
-                        <p className="text-sm">{extractedData.description}</p>
+                    <Card className="p-6 bg-background border-2 border-primary/20 shadow-lg">
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                          <p className="font-semibold text-lg">Analysis Complete</p>
+                        </div>
+                        <MarkdownContent 
+                          content={extractedData.description} 
+                          className="prose prose-sm max-w-none"
+                        />
                       </div>
                     </Card>
                   )}
