@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,6 +35,30 @@ const Dashboard = () => {
       }
 
       setUser(session.user);
+
+      // Fetch profile data
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+      }
+
+      // Fetch user projects
+      const { data: projectsData } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (projectsData) {
+        setProjects(projectsData);
+      }
+
       setLoading(false);
     };
 
@@ -129,9 +155,11 @@ const Dashboard = () => {
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">AI Credits Used</p>
-                  <p className="text-3xl font-bold">5 / 10</p>
+                  <p className="text-3xl font-bold">
+                    {profile?.ai_credits_used || 0} / {profile?.ai_credits_monthly || 10}
+                  </p>
                   <Badge variant="secondary" className="mt-2">
-                    Free Tier
+                    {profile?.subscription_tier || "Free"} Tier
                   </Badge>
                 </div>
                 <div className="p-3 bg-gradient-hero rounded-xl">
@@ -144,9 +172,9 @@ const Dashboard = () => {
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Projects Created</p>
-                  <p className="text-3xl font-bold">0</p>
+                  <p className="text-3xl font-bold">{projects.length}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Create your first project
+                    {projects.length === 0 ? "Create your first project" : "Keep validating!"}
                   </p>
                 </div>
                 <div className="p-3 bg-gradient-card rounded-xl">
@@ -159,9 +187,15 @@ const Dashboard = () => {
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Member Since</p>
-                  <p className="text-3xl font-bold">Today</p>
+                  <p className="text-3xl font-bold">
+                    {profile?.created_at
+                      ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "short" })
+                      : "Today"}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Just getting started
+                    {profile?.created_at
+                      ? new Date(profile.created_at).toLocaleDateString()
+                      : "Just getting started"}
                   </p>
                 </div>
                 <div className="p-3 bg-secondary/10 rounded-xl">
@@ -183,7 +217,11 @@ const Dashboard = () => {
                 report in just 60 seconds.
               </p>
             </div>
-            <Button size="lg" className="text-lg px-8 py-6 shadow-medium">
+            <Button
+              size="lg"
+              onClick={() => navigate("/projects/new")}
+              className="text-lg px-8 py-6 shadow-medium"
+            >
               <Plus className="mr-2 h-5 w-5" />
               New Project
             </Button>
@@ -219,17 +257,75 @@ const Dashboard = () => {
           </div>
 
           {/* Empty State - Recent Projects */}
-          <Card className="p-12 text-center space-y-4 border-2 border-dashed">
-            <FolderOpen className="h-16 w-16 text-muted-foreground/50 mx-auto" />
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-muted-foreground">
-                No projects yet
-              </h3>
-              <p className="text-muted-foreground">
-                Your validated projects will appear here
-              </p>
+          {projects.length === 0 ? (
+            <Card className="p-12 text-center space-y-4 border-2 border-dashed">
+              <FolderOpen className="h-16 w-16 text-muted-foreground/50 mx-auto" />
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-muted-foreground">
+                  No projects yet
+                </h3>
+                <p className="text-muted-foreground">
+                  Your validated projects will appear here
+                </p>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Recent Projects</h2>
+              <div className="grid gap-4">
+                {projects.map((project) => (
+                  <Card
+                    key={project.id}
+                    className="p-6 border-2 hover:border-primary/20 transition-all cursor-pointer"
+                    onClick={() => navigate(`/projects/${project.id}/report`)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-xl font-bold">{project.name}</h3>
+                          <Badge
+                            variant={
+                              project.status === "complete"
+                                ? "default"
+                                : project.status === "analyzing"
+                                ? "secondary"
+                                : "outline"
+                            }
+                          >
+                            {project.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {project.description}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                          <span>{project.industry}</span>
+                          <span>•</span>
+                          <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      {project.validation_score && (
+                        <div className="text-right ml-4">
+                          <div
+                            className={`text-4xl font-bold ${
+                              project.validation_score >= 70
+                                ? "text-success"
+                                : project.validation_score >= 40
+                                ? "text-warning"
+                                : "text-destructive"
+                            }`}
+                          >
+                            {project.validation_score}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Score</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </Card>
+          )}
         </div>
       </div>
     </div>
