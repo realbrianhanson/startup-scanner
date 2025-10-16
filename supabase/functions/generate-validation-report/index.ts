@@ -182,6 +182,14 @@ serve(async (req) => {
   }
 });
 
+function cleanJsonFromMarkdown(text: string): string {
+  // Remove markdown code blocks (```json and ```)
+  return text
+    .replace(/```json\s*/g, '')
+    .replace(/```\s*/g, '')
+    .trim();
+}
+
 async function callAI(prompt: string, apiKey: string): Promise<string> {
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -194,7 +202,7 @@ async function callAI(prompt: string, apiKey: string): Promise<string> {
       messages: [
         {
           role: "system",
-          content: "You are a McKinsey-style business analyst providing structured, data-driven insights."
+          content: "You are a McKinsey-style business analyst providing structured, data-driven insights. Always return valid JSON without markdown formatting."
         },
         {
           role: "user",
@@ -211,7 +219,8 @@ async function callAI(prompt: string, apiKey: string): Promise<string> {
   }
 
   const data = await response.json();
-  return data.choices[0]?.message?.content || "";
+  const content = data.choices[0]?.message?.content || "";
+  return cleanJsonFromMarkdown(content);
 }
 
 async function generateExecutiveSummary(project: any, apiKey: string) {
