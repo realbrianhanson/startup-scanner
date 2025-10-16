@@ -318,15 +318,27 @@ const ViewReport = () => {
                         <div className="grid md:grid-cols-3 gap-4">
                           <Card className="p-5 bg-muted/30">
                             <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Total Addressable Market</p>
-                            <p className="text-xl font-bold text-primary">{reportData.market_analysis.tam}</p>
+                            <div className="text-xl font-bold text-primary">
+                              {typeof reportData.market_analysis.tam === 'object' 
+                                ? reportData.market_analysis.tam.estimate || JSON.stringify(reportData.market_analysis.tam)
+                                : reportData.market_analysis.tam}
+                            </div>
                           </Card>
                           <Card className="p-5 bg-muted/30">
                             <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Serviceable Available Market</p>
-                            <p className="text-xl font-bold text-primary">{reportData.market_analysis.sam}</p>
+                            <div className="text-xl font-bold text-primary">
+                              {typeof reportData.market_analysis.sam === 'object' 
+                                ? reportData.market_analysis.sam.estimate || JSON.stringify(reportData.market_analysis.sam)
+                                : reportData.market_analysis.sam}
+                            </div>
                           </Card>
                           <Card className="p-5 bg-muted/30">
                             <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Serviceable Obtainable Market</p>
-                            <p className="text-xl font-bold text-primary">{reportData.market_analysis.som}</p>
+                            <div className="text-xl font-bold text-primary">
+                              {typeof reportData.market_analysis.som === 'object' 
+                                ? reportData.market_analysis.som.estimate || JSON.stringify(reportData.market_analysis.som)
+                                : reportData.market_analysis.som}
+                            </div>
                           </Card>
                         </div>
                         
