@@ -521,10 +521,13 @@ const ViewReport = () => {
           {/* Action Buttons */}
           {project?.status === "complete" && (
             <div className="flex items-center justify-center space-x-4 pt-8">
-              <Button variant="outline" size="lg" disabled>
+              <Button 
+                variant="default" 
+                size="lg"
+                onClick={() => navigate(`/projects/${id}/chat`)}
+              >
                 <MessageSquare className="mr-2 h-5 w-5" />
-                Chat with AI Assistant
-                <Badge variant="secondary" className="ml-2">Coming Soon</Badge>
+                Chat with Cora
               </Button>
               <Button variant="outline" size="lg" disabled>
                 <Download className="mr-2 h-5 w-5" />

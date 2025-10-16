@@ -1,1 +1,10 @@
 project_id = "ftwcmfsfzzgdvyfjimuf"
+
+[functions.analyze-website]
+verify_jwt = true
+
+[functions.generate-validation-report]
+verify_jwt = true
+
+[functions.chat-with-cora]
+verify_jwt = true
