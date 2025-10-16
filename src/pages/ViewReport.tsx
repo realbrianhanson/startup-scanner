@@ -246,49 +246,51 @@ const ViewReport = () => {
           {/* Quick Score (if available) */}
           {reportData.executive_summary && (
             <Card className="p-8 bg-gradient-card border-2 shadow-large">
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">Executive Summary</h2>
+                  <h2 className="text-3xl font-bold">Executive Summary</h2>
                   <Zap className="h-6 w-6 text-primary" />
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-success flex items-center">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg text-success flex items-center">
                       <CheckCircle2 className="h-5 w-5 mr-2" />
                       Top Strengths
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {reportData.executive_summary.strengths?.map((strength: string, i: number) => (
-                        <li key={i} className="text-sm flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{strength}</span>
+                        <li key={i} className="flex items-start leading-relaxed">
+                          <span className="text-success mr-3 mt-1">✓</span>
+                          <span className="text-foreground/90">{strength}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                   
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-warning flex items-center">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg text-warning flex items-center">
                       <AlertTriangle className="h-5 w-5 mr-2" />
                       Key Concerns
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {reportData.executive_summary.concerns?.map((concern: string, i: number) => (
-                        <li key={i} className="text-sm flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{concern}</span>
+                        <li key={i} className="flex items-start leading-relaxed">
+                          <span className="text-warning mr-3 mt-1">⚠</span>
+                          <span className="text-foreground/90">{concern}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t">
-                  <h3 className="font-semibold mb-2">Recommendation</h3>
-                  <MarkdownContent content={reportData.executive_summary.recommendation} className="text-sm" />
+                <div className="pt-6 border-t">
+                  <h3 className="font-semibold text-lg mb-4">Recommendation</h3>
+                  <MarkdownContent content={reportData.executive_summary.recommendation} />
                   {reportData.executive_summary.reasoning && (
-                    <MarkdownContent content={reportData.executive_summary.reasoning} className="text-sm text-muted-foreground mt-2" />
+                    <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                      <MarkdownContent content={reportData.executive_summary.reasoning} />
+                    </div>
                   )}
                 </div>
               </div>
@@ -311,38 +313,38 @@ const ViewReport = () => {
                         <Badge variant="secondary">Expand</Badge>
                       </div>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="p-6 pt-0">
-                      <div className="space-y-4">
+                     <CollapsibleContent className="p-6 pt-0">
+                      <div className="space-y-6">
                         <div className="grid md:grid-cols-3 gap-4">
-                          <Card className="p-4">
-                            <p className="text-sm text-muted-foreground mb-1">TAM</p>
-                            <p className="text-lg font-semibold">{reportData.market_analysis.tam}</p>
+                          <Card className="p-5 bg-muted/30">
+                            <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Total Addressable Market</p>
+                            <p className="text-xl font-bold text-primary">{reportData.market_analysis.tam}</p>
                           </Card>
-                          <Card className="p-4">
-                            <p className="text-sm text-muted-foreground mb-1">SAM</p>
-                            <p className="text-lg font-semibold">{reportData.market_analysis.sam}</p>
+                          <Card className="p-5 bg-muted/30">
+                            <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Serviceable Available Market</p>
+                            <p className="text-xl font-bold text-primary">{reportData.market_analysis.sam}</p>
                           </Card>
-                          <Card className="p-4">
-                            <p className="text-sm text-muted-foreground mb-1">SOM</p>
-                            <p className="text-lg font-semibold">{reportData.market_analysis.som}</p>
+                          <Card className="p-5 bg-muted/30">
+                            <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Serviceable Obtainable Market</p>
+                            <p className="text-xl font-bold text-primary">{reportData.market_analysis.som}</p>
                           </Card>
                         </div>
                         
-                        <div>
-                          <h3 className="font-semibold mb-2">Market Trends</h3>
-                          <ul className="space-y-2">
+                        <div className="bg-muted/20 p-5 rounded-lg">
+                          <h3 className="font-semibold text-lg mb-3">Market Trends</h3>
+                          <ul className="space-y-3">
                             {reportData.market_analysis.trends?.map((trend: string, i: number) => (
-                              <li key={i} className="text-sm flex items-start">
-                                <span className="mr-2">•</span>
-                                <span>{trend}</span>
+                              <li key={i} className="flex items-start leading-relaxed">
+                                <span className="text-primary mr-3 mt-1">→</span>
+                                <span className="text-foreground/90">{trend}</span>
                               </li>
                             ))}
                           </ul>
                         </div>
 
                         <div>
-                          <h3 className="font-semibold mb-2">Timing Assessment</h3>
-                          <MarkdownContent content={reportData.market_analysis.timing_assessment} className="text-sm" />
+                          <h3 className="font-semibold text-lg mb-3">Timing Assessment</h3>
+                          <MarkdownContent content={reportData.market_analysis.timing_assessment} />
                         </div>
                       </div>
                     </CollapsibleContent>
@@ -364,34 +366,34 @@ const ViewReport = () => {
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-6 pt-0">
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div>
-                          <h3 className="font-semibold mb-3">Direct Competitors</h3>
-                          <div className="space-y-3">
+                          <h3 className="font-semibold text-lg mb-4">Direct Competitors</h3>
+                          <div className="space-y-4">
                             {reportData.competitive_landscape.direct_competitors?.map((comp: any, i: number) => (
-                              <Card key={i} className="p-4">
-                                <p className="font-semibold">{comp.name}</p>
-                                <p className="text-sm text-muted-foreground">{comp.description}</p>
+                              <Card key={i} className="p-5 bg-muted/30">
+                                <p className="font-semibold text-lg mb-2">{comp.name}</p>
+                                <p className="text-foreground/80 leading-relaxed">{comp.description}</p>
                               </Card>
                             ))}
                           </div>
                         </div>
 
-                        <div>
-                          <h3 className="font-semibold mb-2">Your Competitive Advantages</h3>
-                          <ul className="space-y-2">
+                        <div className="bg-success/10 p-5 rounded-lg">
+                          <h3 className="font-semibold text-lg mb-3">Your Competitive Advantages</h3>
+                          <ul className="space-y-3">
                             {reportData.competitive_landscape.competitive_advantages?.map((adv: string, i: number) => (
-                              <li key={i} className="text-sm flex items-start">
-                                <CheckCircle2 className="h-4 w-4 mr-2 text-success shrink-0 mt-0.5" />
-                                <span>{adv}</span>
+                              <li key={i} className="flex items-start leading-relaxed">
+                                <CheckCircle2 className="h-5 w-5 mr-3 text-success shrink-0 mt-0.5" />
+                                <span className="text-foreground/90">{adv}</span>
                               </li>
                             ))}
                           </ul>
                         </div>
 
                         <div>
-                          <h3 className="font-semibold mb-2">Positioning Recommendation</h3>
-                          <MarkdownContent content={reportData.competitive_landscape.positioning} className="text-sm" />
+                          <h3 className="font-semibold text-lg mb-3">Positioning Recommendation</h3>
+                          <MarkdownContent content={reportData.competitive_landscape.positioning} />
                         </div>
                       </div>
                     </CollapsibleContent>
