@@ -346,7 +346,8 @@ function calculateValidationScore(sections: any): number {
   let finalScore = executiveScore;
   
   // Market analysis impact
-  if (sections.marketAnalysis?.growth_rate?.includes("high")) {
+  const growthRate = sections.marketAnalysis?.growth_rate;
+  if (growthRate && typeof growthRate === 'string' && growthRate.toLowerCase().includes("high")) {
     finalScore += 5;
   }
   
