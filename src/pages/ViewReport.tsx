@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { MarkdownContent } from "@/components/MarkdownContent";
 
 const ViewReport = () => {
   const { id } = useParams();
@@ -285,9 +286,9 @@ const ViewReport = () => {
 
                 <div className="pt-4 border-t">
                   <h3 className="font-semibold mb-2">Recommendation</h3>
-                  <p className="text-sm">{reportData.executive_summary.recommendation}</p>
+                  <MarkdownContent content={reportData.executive_summary.recommendation} className="text-sm" />
                   {reportData.executive_summary.reasoning && (
-                    <p className="text-sm text-muted-foreground mt-2">{reportData.executive_summary.reasoning}</p>
+                    <MarkdownContent content={reportData.executive_summary.reasoning} className="text-sm text-muted-foreground mt-2" />
                   )}
                 </div>
               </div>
@@ -341,7 +342,7 @@ const ViewReport = () => {
 
                         <div>
                           <h3 className="font-semibold mb-2">Timing Assessment</h3>
-                          <p className="text-sm">{reportData.market_analysis.timing_assessment}</p>
+                          <MarkdownContent content={reportData.market_analysis.timing_assessment} className="text-sm" />
                         </div>
                       </div>
                     </CollapsibleContent>
@@ -390,7 +391,7 @@ const ViewReport = () => {
 
                         <div>
                           <h3 className="font-semibold mb-2">Positioning Recommendation</h3>
-                          <p className="text-sm">{reportData.competitive_landscape.positioning}</p>
+                          <MarkdownContent content={reportData.competitive_landscape.positioning} className="text-sm" />
                         </div>
                       </div>
                     </CollapsibleContent>
@@ -503,12 +504,12 @@ const ViewReport = () => {
 
                         <div>
                           <h3 className="font-semibold mb-2">Revenue Model</h3>
-                          <p className="text-sm">{reportData.financial_basics.revenue_model}</p>
+                          <MarkdownContent content={reportData.financial_basics.revenue_model} className="text-sm" />
                         </div>
 
                         <div>
                           <h3 className="font-semibold mb-2">CAC Estimate</h3>
-                          <p className="text-sm">{reportData.financial_basics.cac_estimate}</p>
+                          <MarkdownContent content={reportData.financial_basics.cac_estimate} className="text-sm" />
                         </div>
                       </div>
                     </CollapsibleContent>
