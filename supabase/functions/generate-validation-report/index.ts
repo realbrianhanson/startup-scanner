@@ -672,8 +672,10 @@ Format as JSON with keys:
 
   const result = await callAI(prompt, apiKey);
   try {
-    return JSON.parse(result);
-  } catch {
+    const cleanedResult = cleanJsonFromMarkdown(result);
+    return JSON.parse(cleanedResult);
+  } catch (error) {
+    console.error("Path to MVP parse error:", error, "Raw result:", result);
     return {
       mvp_definition: { description: "Analysis pending", core_value: "TBD" },
       core_features: [
@@ -738,8 +740,10 @@ Format as JSON with keys:
 
   const result = await callAI(prompt, apiKey);
   try {
-    return JSON.parse(result);
-  } catch {
+    const cleanedResult = cleanJsonFromMarkdown(result);
+    return JSON.parse(cleanedResult);
+  } catch (error) {
+    console.error("Go to market parse error:", error, "Raw result:", result);
     return {
       target_segments: [
         { segment: "Segment analysis pending", description: "TBD", size: "TBD", characteristics: ["TBD"] }
