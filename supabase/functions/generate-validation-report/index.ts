@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 5;
+    const creditsNeeded = 6; // Updated to include customer personas
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -69,6 +69,7 @@ serve(async (req) => {
         generation_status: {
           executive_summary: "pending",
           market_analysis: "pending",
+          customer_personas: "pending",
           competitive_landscape: "pending",
           strategic_frameworks: "pending",
           financial_basics: "pending",
@@ -93,6 +94,7 @@ serve(async (req) => {
     const sections = [
       generateExecutiveSummary(project, LOVABLE_API_KEY),
       generateMarketAnalysis(project, LOVABLE_API_KEY),
+      generateCustomerPersonas(project, LOVABLE_API_KEY),
       generateCompetitiveLandscape(project, LOVABLE_API_KEY),
       generateStrategicFrameworks(project, LOVABLE_API_KEY),
       generateFinancialBasics(project, LOVABLE_API_KEY),
@@ -101,6 +103,7 @@ serve(async (req) => {
     const [
       executiveSummary,
       marketAnalysis,
+      customerPersonas,
       competitiveLandscape,
       strategicFrameworks,
       financialBasics,
@@ -110,6 +113,7 @@ serve(async (req) => {
     const validationScore = calculateValidationScore({
       executiveSummary,
       marketAnalysis,
+      customerPersonas,
       competitiveLandscape,
       strategicFrameworks,
       financialBasics,
@@ -119,6 +123,7 @@ serve(async (req) => {
     const reportData = {
       executive_summary: executiveSummary,
       market_analysis: marketAnalysis,
+      customer_personas: customerPersonas,
       competitive_landscape: competitiveLandscape,
       strategic_frameworks: strategicFrameworks,
       financial_basics: financialBasics,
@@ -132,6 +137,7 @@ serve(async (req) => {
         generation_status: {
           executive_summary: "complete",
           market_analysis: "complete",
+          customer_personas: "complete",
           competitive_landscape: "complete",
           strategic_frameworks: "complete",
           financial_basics: "complete",
@@ -336,6 +342,97 @@ Format as JSON with keys:
       porters_five_forces: { supplier_power: "Medium", buyer_power: "Medium", competitive_rivalry: "High", threat_of_substitution: "Medium", threat_of_new_entry: "Medium" },
       gtm_strategy: [result]
     };
+  }
+}
+
+async function generateCustomerPersonas(project: any, apiKey: string) {
+  const prompt = `Generate 3-4 distinct customer personas for: ${project.name}
+
+Industry: ${project.industry}
+Description: ${project.description}
+
+For each persona:
+
+**TARGETING PRIORITY:**
+- Which to target: [1st / 2nd / 3rd / 4th]
+- Why: [1 sentence - ease of reach + conversion likelihood]
+
+**WHO THEY ARE:**
+- Name: [First name + role, e.g. "Sarah the Marketing Director"]
+- Age: [Range, e.g. 32-38]
+- Job/Role: [Specific]
+- Income: [Range]
+- Location: [Type + context]
+- Values: [Top 3 things they care about]
+- Personality: [2-3 traits affecting purchase decisions]
+
+**3 BIG PAIN POINTS:**
+1. [PRIMARY PAIN]: [Specific problem] → Impact: [How it affects their life/work/money]
+2. [SECONDARY PAIN]: [Specific problem] → Impact: [Consequence]
+3. [TERTIARY PAIN]: [Specific problem] → Impact: [Consequence]
+
+Current broken solution: [What they're doing now and why it sucks]
+Dream outcome: [What they actually want]
+
+**OBJECTIONS (What stops them from buying):**
+1. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
+2. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
+3. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
+4. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
+
+**CLOSING ANGLES (How to overcome objections and convert):**
+- Angle 1: [Specific approach] → Addresses: [Which objection(s)]
+- Angle 2: [Specific approach] → Addresses: [Which objection(s)]
+- Angle 3: [Specific approach] → Addresses: [Which objection(s)]
+- Angle 4: [Specific approach] → Addresses: [Which objection(s)]
+- Proof they need: [Testimonials/data/guarantees/case studies]
+- Urgency trigger: [What makes them buy NOW vs later]
+
+**WHERE TO FIND THEM (Top 2-3 channels with SPECIFIC NAMES):**
+- Primary channel: [LinkedIn/Reddit/Facebook/etc]
+  * Specific communities: [Exact group/subreddit names - 2-3 real ones]
+  * Influencers they follow: [2-3 actual names]
+- Secondary channel: [Platform]
+  * Specific communities: [Exact names - 2-3 real ones]
+- How to reach out: [Best approach + opening line template]
+
+**CONTENT THAT CONVERTS (3 ideas):**
+1. [Blog/video title]: [Why it works for this persona]
+2. [Social post angle]: [Why it resonates]
+3. [Email subject]: [Why they'll open]
+
+CRITICAL: 
+- Return ONLY valid JSON with no markdown formatting
+- Use REAL, SPECIFIC names (actual groups, real people, existing communities)
+- No generic "join industry groups" - name the actual groups
+- Format as array of persona objects with keys: priority, priority_reason, name, age, job, income, location, values, personality, pain_points (array of 3 objects with "pain" and "impact"), current_solution, dream_outcome, objections (array of 4 objects with "objection" and "root_cause"), closing_angles (array of 4 objects with "angle" and "addresses"), proof_needed, urgency_trigger, channels (array of objects with "platform", "communities", "influencers", "outreach_template"), content_ideas (array of 3 objects with "title" and "why_it_works")`;
+
+  const result = await callAI(prompt, apiKey);
+  try {
+    return JSON.parse(result);
+  } catch {
+    return [
+      {
+        priority: "1st",
+        priority_reason: "Analysis pending",
+        name: "Target Customer",
+        age: "TBD",
+        job: "TBD",
+        income: "TBD",
+        location: "TBD",
+        values: ["TBD"],
+        personality: ["TBD"],
+        pain_points: [{ pain: "Analysis pending", impact: "TBD" }],
+        current_solution: "TBD",
+        dream_outcome: "TBD",
+        objections: [{ objection: "TBD", root_cause: "TBD" }],
+        closing_angles: [{ angle: "TBD", addresses: "TBD" }],
+        proof_needed: "TBD",
+        urgency_trigger: "TBD",
+        channels: [{ platform: "TBD", communities: [], influencers: [], outreach_template: "TBD" }],
+        content_ideas: [{ title: "TBD", why_it_works: "TBD" }]
+      }
+    ];
   }
 }
 
