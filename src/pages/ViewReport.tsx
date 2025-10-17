@@ -61,11 +61,15 @@ const ViewReport = () => {
 
   const loadProjectAndReport = async () => {
     try {
+      console.log("Loading project and report for ID:", id);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log("No user found, redirecting to auth");
         navigate("/auth");
         return;
       }
+
+      console.log("User authenticated:", user.id);
 
       // Load project
       const { data: projectData, error: projectError } = await supabase
@@ -75,7 +79,12 @@ const ViewReport = () => {
         .eq("user_id", user.id)
         .single();
 
-      if (projectError) throw projectError;
+      if (projectError) {
+        console.error("Project error:", projectError);
+        throw projectError;
+      }
+      
+      console.log("Project loaded:", projectData);
       setProject(projectData);
 
       // Load report
@@ -85,19 +94,30 @@ const ViewReport = () => {
         .eq("project_id", id)
         .maybeSingle();
 
+      if (reportError) {
+        console.error("Report error:", reportError);
+        // Don't throw here, just log - report might not exist yet
+      }
+
+      console.log("Report data:", reportData);
+
       if (reportData) {
         setReport(reportData);
         if (projectData.status === "complete") {
           setProgress(100);
+        } else {
+          updateProgress(reportData.generation_status);
         }
       } else {
         // No report yet, trigger generation
+        console.log("No report found, triggering generation");
         startReportGeneration();
       }
 
       setLoading(false);
 
       // Subscribe to realtime updates
+      console.log("Setting up realtime subscriptions");
       const channel = supabase
         .channel(`report-${id}`)
         .on(
@@ -130,24 +150,31 @@ const ViewReport = () => {
         .subscribe();
 
       return () => {
+        console.log("Cleaning up realtime subscriptions");
         supabase.removeChannel(channel);
       };
     } catch (error: any) {
       console.error("Error loading project:", error);
       toast.error(error.message || "Failed to load project");
       setLoading(false);
+      // Don't navigate away - stay on page so user can see error
     }
   };
 
   const startReportGeneration = async () => {
+    console.log("Starting report generation for project:", id);
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-validation-report", {
         body: { project_id: id },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Report generation error:", error);
+        throw error;
+      }
 
+      console.log("Report generation response:", data);
       toast.success("Report generation started!");
     } catch (error: any) {
       console.error("Error generating report:", error);
@@ -179,7 +206,27 @@ const ViewReport = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If project failed to load, show error
+  if (!project && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+          <h2 className="text-2xl font-bold">Project Not Found</h2>
+          <p className="text-muted-foreground">The project you're looking for doesn't exist.</p>
+          <Button onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
