@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 10; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
+    const creditsNeeded = 11; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -76,6 +76,7 @@ serve(async (req) => {
           pestel_analysis: "pending",
           catwoe_analysis: "pending",
           path_to_mvp: "pending",
+          go_to_market_strategy: "pending",
           financial_basics: "pending",
         },
       })
@@ -105,6 +106,7 @@ serve(async (req) => {
       generatePestelAnalysis(project, LOVABLE_API_KEY),
       generateCatwoeAnalysis(project, LOVABLE_API_KEY),
       generatePathToMvp(project, LOVABLE_API_KEY),
+      generateGoToMarketStrategy(project, LOVABLE_API_KEY),
       generateFinancialBasics(project, LOVABLE_API_KEY),
     ];
 
@@ -118,6 +120,7 @@ serve(async (req) => {
       pestelAnalysis,
       catwoeAnalysis,
       pathToMvp,
+      goToMarketStrategy,
       financialBasics,
     ] = await Promise.all(sections);
 
@@ -132,6 +135,7 @@ serve(async (req) => {
       pestelAnalysis,
       catwoeAnalysis,
       pathToMvp,
+      goToMarketStrategy,
       financialBasics,
     });
 
@@ -146,6 +150,7 @@ serve(async (req) => {
       pestel_analysis: pestelAnalysis,
       catwoe_analysis: catwoeAnalysis,
       path_to_mvp: pathToMvp,
+      go_to_market_strategy: goToMarketStrategy,
       financial_basics: financialBasics,
       validation_score: validationScore,
     };
@@ -164,6 +169,7 @@ serve(async (req) => {
           pestel_analysis: "complete",
           catwoe_analysis: "complete",
           path_to_mvp: "complete",
+          go_to_market_strategy: "complete",
           financial_basics: "complete",
         },
       })
@@ -696,6 +702,74 @@ Format as JSON with keys:
         review_frequency: "TBD",
         improvement_process: "TBD"
       }
+    };
+  }
+}
+
+async function generateGoToMarketStrategy(project: any, apiKey: string) {
+  const prompt = `Business Idea: ${project.name}
+Industry: ${project.industry}
+Description: ${project.description}
+
+Create a comprehensive Go-To-Market (GTM) Strategy covering:
+
+1. Target Market Segmentation - Define primary and secondary segments with detailed profiles
+2. Value Proposition - Clear positioning and unique selling points for each segment
+3. Marketing Channels - Specific channels with strategies and expected ROI
+4. Sales Strategy - Sales process, team structure, and conversion tactics
+5. Pricing Strategy - Pricing model, tiers, and competitive positioning
+6. Launch Phases - Pre-launch, launch, and post-launch activities with timelines
+7. Growth Tactics - Strategies for scaling and achieving market penetration
+8. Key Metrics - Critical KPIs to track GTM success
+
+Provide specific, actionable strategies with concrete examples.
+
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting.
+
+Format as JSON with keys:
+- target_segments (array of { segment, description, size, characteristics (array) })
+- value_proposition { primary (string), differentiators (array) }
+- marketing_channels (array of { channel, strategy, budget_allocation, expected_roi })
+- sales_strategy { process (string), team_structure (array), conversion_tactics (array) }
+- pricing_strategy { model (string), tiers (array of { name, price, features (array) }), competitive_position (string) }
+- launch_phases (array of { phase, duration, activities (array), goals (array) })
+- growth_tactics (array of { tactic, description, implementation, expected_impact })
+- key_metrics (array of { metric, target, measurement_frequency })`;
+
+  const result = await callAI(prompt, apiKey);
+  try {
+    return JSON.parse(result);
+  } catch {
+    return {
+      target_segments: [
+        { segment: "Segment analysis pending", description: "TBD", size: "TBD", characteristics: ["TBD"] }
+      ],
+      value_proposition: {
+        primary: "Value proposition pending",
+        differentiators: ["TBD"]
+      },
+      marketing_channels: [
+        { channel: "TBD", strategy: "TBD", budget_allocation: "TBD", expected_roi: "TBD" }
+      ],
+      sales_strategy: {
+        process: "Sales strategy pending",
+        team_structure: ["TBD"],
+        conversion_tactics: ["TBD"]
+      },
+      pricing_strategy: {
+        model: "Pricing model pending",
+        tiers: [{ name: "TBD", price: "TBD", features: ["TBD"] }],
+        competitive_position: "TBD"
+      },
+      launch_phases: [
+        { phase: "Phase 1", duration: "TBD", activities: ["TBD"], goals: ["TBD"] }
+      ],
+      growth_tactics: [
+        { tactic: "TBD", description: "TBD", implementation: "TBD", expected_impact: "TBD" }
+      ],
+      key_metrics: [
+        { metric: "TBD", target: "TBD", measurement_frequency: "TBD" }
+      ]
     };
   }
 }

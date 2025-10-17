@@ -1148,6 +1148,226 @@ const ViewReport = () => {
           </Card>
         )}
 
+        {/* Go-To-Market Strategy */}
+        {reportData.go_to_market_strategy && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Go-To-Market Strategy
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="target-segments">
+                  <AccordionTrigger>Target Market Segments</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      {reportData.go_to_market_strategy.target_segments.map((segment: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <h4 className="font-semibold mb-2">{segment.segment}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{segment.description}</p>
+                          <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                            <div>
+                              <span className="text-muted-foreground">Market Size:</span> {segment.size}
+                            </div>
+                          </div>
+                          <div>
+                            <h5 className="text-sm font-semibold mb-1">Key Characteristics:</h5>
+                            <ul className="list-disc pl-5 text-sm">
+                              {segment.characteristics.map((char: string, i: number) => (
+                                <li key={i}>{char}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="value-prop">
+                  <AccordionTrigger>Value Proposition</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <h4 className="font-semibold mb-2">Primary Value Proposition:</h4>
+                        <p className="text-sm">{reportData.go_to_market_strategy.value_proposition.primary}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-2">Key Differentiators:</h4>
+                        <ul className="list-disc pl-5 text-sm space-y-1">
+                          {reportData.go_to_market_strategy.value_proposition.differentiators.map((diff: string, idx: number) => (
+                            <li key={idx}>{diff}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="marketing-channels">
+                  <AccordionTrigger>Marketing Channels</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      {reportData.go_to_market_strategy.marketing_channels.map((channel: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <h4 className="font-semibold mb-2">{channel.channel}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{channel.strategy}</p>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Budget:</span> {channel.budget_allocation}
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Expected ROI:</span> {channel.expected_roi}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="sales-strategy">
+                  <AccordionTrigger>Sales Strategy</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold mb-2">Sales Process:</h4>
+                        <p className="text-sm text-muted-foreground">{reportData.go_to_market_strategy.sales_strategy.process}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-2">Team Structure:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {reportData.go_to_market_strategy.sales_strategy.team_structure.map((role: string, idx: number) => (
+                            <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                              {role}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-2">Conversion Tactics:</h4>
+                        <ul className="list-disc pl-5 text-sm space-y-1">
+                          {reportData.go_to_market_strategy.sales_strategy.conversion_tactics.map((tactic: string, idx: number) => (
+                            <li key={idx}>{tactic}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="pricing">
+                  <AccordionTrigger>Pricing Strategy</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      <div className="p-3 bg-muted rounded-lg">
+                        <h4 className="font-semibold mb-1">Pricing Model:</h4>
+                        <p className="text-sm">{reportData.go_to_market_strategy.pricing_strategy.model}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-2">Pricing Tiers:</h4>
+                        <div className="space-y-2">
+                          {reportData.go_to_market_strategy.pricing_strategy.tiers.map((tier: any, idx: number) => (
+                            <div key={idx} className="p-3 bg-muted rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-semibold">{tier.name}</h5>
+                                <span className="text-lg font-bold text-primary">{tier.price}</span>
+                              </div>
+                              <ul className="list-disc pl-5 text-sm space-y-1">
+                                {tier.features.map((feature: string, i: number) => (
+                                  <li key={i}>{feature}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <h4 className="font-semibold mb-1">Competitive Position:</h4>
+                        <p className="text-sm">{reportData.go_to_market_strategy.pricing_strategy.competitive_position}</p>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="launch-phases">
+                  <AccordionTrigger>Launch Phases</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      {reportData.go_to_market_strategy.launch_phases.map((phase: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-semibold">{phase.phase}</h4>
+                            <span className="text-sm text-muted-foreground">{phase.duration}</span>
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <h5 className="text-sm font-semibold mb-1">Activities:</h5>
+                              <ul className="list-disc pl-5 text-sm space-y-1">
+                                {phase.activities.map((activity: string, i: number) => (
+                                  <li key={i}>{activity}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <h5 className="text-sm font-semibold mb-1">Goals:</h5>
+                              <ul className="list-disc pl-5 text-sm space-y-1">
+                                {phase.goals.map((goal: string, i: number) => (
+                                  <li key={i}>{goal}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="growth-tactics">
+                  <AccordionTrigger>Growth Tactics</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      {reportData.go_to_market_strategy.growth_tactics.map((tactic: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <h4 className="font-semibold mb-2">{tactic.tactic}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{tactic.description}</p>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Implementation:</span>
+                              <p className="text-xs mt-1">{tactic.implementation}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Expected Impact:</span>
+                              <p className="text-xs mt-1">{tactic.expected_impact}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="key-metrics">
+                  <AccordionTrigger>Key Metrics</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      {reportData.go_to_market_strategy.key_metrics.map((metric: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <h4 className="font-semibold mb-2">{metric.metric}</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Target:</span> {metric.target}
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Frequency:</span> {metric.measurement_frequency}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Financial Basics */}
               {reportData.financial_basics && (
                 <Collapsible>
