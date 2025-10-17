@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 11; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
+    const creditsNeeded = 12; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -77,6 +77,7 @@ serve(async (req) => {
           catwoe_analysis: "pending",
           path_to_mvp: "pending",
           go_to_market_strategy: "pending",
+          usp_analysis: "pending",
           financial_basics: "pending",
         },
       })
@@ -107,6 +108,7 @@ serve(async (req) => {
       generateCatwoeAnalysis(project, LOVABLE_API_KEY),
       generatePathToMvp(project, LOVABLE_API_KEY),
       generateGoToMarketStrategy(project, LOVABLE_API_KEY),
+      generateUSPAnalysis(project, LOVABLE_API_KEY),
       generateFinancialBasics(project, LOVABLE_API_KEY),
     ];
 
@@ -121,6 +123,7 @@ serve(async (req) => {
       catwoeAnalysis,
       pathToMvp,
       goToMarketStrategy,
+      uspAnalysis,
       financialBasics,
     ] = await Promise.all(sections);
 
@@ -136,6 +139,7 @@ serve(async (req) => {
       catwoeAnalysis,
       pathToMvp,
       goToMarketStrategy,
+      uspAnalysis,
       financialBasics,
     });
 
@@ -151,6 +155,7 @@ serve(async (req) => {
       catwoe_analysis: catwoeAnalysis,
       path_to_mvp: pathToMvp,
       go_to_market_strategy: goToMarketStrategy,
+      usp_analysis: uspAnalysis,
       financial_basics: financialBasics,
       validation_score: validationScore,
     };
@@ -170,6 +175,7 @@ serve(async (req) => {
           catwoe_analysis: "complete",
           path_to_mvp: "complete",
           go_to_market_strategy: "complete",
+          usp_analysis: "complete",
           financial_basics: "complete",
         },
       })
@@ -704,6 +710,89 @@ Format as JSON with keys:
         review_frequency: "TBD",
         improvement_process: "TBD"
       }
+    };
+  }
+}
+
+async function generateUSPAnalysis(project: any, apiKey: string) {
+  const prompt = `Based on the following business idea, create a comprehensive USP (Unique Selling Proposition) analysis:
+
+Project: ${project.name}
+Description: ${project.description}
+Industry: ${project.industry}
+
+Provide a detailed USP analysis with:
+1. Current positioning analysis (what makes them unique now)
+2. Recommended USP statement (clear, compelling, single sentence)
+3. Key differentiators (3-5 specific points that set them apart)
+4. Competitive advantages (tangible benefits over competitors)
+5. Value proposition components (what they deliver, how, and why it matters)
+6. Target audience alignment (how USP speaks to ideal customers)
+7. Proof points (evidence/credentials that support the USP)
+8. Communication guidelines (how to articulate the USP across channels)
+
+Return ONLY a JSON object (no markdown) in this exact structure:
+{
+  "current_positioning": {
+    "summary": "brief analysis",
+    "strengths": ["strength1", "strength2"],
+    "gaps": ["gap1", "gap2"]
+  },
+  "recommended_usp": "single compelling sentence",
+  "key_differentiators": [
+    {
+      "differentiator": "name",
+      "description": "details",
+      "impact": "why it matters"
+    }
+  ],
+  "competitive_advantages": [
+    {
+      "advantage": "name",
+      "description": "details",
+      "quantifiable_benefit": "measurable impact"
+    }
+  ],
+  "value_proposition": {
+    "what": "what you deliver",
+    "how": "how you deliver it differently",
+    "why": "why it matters to customers"
+  },
+  "target_alignment": {
+    "primary_audience": "who this appeals to most",
+    "emotional_triggers": ["trigger1", "trigger2"],
+    "rational_benefits": ["benefit1", "benefit2"]
+  },
+  "proof_points": [
+    {
+      "claim": "what you claim",
+      "evidence": "supporting evidence",
+      "credibility": "why it's believable"
+    }
+  ],
+  "communication_guidelines": {
+    "elevator_pitch": "30-second version",
+    "tagline_options": ["option1", "option2", "option3"],
+    "key_messages": ["message1", "message2", "message3"],
+    "tone": "how to communicate it"
+  }
+}`;
+
+  const result = await callAI(prompt, apiKey);
+  try {
+    const cleanedResult = cleanJsonFromMarkdown(result);
+    return JSON.parse(cleanedResult);
+  } catch (error) {
+    console.error("USP analysis parse error:", error, "Raw result:", result);
+    return {
+      current_positioning: { summary: "Analysis pending", strengths: ["TBD"], gaps: ["TBD"] },
+      recommended_usp: "Analysis pending",
+      key_differentiators: [{ differentiator: "TBD", description: "TBD", impact: "TBD" }],
+      competitive_advantages: [{ advantage: "TBD", description: "TBD", quantifiable_benefit: "TBD" }],
+      value_proposition: { what: "TBD", how: "TBD", why: "TBD" },
+      target_alignment: { primary_audience: "TBD", emotional_triggers: ["TBD"], rational_benefits: ["TBD"] },
+      proof_points: [{ claim: "TBD", evidence: "TBD", credibility: "TBD" }],
+      communication_guidelines: { elevator_pitch: "TBD", tagline_options: ["TBD"], key_messages: ["TBD"], tone: "TBD" }
     };
   }
 }

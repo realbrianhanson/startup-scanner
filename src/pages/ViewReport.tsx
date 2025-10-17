@@ -1368,6 +1368,187 @@ const ViewReport = () => {
           </Card>
         )}
 
+        {/* USP Analysis */}
+        {reportData.usp_analysis && (
+          <Card>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="usp">
+                <AccordionTrigger className="px-6 hover:no-underline">
+                  <CardHeader className="p-0">
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb className="h-6 w-6" />
+                      Unique Selling Proposition (USP)
+                    </CardTitle>
+                  </CardHeader>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <CardContent className="space-y-6">
+                    {/* Recommended USP */}
+                    <div className="bg-primary/5 p-4 rounded-lg border-l-4 border-primary">
+                      <h4 className="font-semibold mb-2">Recommended USP</h4>
+                      <p className="text-lg font-medium">{reportData.usp_analysis.recommended_usp}</p>
+                    </div>
+
+                    {/* Current Positioning */}
+                    {reportData.usp_analysis.current_positioning && (
+                      <div>
+                        <h4 className="font-semibold mb-2">Current Positioning</h4>
+                        <p className="mb-3">{reportData.usp_analysis.current_positioning.summary}</p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Strengths:</p>
+                            <ul className="list-disc list-inside space-y-1">
+                              {reportData.usp_analysis.current_positioning.strengths?.map((strength: string, i: number) => (
+                                <li key={i}>{strength}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Gaps:</p>
+                            <ul className="list-disc list-inside space-y-1">
+                              {reportData.usp_analysis.current_positioning.gaps?.map((gap: string, i: number) => (
+                                <li key={i}>{gap}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Key Differentiators */}
+                    {reportData.usp_analysis.key_differentiators && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Key Differentiators</h4>
+                        <div className="space-y-3">
+                          {reportData.usp_analysis.key_differentiators.map((diff: any, i: number) => (
+                            <div key={i} className="border-l-2 border-primary pl-4">
+                              <p className="font-medium">{diff.differentiator}</p>
+                              <p className="text-sm text-muted-foreground">{diff.description}</p>
+                              <p className="text-sm mt-1"><span className="font-medium">Impact:</span> {diff.impact}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Competitive Advantages */}
+                    {reportData.usp_analysis.competitive_advantages && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Competitive Advantages</h4>
+                        <div className="grid gap-3">
+                          {reportData.usp_analysis.competitive_advantages.map((adv: any, i: number) => (
+                            <div key={i} className="p-3 bg-muted/50 rounded-lg">
+                              <p className="font-medium">{adv.advantage}</p>
+                              <p className="text-sm text-muted-foreground mt-1">{adv.description}</p>
+                              <p className="text-sm mt-2 text-primary">📊 {adv.quantifiable_benefit}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Value Proposition */}
+                    {reportData.usp_analysis.value_proposition && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Value Proposition Components</h4>
+                        <div className="space-y-3">
+                          <div className="p-3 bg-blue-500/10 rounded">
+                            <p className="font-medium text-blue-700 dark:text-blue-300">What</p>
+                            <p className="text-sm">{reportData.usp_analysis.value_proposition.what}</p>
+                          </div>
+                          <div className="p-3 bg-green-500/10 rounded">
+                            <p className="font-medium text-green-700 dark:text-green-300">How</p>
+                            <p className="text-sm">{reportData.usp_analysis.value_proposition.how}</p>
+                          </div>
+                          <div className="p-3 bg-purple-500/10 rounded">
+                            <p className="font-medium text-purple-700 dark:text-purple-300">Why</p>
+                            <p className="text-sm">{reportData.usp_analysis.value_proposition.why}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Target Alignment */}
+                    {reportData.usp_analysis.target_alignment && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Target Audience Alignment</h4>
+                        <p className="mb-3"><span className="font-medium">Primary Audience:</span> {reportData.usp_analysis.target_alignment.primary_audience}</p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Emotional Triggers:</p>
+                            <ul className="list-disc list-inside space-y-1">
+                              {reportData.usp_analysis.target_alignment.emotional_triggers?.map((trigger: string, i: number) => (
+                                <li key={i}>{trigger}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Rational Benefits:</p>
+                            <ul className="list-disc list-inside space-y-1">
+                              {reportData.usp_analysis.target_alignment.rational_benefits?.map((benefit: string, i: number) => (
+                                <li key={i}>{benefit}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Proof Points */}
+                    {reportData.usp_analysis.proof_points && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Proof Points</h4>
+                        <div className="space-y-3">
+                          {reportData.usp_analysis.proof_points.map((point: any, i: number) => (
+                            <div key={i} className="border rounded-lg p-3">
+                              <p className="font-medium">{point.claim}</p>
+                              <p className="text-sm text-muted-foreground mt-1"><span className="font-medium">Evidence:</span> {point.evidence}</p>
+                              <p className="text-sm mt-1"><span className="font-medium">Credibility:</span> {point.credibility}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Communication Guidelines */}
+                    {reportData.usp_analysis.communication_guidelines && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Communication Guidelines</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Elevator Pitch (30 seconds):</p>
+                            <p className="p-3 bg-muted/50 rounded">{reportData.usp_analysis.communication_guidelines.elevator_pitch}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Tagline Options:</p>
+                            <div className="space-y-2">
+                              {reportData.usp_analysis.communication_guidelines.tagline_options?.map((tagline: string, i: number) => (
+                                <p key={i} className="p-2 bg-primary/5 rounded text-center font-medium">{tagline}</p>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Key Messages:</p>
+                            <ul className="list-disc list-inside space-y-1">
+                              {reportData.usp_analysis.communication_guidelines.key_messages?.map((message: string, i: number) => (
+                                <li key={i}>{message}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Tone:</p>
+                            <p>{reportData.usp_analysis.communication_guidelines.tone}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </Card>
+        )}
+
         {/* Financial Basics */}
               {reportData.financial_basics && (
                 <Collapsible>
