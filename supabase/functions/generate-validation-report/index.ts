@@ -234,7 +234,12 @@ Create a brief executive summary with:
 3. Top 3 concerns
 4. Clear Go/No-Go recommendation
 
-Format as JSON with keys: score, strengths (array), concerns (array), recommendation, reasoning`;
+Format as JSON with keys: 
+- score (number)
+- strengths (array of strings)
+- concerns (array of strings)
+- recommendation (string in markdown format with proper paragraphs and formatting)
+- reasoning (string in markdown format with proper paragraphs and formatting)`;
 
   const result = await callAI(prompt, apiKey);
   try {
@@ -257,7 +262,14 @@ Provide detailed market analysis:
 5. Entry barriers assessment
 6. Market timing evaluation
 
-Format as JSON with keys: tam, sam, som, growth_rate, trends (array), barriers (array), timing_assessment`;
+Format as JSON with keys: 
+- tam (string, e.g. "$5B globally")
+- sam (string, e.g. "$1.2B in North America")
+- som (string, e.g. "$50M in first 3 years")
+- growth_rate (string)
+- trends (array of strings)
+- barriers (array of strings)
+- timing_assessment (string in markdown format with proper paragraphs explaining market timing)`;
 
   const result = await callAI(prompt, apiKey);
   try {
@@ -278,7 +290,11 @@ Analyze competitive landscape:
 3. Your competitive advantages
 4. Market positioning recommendation
 
-Format as JSON with keys: direct_competitors (array of {name, description}), indirect_competitors (array), competitive_advantages (array), positioning`;
+Format as JSON with keys: 
+- direct_competitors (array of {name, description})
+- indirect_competitors (array of strings)
+- competitive_advantages (array of strings)
+- positioning (string in markdown format with proper paragraphs explaining positioning strategy)`;
 
   const result = await callAI(prompt, apiKey);
   try {
@@ -323,7 +339,11 @@ Provide financial basics:
 3. Customer acquisition cost (CAC) estimates
 4. Basic 3-year revenue projections
 
-Format as JSON with keys: startup_costs {conservative, moderate, aggressive}, revenue_model, cac_estimate, projections {year1, year2, year3}`;
+Format as JSON with keys: 
+- startup_costs {conservative, moderate, aggressive} (all strings like "$10K-15K")
+- revenue_model (string in markdown format with proper paragraphs explaining the revenue model)
+- cac_estimate (string in markdown format with proper paragraphs explaining CAC)
+- projections {year1, year2, year3} (all strings)`;
 
   const result = await callAI(prompt, apiKey);
   try {
