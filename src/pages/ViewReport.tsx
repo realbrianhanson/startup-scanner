@@ -106,6 +106,7 @@ const ViewReport = () => {
 
       if (reportData) {
         setReport(reportData);
+        console.log("Customer personas data:", (reportData.report_data as any)?.customer_personas);
         if (projectData.status === "complete") {
           setProgress(100);
         } else {
@@ -437,7 +438,7 @@ const ViewReport = () => {
               )}
 
               {/* Customer Personas */}
-              {reportData.customer_personas && Array.isArray(reportData.customer_personas) && (
+              {reportData.customer_personas && Array.isArray(reportData.customer_personas) && reportData.customer_personas.length > 0 && (
                 <Collapsible>
                   <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
                     <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">

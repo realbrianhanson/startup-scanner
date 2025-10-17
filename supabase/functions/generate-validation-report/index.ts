@@ -519,8 +519,12 @@ CRITICAL:
 
   const result = await callAI(prompt, apiKey);
   try {
-    return JSON.parse(result);
-  } catch {
+    const cleanedResult = cleanJsonFromMarkdown(result);
+    const parsed = JSON.parse(cleanedResult);
+    console.log("Customer personas generated successfully:", parsed.length, "personas");
+    return parsed;
+  } catch (error) {
+    console.error("Customer personas parse error:", error, "Raw result:", result);
     return [
       {
         priority: "1st",
