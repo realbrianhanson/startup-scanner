@@ -26,6 +26,20 @@ const ViewReport = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Helper to safely convert content to string for MarkdownContent
+  const toMarkdownString = (content: any): string => {
+    if (!content) return '';
+    if (typeof content === 'string') return content;
+    if (typeof content === 'object') {
+      // If it has a 'text' or 'content' property, use that
+      if (content.text) return String(content.text);
+      if (content.content) return String(content.content);
+      // Otherwise stringify it
+      return JSON.stringify(content, null, 2);
+    }
+    return String(content);
+  };
+
   const [project, setProject] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -286,10 +300,10 @@ const ViewReport = () => {
 
                 <div className="pt-6 border-t">
                   <h3 className="font-semibold text-lg mb-4">Recommendation</h3>
-                  <MarkdownContent content={reportData.executive_summary.recommendation} />
+                  <MarkdownContent content={toMarkdownString(reportData.executive_summary.recommendation)} />
                   {reportData.executive_summary.reasoning && (
                     <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                      <MarkdownContent content={reportData.executive_summary.reasoning} />
+                      <MarkdownContent content={toMarkdownString(reportData.executive_summary.reasoning)} />
                     </div>
                   )}
                 </div>
@@ -356,7 +370,7 @@ const ViewReport = () => {
 
                         <div>
                           <h3 className="font-semibold text-lg mb-3">Timing Assessment</h3>
-                          <MarkdownContent content={reportData.market_analysis.timing_assessment} />
+                          <MarkdownContent content={toMarkdownString(reportData.market_analysis.timing_assessment)} />
                         </div>
                       </div>
                     </CollapsibleContent>
@@ -405,7 +419,7 @@ const ViewReport = () => {
 
                         <div>
                           <h3 className="font-semibold text-lg mb-3">Positioning Recommendation</h3>
-                          <MarkdownContent content={reportData.competitive_landscape.positioning} />
+                          <MarkdownContent content={toMarkdownString(reportData.competitive_landscape.positioning)} />
                         </div>
                       </div>
                     </CollapsibleContent>
@@ -518,12 +532,12 @@ const ViewReport = () => {
 
                         <div>
                           <h3 className="font-semibold mb-2">Revenue Model</h3>
-                          <MarkdownContent content={reportData.financial_basics.revenue_model} className="text-sm" />
+                          <MarkdownContent content={toMarkdownString(reportData.financial_basics.revenue_model)} className="text-sm" />
                         </div>
 
                         <div>
                           <h3 className="font-semibold mb-2">CAC Estimate</h3>
-                          <MarkdownContent content={reportData.financial_basics.cac_estimate} className="text-sm" />
+                          <MarkdownContent content={toMarkdownString(reportData.financial_basics.cac_estimate)} className="text-sm" />
                         </div>
                       </div>
                     </CollapsibleContent>
