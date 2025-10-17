@@ -96,36 +96,73 @@ serve(async (req) => {
       .update({ status: "analyzing" })
       .eq("id", project_id);
 
-    // Generate sections in parallel
-    const sections = [
-      generateExecutiveSummary(project, LOVABLE_API_KEY),
-      generateMarketAnalysis(project, LOVABLE_API_KEY),
-      generateCustomerPersonas(project, LOVABLE_API_KEY),
-      generateCompetitiveLandscape(project, LOVABLE_API_KEY),
-      generateStrategicFrameworks(project, LOVABLE_API_KEY),
-      generatePorterFiveForces(project, LOVABLE_API_KEY),
-      generatePestelAnalysis(project, LOVABLE_API_KEY),
-      generateCatwoeAnalysis(project, LOVABLE_API_KEY),
-      generatePathToMvp(project, LOVABLE_API_KEY),
-      generateGoToMarketStrategy(project, LOVABLE_API_KEY),
-      generateUSPAnalysis(project, LOVABLE_API_KEY),
-      generateFinancialBasics(project, LOVABLE_API_KEY),
-    ];
+    // Helper function to update status after each section
+    const updateSectionStatus = async (sectionName: string, sectionData: any, currentStatus: any) => {
+      console.log(`Section ${sectionName} completed`);
+      const newStatus = { ...currentStatus, [sectionName]: "complete" };
+      const { error } = await supabase
+        .from("reports")
+        .update({
+          generation_status: newStatus
+        })
+        .eq("id", report.id);
+      
+      if (error) {
+        console.error(`Error updating ${sectionName}:`, error);
+      }
+      return newStatus;
+    };
 
-    const [
-      executiveSummary,
-      marketAnalysis,
-      customerPersonas,
-      competitiveLandscape,
-      strategicFrameworks,
-      porterFiveForces,
-      pestelAnalysis,
-      catwoeAnalysis,
-      pathToMvp,
-      goToMarketStrategy,
-      uspAnalysis,
-      financialBasics,
-    ] = await Promise.all(sections);
+    let currentStatus = { ...report.generation_status };
+
+    // Generate sections sequentially to show progress
+    console.log("Generating executive summary...");
+    const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("executive_summary", executiveSummary, currentStatus);
+
+    console.log("Generating market analysis...");
+    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("market_analysis", marketAnalysis, currentStatus);
+
+    console.log("Generating customer personas...");
+    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("customer_personas", customerPersonas, currentStatus);
+
+    console.log("Generating competitive landscape...");
+    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("competitive_landscape", competitiveLandscape, currentStatus);
+
+    console.log("Generating strategic frameworks...");
+    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("strategic_frameworks", strategicFrameworks, currentStatus);
+
+    console.log("Generating Porter's Five Forces...");
+    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("porter_five_forces", porterFiveForces, currentStatus);
+
+    console.log("Generating PESTEL analysis...");
+    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("pestel_analysis", pestelAnalysis, currentStatus);
+
+    console.log("Generating CATWOE analysis...");
+    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("catwoe_analysis", catwoeAnalysis, currentStatus);
+
+    console.log("Generating path to MVP...");
+    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("path_to_mvp", pathToMvp, currentStatus);
+
+    console.log("Generating go-to-market strategy...");
+    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("go_to_market_strategy", goToMarketStrategy, currentStatus);
+
+    console.log("Generating USP analysis...");
+    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("usp_analysis", uspAnalysis, currentStatus);
+
+    console.log("Generating financial basics...");
+    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY);
+    currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
 
     // Calculate validation score
     const validationScore = calculateValidationScore({
@@ -143,27 +180,25 @@ serve(async (req) => {
       financialBasics,
     });
 
-    // Update report with all sections
-    const reportData = {
-      executive_summary: executiveSummary,
-      market_analysis: marketAnalysis,
-      customer_personas: customerPersonas,
-      competitive_landscape: competitiveLandscape,
-      strategic_frameworks: strategicFrameworks,
-      porter_five_forces: porterFiveForces,
-      pestel_analysis: pestelAnalysis,
-      catwoe_analysis: catwoeAnalysis,
-      path_to_mvp: pathToMvp,
-      go_to_market_strategy: goToMarketStrategy,
-      usp_analysis: uspAnalysis,
-      financial_basics: financialBasics,
-      validation_score: validationScore,
-    };
-
+    // Final update with all data and validation score
     await supabase
       .from("reports")
       .update({
-        report_data: reportData,
+        report_data: {
+          executive_summary: executiveSummary,
+          market_analysis: marketAnalysis,
+          customer_personas: customerPersonas,
+          competitive_landscape: competitiveLandscape,
+          strategic_frameworks: strategicFrameworks,
+          porter_five_forces: porterFiveForces,
+          pestel_analysis: pestelAnalysis,
+          catwoe_analysis: catwoeAnalysis,
+          path_to_mvp: pathToMvp,
+          go_to_market_strategy: goToMarketStrategy,
+          usp_analysis: uspAnalysis,
+          financial_basics: financialBasics,
+          validation_score: validationScore,
+        },
         generation_status: {
           executive_summary: "complete",
           market_analysis: "complete",
@@ -204,8 +239,8 @@ serve(async (req) => {
       project_id: project_id,
       operation_type: "report_generation",
       model_used: "google/gemini-2.5-flash",
-      tokens_used: 15000, // Estimated
-      cost_cents: 50, // Estimated
+      tokens_used: 15000,
+      cost_cents: 50,
     });
 
     console.log("Report generation complete");

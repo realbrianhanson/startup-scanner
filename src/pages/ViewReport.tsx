@@ -164,6 +164,7 @@ const ViewReport = () => {
   const startReportGeneration = async () => {
     console.log("Starting report generation for project:", id);
     setGenerating(true);
+    setProgress(0); // Initialize progress to 0
     try {
       const { data, error } = await supabase.functions.invoke("generate-validation-report", {
         body: { project_id: id },
@@ -179,16 +180,25 @@ const ViewReport = () => {
     } catch (error: any) {
       console.error("Error generating report:", error);
       toast.error(error.message || "Failed to start report generation");
-    } finally {
       setGenerating(false);
     }
+    // Don't set generating to false here - let realtime updates handle it
   };
 
   const updateProgress = (status: any) => {
+    console.log("Updating progress with status:", status);
     const sections = Object.values(status || {});
     const completed = sections.filter((s) => s === "complete").length;
     const total = sections.length;
-    setProgress((completed / total) * 100);
+    const newProgress = total > 0 ? (completed / total) * 100 : 0;
+    console.log(`Progress: ${completed}/${total} sections = ${newProgress}%`);
+    setProgress(newProgress);
+    
+    // If all sections are complete, stop showing generating state
+    if (completed === total && total > 0) {
+      console.log("All sections complete!");
+      setGenerating(false);
+    }
   };
 
   const getScoreColor = (score: number) => {
