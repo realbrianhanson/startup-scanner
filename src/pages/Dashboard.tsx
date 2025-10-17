@@ -124,7 +124,7 @@ const Dashboard = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
                 <Settings className="h-5 w-5" />
               </Button>
               <Button variant="ghost" onClick={handleSignOut}>

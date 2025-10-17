@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   BarChart3,
@@ -24,7 +24,6 @@ import { MarkdownContent } from "@/components/MarkdownContent";
 const ViewReport = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   // Helper to safely convert content to string for MarkdownContent
   const toMarkdownString = (content: any): string => {
@@ -125,11 +124,7 @@ const ViewReport = () => {
       };
     } catch (error: any) {
       console.error("Error loading project:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to load project",
-      });
+      toast.error(error.message || "Failed to load project");
       setLoading(false);
     }
   };
@@ -143,17 +138,10 @@ const ViewReport = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Report generation started",
-        description: "Your validation report is being generated...",
-      });
+      toast.success("Report generation started!");
     } catch (error: any) {
       console.error("Error generating report:", error);
-      toast({
-        variant: "destructive",
-        title: "Generation failed",
-        description: error.message || "Failed to start report generation",
-      });
+      toast.error(error.message || "Failed to start report generation");
     } finally {
       setGenerating(false);
     }
@@ -558,10 +546,25 @@ const ViewReport = () => {
                 <MessageSquare className="mr-2 h-5 w-5" />
                 Chat with Cora
               </Button>
-              <Button variant="outline" size="lg" disabled>
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={async () => {
+                  toast.info("Generating PDF... This may take 10 seconds");
+                  try {
+                    const { data, error } = await supabase.functions.invoke('generate-pdf', {
+                      body: { project_id: id }
+                    });
+                    if (error) throw error;
+                    toast.success("PDF generated! Check your downloads");
+                  } catch (error) {
+                    console.error('PDF generation error:', error);
+                    toast.error("Failed to generate PDF");
+                  }
+                }}
+              >
                 <Download className="mr-2 h-5 w-5" />
                 Export as PDF
-                <Badge variant="secondary" className="ml-2">Coming Soon</Badge>
               </Button>
             </div>
           )}
