@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 7; // Updated to include customer personas and PESTEL
+    const creditsNeeded = 8; // Updated to include customer personas, PESTEL, and CATWOE
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -73,6 +73,7 @@ serve(async (req) => {
           competitive_landscape: "pending",
           strategic_frameworks: "pending",
           pestel_analysis: "pending",
+          catwoe_analysis: "pending",
           financial_basics: "pending",
         },
       })
@@ -99,6 +100,7 @@ serve(async (req) => {
       generateCompetitiveLandscape(project, LOVABLE_API_KEY),
       generateStrategicFrameworks(project, LOVABLE_API_KEY),
       generatePestelAnalysis(project, LOVABLE_API_KEY),
+      generateCatwoeAnalysis(project, LOVABLE_API_KEY),
       generateFinancialBasics(project, LOVABLE_API_KEY),
     ];
 
@@ -109,6 +111,7 @@ serve(async (req) => {
       competitiveLandscape,
       strategicFrameworks,
       pestelAnalysis,
+      catwoeAnalysis,
       financialBasics,
     ] = await Promise.all(sections);
 
@@ -120,6 +123,7 @@ serve(async (req) => {
       competitiveLandscape,
       strategicFrameworks,
       pestelAnalysis,
+      catwoeAnalysis,
       financialBasics,
     });
 
@@ -131,6 +135,7 @@ serve(async (req) => {
       competitive_landscape: competitiveLandscape,
       strategic_frameworks: strategicFrameworks,
       pestel_analysis: pestelAnalysis,
+      catwoe_analysis: catwoeAnalysis,
       financial_basics: financialBasics,
       validation_score: validationScore,
     };
@@ -146,6 +151,7 @@ serve(async (req) => {
           competitive_landscape: "complete",
           strategic_frameworks: "complete",
           pestel_analysis: "complete",
+          catwoe_analysis: "complete",
           financial_basics: "complete",
         },
       })
@@ -537,6 +543,50 @@ Format as JSON with keys:
       technological: "Analysis pending",
       environmental: "Analysis pending",
       legal: "Analysis pending"
+    };
+  }
+}
+
+async function generateCatwoeAnalysis(project: any, apiKey: string) {
+  const prompt = `Business Idea: ${project.name}
+Industry: ${project.industry}
+Description: ${project.description}
+
+Provide a comprehensive CATWOE analysis for this business idea:
+
+1. Customers: Who are the beneficiaries? Who will gain from this system/business?
+2. Actors: Who will implement and operate the system? Who are the key team members needed?
+3. Transformation: What is the core transformation? What input becomes what output?
+4. World View: What is the bigger picture? What beliefs/values make this transformation meaningful?
+5. Owners: Who has the authority? Who can stop this initiative? Who controls resources?
+6. Environmental Constraints: What external constraints exist? What limits must be considered (legal, ethical, resource, technological)?
+
+For each element, provide 2-3 paragraphs analyzing:
+- Current understanding and context
+- Strategic implications for the business
+- Key considerations and recommendations
+
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
+
+Format as JSON with keys: 
+- customers (plain text string with newlines for paragraphs)
+- actors (plain text string with newlines for paragraphs)
+- transformation (plain text string with newlines for paragraphs)
+- world_view (plain text string with newlines for paragraphs)
+- owners (plain text string with newlines for paragraphs)
+- environmental_constraints (plain text string with newlines for paragraphs)`;
+
+  const result = await callAI(prompt, apiKey);
+  try {
+    return JSON.parse(result);
+  } catch {
+    return { 
+      customers: "Analysis pending",
+      actors: "Analysis pending",
+      transformation: "Analysis pending",
+      world_view: "Analysis pending",
+      owners: "Analysis pending",
+      environmental_constraints: "Analysis pending"
     };
   }
 }

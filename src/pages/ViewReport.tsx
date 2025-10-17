@@ -743,6 +743,104 @@ const ViewReport = () => {
                 </Collapsible>
               )}
 
+              {/* CATWOE Analysis */}
+              {reportData.catwoe_analysis && (
+                <Collapsible>
+                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Target className="h-6 w-6 text-primary" />
+                          <h2 className="text-2xl font-bold">CATWOE Analysis</h2>
+                        </div>
+                        <Badge variant="secondary">Expand</Badge>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-6 pt-0">
+                      <div className="space-y-6">
+                        {/* Customers */}
+                        {reportData.catwoe_analysis.customers && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <Users className="h-5 w-5 text-primary" />
+                              Customers (Who benefits?)
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.customers)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Actors */}
+                        {reportData.catwoe_analysis.actors && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <span className="text-xl">👥</span>
+                              Actors (Who implements?)
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.actors)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Transformation */}
+                        {reportData.catwoe_analysis.transformation && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <span className="text-xl">🔄</span>
+                              Transformation (What changes?)
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.transformation)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* World View */}
+                        {reportData.catwoe_analysis.world_view && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <Globe className="h-5 w-5 text-primary" />
+                              World View (What's the bigger picture?)
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.world_view)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Owners */}
+                        {reportData.catwoe_analysis.owners && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <span className="text-xl">👑</span>
+                              Owners (Who has authority?)
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.owners)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Environmental Constraints */}
+                        {reportData.catwoe_analysis.environmental_constraints && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <span className="text-xl">⚖️</span>
+                              Environmental Constraints (What are the limits?)
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.environmental_constraints)} />
+                            </Card>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              )}
+
               {/* Financial Basics */}
               {reportData.financial_basics && (
                 <Collapsible>
