@@ -234,12 +234,14 @@ Create a brief executive summary with:
 3. Top 3 concerns
 4. Clear Go/No-Go recommendation
 
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside the string values.
+
 Format as JSON with keys: 
 - score (number)
-- strengths (array of strings)
-- concerns (array of strings)
-- recommendation (string in markdown format with proper paragraphs and formatting)
-- reasoning (string in markdown format with proper paragraphs and formatting)`;
+- strengths (array of plain strings)
+- concerns (array of plain strings)
+- recommendation (plain text string with newlines for paragraphs - no markdown syntax)
+- reasoning (plain text string with newlines for paragraphs - no markdown syntax)`;
 
   const result = await callAI(prompt, apiKey);
   try {
@@ -262,14 +264,16 @@ Provide detailed market analysis:
 5. Entry barriers assessment
 6. Market timing evaluation
 
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
+
 Format as JSON with keys: 
-- tam (string, e.g. "$5B globally")
-- sam (string, e.g. "$1.2B in North America")
-- som (string, e.g. "$50M in first 3 years")
-- growth_rate (string)
-- trends (array of strings)
-- barriers (array of strings)
-- timing_assessment (string in markdown format with proper paragraphs explaining market timing)`;
+- tam (plain string, e.g. "$5B globally")
+- sam (plain string, e.g. "$1.2B in North America")
+- som (plain string, e.g. "$50M in first 3 years")
+- growth_rate (plain string)
+- trends (array of plain strings - no bold formatting)
+- barriers (array of plain strings)
+- timing_assessment (plain string with newlines for paragraphs, no markdown syntax)`;
 
   const result = await callAI(prompt, apiKey);
   try {
@@ -290,11 +294,13 @@ Analyze competitive landscape:
 3. Your competitive advantages
 4. Market positioning recommendation
 
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside the string values.
+
 Format as JSON with keys: 
-- direct_competitors (array of {name, description})
-- indirect_competitors (array of strings)
-- competitive_advantages (array of strings)
-- positioning (string in markdown format with proper paragraphs explaining positioning strategy)`;
+- direct_competitors (array of {name, description} - both plain strings)
+- indirect_competitors (array of plain strings)
+- competitive_advantages (array of plain strings)
+- positioning (plain text string with newlines for paragraphs - no markdown syntax)`;
 
   const result = await callAI(prompt, apiKey);
   try {
@@ -314,7 +320,12 @@ Provide strategic analysis:
 2. Porter's Five Forces (with High/Medium/Low ratings)
 3. Go-to-market strategy recommendations
 
-Format as JSON with keys: swot {strengths, weaknesses, opportunities, threats}, porters_five_forces {supplier_power, buyer_power, competitive_rivalry, threat_of_substitution, threat_of_new_entry}, gtm_strategy (array)`;
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
+
+Format as JSON with keys: 
+- swot {strengths, weaknesses, opportunities, threats} (all arrays of plain strings)
+- porters_five_forces {supplier_power, buyer_power, competitive_rivalry, threat_of_substitution, threat_of_new_entry}
+- gtm_strategy (array of plain strings - no bold formatting)`;
 
   const result = await callAI(prompt, apiKey);
   try {
@@ -335,19 +346,44 @@ Description: ${project.description}
 
 Provide financial basics:
 1. Estimated startup costs (conservative, moderate, aggressive scenarios)
-2. Revenue model analysis
+2. Revenue model analysis with revenue streams
 3. Customer acquisition cost (CAC) estimates
 4. Basic 3-year revenue projections
 
+CRITICAL: Return ONLY valid JSON. The revenue_model and cac_estimate must be PLAIN TEXT STRINGS, not nested JSON objects.
+
 Format as JSON with keys: 
 - startup_costs {conservative, moderate, aggressive} (all strings like "$10K-15K")
-- revenue_model (string in markdown format with proper paragraphs explaining the revenue model)
-- cac_estimate (string in markdown format with proper paragraphs explaining CAC)
-- projections {year1, year2, year3} (all strings)`;
+- revenue_model (single plain text string with newlines describing the model and revenue streams - NOT a nested object)
+- cac_estimate (single plain text string with newlines describing CAC - NOT a nested object)
+- projections {year1, year2, year3} (all strings)
+
+Example revenue_model format: "Primarily a freemium model. The free workshop acts as a lead magnet.\n\nRevenue streams include:\n- Premium training programs\n- Consulting services\n- Membership subscriptions"`;
 
   const result = await callAI(prompt, apiKey);
   try {
-    return JSON.parse(result);
+    const parsed = JSON.parse(result);
+    
+    // Convert nested objects to plain strings if AI returned them
+    if (typeof parsed.revenue_model === 'object') {
+      const rm = parsed.revenue_model;
+      let text = rm.description || '';
+      if (rm.revenue_streams && Array.isArray(rm.revenue_streams)) {
+        text += '\n\nRevenue streams:\n' + rm.revenue_streams.map((s: string) => `- ${s}`).join('\n');
+      }
+      parsed.revenue_model = text || JSON.stringify(rm);
+    }
+    
+    if (typeof parsed.cac_estimate === 'object') {
+      const cac = parsed.cac_estimate;
+      const parts = [];
+      if (cac.cac_per_paying_customer) parts.push(`CAC per paying customer: ${cac.cac_per_paying_customer}`);
+      if (cac.free_workshop_registration) parts.push(`Free workshop registration: ${cac.free_workshop_registration}`);
+      if (cac.paid_program_conversion_rate) parts.push(`Conversion rate: ${cac.paid_program_conversion_rate}`);
+      parsed.cac_estimate = parts.join('\n\n') || JSON.stringify(cac);
+    }
+    
+    return parsed;
   } catch {
     return { 
       startup_costs: { conservative: "$10K", moderate: "$25K", aggressive: "$50K" },
