@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 9; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
+    const creditsNeeded = 10; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -75,6 +75,7 @@ serve(async (req) => {
           porter_five_forces: "pending",
           pestel_analysis: "pending",
           catwoe_analysis: "pending",
+          path_to_mvp: "pending",
           financial_basics: "pending",
         },
       })
@@ -103,6 +104,7 @@ serve(async (req) => {
       generatePorterFiveForces(project, LOVABLE_API_KEY),
       generatePestelAnalysis(project, LOVABLE_API_KEY),
       generateCatwoeAnalysis(project, LOVABLE_API_KEY),
+      generatePathToMvp(project, LOVABLE_API_KEY),
       generateFinancialBasics(project, LOVABLE_API_KEY),
     ];
 
@@ -115,6 +117,7 @@ serve(async (req) => {
       porterFiveForces,
       pestelAnalysis,
       catwoeAnalysis,
+      pathToMvp,
       financialBasics,
     ] = await Promise.all(sections);
 
@@ -128,6 +131,7 @@ serve(async (req) => {
       porterFiveForces,
       pestelAnalysis,
       catwoeAnalysis,
+      pathToMvp,
       financialBasics,
     });
 
@@ -141,6 +145,7 @@ serve(async (req) => {
       porter_five_forces: porterFiveForces,
       pestel_analysis: pestelAnalysis,
       catwoe_analysis: catwoeAnalysis,
+      path_to_mvp: pathToMvp,
       financial_basics: financialBasics,
       validation_score: validationScore,
     };
@@ -158,6 +163,7 @@ serve(async (req) => {
           porter_five_forces: "complete",
           pestel_analysis: "complete",
           catwoe_analysis: "complete",
+          path_to_mvp: "complete",
           financial_basics: "complete",
         },
       })
@@ -605,32 +611,91 @@ Provide a comprehensive CATWOE analysis for this business idea:
 5. Owners: Who has the authority? Who can stop this initiative? Who controls resources?
 6. Environmental Constraints: What external constraints exist? What limits must be considered (legal, ethical, resource, technological)?
 
-For each element, provide 2-3 paragraphs analyzing:
-- Current understanding and context
-- Strategic implications for the business
-- Key considerations and recommendations
+For each element, provide analysis with description and key points.
 
 CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
 
 Format as JSON with keys: 
-- customers (plain text string with newlines for paragraphs)
-- actors (plain text string with newlines for paragraphs)
-- transformation (plain text string with newlines for paragraphs)
-- world_view (plain text string with newlines for paragraphs)
-- owners (plain text string with newlines for paragraphs)
-- environmental_constraints (plain text string with newlines for paragraphs)`;
+- customers { description (string), key_points (array) }
+- actors { description (string), key_points (array) }
+- transformation { description (string), inputs (array), outputs (array) }
+- world_view { description (string), assumptions (array) }
+- owners { description (string), stakeholders (array) }
+- environmental_constraints { description (string), constraints (array) }`;
 
   const result = await callAI(prompt, apiKey);
   try {
     return JSON.parse(result);
   } catch {
     return { 
-      customers: "Analysis pending",
-      actors: "Analysis pending",
-      transformation: "Analysis pending",
-      world_view: "Analysis pending",
-      owners: "Analysis pending",
-      environmental_constraints: "Analysis pending"
+      customers: { description: "Analysis pending", key_points: ["TBD"] },
+      actors: { description: "Analysis pending", key_points: ["TBD"] },
+      transformation: { description: "Analysis pending", inputs: ["TBD"], outputs: ["TBD"] },
+      world_view: { description: "Analysis pending", assumptions: ["TBD"] },
+      owners: { description: "Analysis pending", stakeholders: ["TBD"] },
+      environmental_constraints: { description: "Analysis pending", constraints: ["TBD"] }
+    };
+  }
+}
+
+async function generatePathToMvp(project: any, apiKey: string) {
+  const prompt = `Business Idea: ${project.name}
+Industry: ${project.industry}
+Description: ${project.description}
+
+Create a comprehensive Path to MVP (Minimum Viable Product) roadmap covering:
+
+1. MVP Definition with description and core value
+2. Core Features: List 5-7 features with priority, effort, and value
+3. Development Phases with deliverables and milestones
+4. Resource Requirements
+5. Launch Strategy
+6. Success Metrics
+7. Iteration Plan
+
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting.
+
+Format as JSON with keys:
+- mvp_definition { description (string), core_value (string) }
+- core_features (array of { feature, priority, effort, value })
+- development_phases (array of { phase, duration, deliverables (array), milestones (array) })
+- resource_requirements { team (array), tools (array), estimated_budget (string), timeline (string) }
+- launch_strategy { target_audience (string), channels (array), approach (string), timeline (string) }
+- success_metrics (array of { metric, target, measurement })
+- iteration_plan { feedback_channels (array), review_frequency (string), improvement_process (string) }`;
+
+  const result = await callAI(prompt, apiKey);
+  try {
+    return JSON.parse(result);
+  } catch {
+    return {
+      mvp_definition: { description: "Analysis pending", core_value: "TBD" },
+      core_features: [
+        { feature: "Feature analysis pending", priority: "High", effort: "TBD", value: "TBD" }
+      ],
+      development_phases: [
+        { phase: "Phase 1", duration: "TBD", deliverables: ["TBD"], milestones: ["TBD"] }
+      ],
+      resource_requirements: {
+        team: ["TBD"],
+        tools: ["TBD"],
+        estimated_budget: "TBD",
+        timeline: "TBD"
+      },
+      launch_strategy: {
+        target_audience: "TBD",
+        channels: ["TBD"],
+        approach: "TBD",
+        timeline: "TBD"
+      },
+      success_metrics: [
+        { metric: "TBD", target: "TBD", measurement: "TBD" }
+      ],
+      iteration_plan: {
+        feedback_channels: ["TBD"],
+        review_frequency: "TBD",
+        improvement_process: "TBD"
+      }
     };
   }
 }

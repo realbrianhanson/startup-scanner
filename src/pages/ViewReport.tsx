@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarkdownContent } from "@/components/MarkdownContent";
 
 const ViewReport = () => {
@@ -853,105 +854,301 @@ const ViewReport = () => {
                 </Collapsible>
               )}
 
-              {/* CATWOE Analysis */}
-              {reportData.catwoe_analysis && (
-                <Collapsible>
-                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
-                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Target className="h-6 w-6 text-primary" />
-                          <h2 className="text-2xl font-bold">CATWOE Analysis</h2>
+        {/* CATWOE Analysis */}
+        {reportData.catwoe_analysis && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                CATWOE Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="customers">
+                  <AccordionTrigger>Customers</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.customers.description}</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      {reportData.catwoe_analysis.customers.key_points.map((point: string, idx: number) => (
+                        <li key={idx}>{point}</li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="actors">
+                  <AccordionTrigger>Actors</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.actors.description}</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      {reportData.catwoe_analysis.actors.key_points.map((point: string, idx: number) => (
+                        <li key={idx}>{point}</li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="transformation">
+                  <AccordionTrigger>Transformation Process</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-muted-foreground mb-3">{reportData.catwoe_analysis.transformation.description}</p>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold mb-2">Inputs:</h4>
+                        <ul className="list-disc pl-6">
+                          {reportData.catwoe_analysis.transformation.inputs.map((input: string, idx: number) => (
+                            <li key={idx}>{input}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-2">Outputs:</h4>
+                        <ul className="list-disc pl-6">
+                          {reportData.catwoe_analysis.transformation.outputs.map((output: string, idx: number) => (
+                            <li key={idx}>{output}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="worldview">
+                  <AccordionTrigger>World View</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.world_view.description}</p>
+                    <h4 className="font-semibold mt-3 mb-2">Key Assumptions:</h4>
+                    <ul className="list-disc pl-6 space-y-1">
+                      {reportData.catwoe_analysis.world_view.assumptions.map((assumption: string, idx: number) => (
+                        <li key={idx}>{assumption}</li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="owners">
+                  <AccordionTrigger>Owners</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.owners.description}</p>
+                    <h4 className="font-semibold mt-3 mb-2">Key Stakeholders:</h4>
+                    <ul className="list-disc pl-6 space-y-1">
+                      {reportData.catwoe_analysis.owners.stakeholders.map((stakeholder: string, idx: number) => (
+                        <li key={idx}>{stakeholder}</li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="environmental">
+                  <AccordionTrigger>Environmental Constraints</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.environmental_constraints.description}</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      {reportData.catwoe_analysis.environmental_constraints.constraints.map((constraint: string, idx: number) => (
+                        <li key={idx}>{constraint}</li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Path to MVP */}
+        {reportData.path_to_mvp && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5" />
+                Path to MVP
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="mvp-definition">
+                  <AccordionTrigger>MVP Definition</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-muted-foreground mb-2">{reportData.path_to_mvp.mvp_definition.description}</p>
+                    <div className="mt-3 p-3 bg-muted rounded-lg">
+                      <h4 className="font-semibold mb-1">Core Value:</h4>
+                      <p className="text-sm">{reportData.path_to_mvp.mvp_definition.core_value}</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="core-features">
+                  <AccordionTrigger>Core Features</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      {reportData.path_to_mvp.core_features.map((feature: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-semibold">{feature.feature}</h4>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              feature.priority === 'high' ? 'bg-destructive/20 text-destructive' :
+                              feature.priority === 'medium' ? 'bg-primary/20 text-primary' :
+                              'bg-muted-foreground/20 text-muted-foreground'
+                            }`}>
+                              {feature.priority}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Effort:</span> {feature.effort}
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Value:</span> {feature.value}
+                            </div>
+                          </div>
                         </div>
-                        <Badge variant="secondary">Expand</Badge>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="development-phases">
+                  <AccordionTrigger>Development Phases</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      {reportData.path_to_mvp.development_phases.map((phase: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-semibold">{phase.phase}</h4>
+                            <span className="text-sm text-muted-foreground">{phase.duration}</span>
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <h5 className="text-sm font-semibold mb-1">Deliverables:</h5>
+                              <ul className="list-disc pl-5 text-sm space-y-1">
+                                {phase.deliverables.map((item: string, i: number) => (
+                                  <li key={i}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <h5 className="text-sm font-semibold mb-1">Milestones:</h5>
+                              <ul className="list-disc pl-5 text-sm space-y-1">
+                                {phase.milestones.map((item: string, i: number) => (
+                                  <li key={i}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="resources">
+                  <AccordionTrigger>Resource Requirements</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold mb-2">Team:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {reportData.path_to_mvp.resource_requirements.team.map((role: string, idx: number) => (
+                            <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                              {role}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="p-6 pt-0">
-                      <div className="space-y-6">
-                        {/* Customers */}
-                        {reportData.catwoe_analysis.customers && (
-                          <div>
-                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                              <Users className="h-5 w-5 text-primary" />
-                              Customers (Who benefits?)
-                            </h3>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.customers)} />
-                            </Card>
-                          </div>
-                        )}
-
-                        {/* Actors */}
-                        {reportData.catwoe_analysis.actors && (
-                          <div>
-                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                              <span className="text-xl">👥</span>
-                              Actors (Who implements?)
-                            </h3>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.actors)} />
-                            </Card>
-                          </div>
-                        )}
-
-                        {/* Transformation */}
-                        {reportData.catwoe_analysis.transformation && (
-                          <div>
-                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                              <span className="text-xl">🔄</span>
-                              Transformation (What changes?)
-                            </h3>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.transformation)} />
-                            </Card>
-                          </div>
-                        )}
-
-                        {/* World View */}
-                        {reportData.catwoe_analysis.world_view && (
-                          <div>
-                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                              <Globe className="h-5 w-5 text-primary" />
-                              World View (What's the bigger picture?)
-                            </h3>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.world_view)} />
-                            </Card>
-                          </div>
-                        )}
-
-                        {/* Owners */}
-                        {reportData.catwoe_analysis.owners && (
-                          <div>
-                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                              <span className="text-xl">👑</span>
-                              Owners (Who has authority?)
-                            </h3>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.owners)} />
-                            </Card>
-                          </div>
-                        )}
-
-                        {/* Environmental Constraints */}
-                        {reportData.catwoe_analysis.environmental_constraints && (
-                          <div>
-                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                              <span className="text-xl">⚖️</span>
-                              Environmental Constraints (What are the limits?)
-                            </h3>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.catwoe_analysis.environmental_constraints)} />
-                            </Card>
-                          </div>
-                        )}
+                      <div>
+                        <h4 className="font-semibold mb-2">Tools & Technologies:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {reportData.path_to_mvp.resource_requirements.tools.map((tool: string, idx: number) => (
+                            <span key={idx} className="px-3 py-1 bg-muted rounded-full text-sm">
+                              {tool}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-              )}
+                      <div className="grid md:grid-cols-2 gap-4 mt-3">
+                        <div className="p-3 bg-muted rounded-lg">
+                          <h4 className="font-semibold mb-1">Estimated Budget:</h4>
+                          <p className="text-sm">{reportData.path_to_mvp.resource_requirements.estimated_budget}</p>
+                        </div>
+                        <div className="p-3 bg-muted rounded-lg">
+                          <h4 className="font-semibold mb-1">Timeline:</h4>
+                          <p className="text-sm">{reportData.path_to_mvp.resource_requirements.timeline}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="launch">
+                  <AccordionTrigger>Launch Strategy</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold mb-1">Target Audience:</h4>
+                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.launch_strategy.target_audience}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-2">Launch Channels:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {reportData.path_to_mvp.launch_strategy.channels.map((channel: string, idx: number) => (
+                            <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                              {channel}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">Approach:</h4>
+                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.launch_strategy.approach}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">Timeline:</h4>
+                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.launch_strategy.timeline}</p>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="metrics">
+                  <AccordionTrigger>Success Metrics</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      {reportData.path_to_mvp.success_metrics.map((metric: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-muted rounded-lg">
+                          <h4 className="font-semibold mb-2">{metric.metric}</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Target:</span> {metric.target}
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Measurement:</span> {metric.measurement}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="iteration">
+                  <AccordionTrigger>Iteration Plan</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold mb-2">Feedback Channels:</h4>
+                        <ul className="list-disc pl-5 text-sm space-y-1">
+                          {reportData.path_to_mvp.iteration_plan.feedback_channels.map((channel: string, idx: number) => (
+                            <li key={idx}>{channel}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">Review Frequency:</h4>
+                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.iteration_plan.review_frequency}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">Improvement Process:</h4>
+                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.iteration_plan.improvement_process}</p>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        )}
 
-              {/* Financial Basics */}
+        {/* Financial Basics */}
               {reportData.financial_basics && (
                 <Collapsible>
                   <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
