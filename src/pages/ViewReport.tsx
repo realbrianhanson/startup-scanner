@@ -8,7 +8,6 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  ArrowRight,
   BarChart3,
   CheckCircle2,
   Loader2,
@@ -19,6 +18,14 @@ import {
   Target,
   Zap,
   Users,
+  Copy,
+  MapPin,
+  DollarSign,
+  Heart,
+  XCircle,
+  Lightbulb,
+  Globe,
+  FileText,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -368,26 +375,229 @@ const ViewReport = () => {
                 </Collapsible>
               )}
 
-              {/* Customer Personas - Navigate to separate page */}
+              {/* Customer Personas */}
               {reportData.customer_personas && Array.isArray(reportData.customer_personas) && (
-                <Card className="p-6 border-2 border-primary/20 bg-gradient-card hover:border-primary/40 transition-all cursor-pointer"
-                  onClick={() => navigate(`/projects/${id}/personas`)}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Users className="h-6 w-6 text-primary" />
-                      <div>
-                        <h2 className="text-2xl font-bold">Your Target Customers</h2>
-                        <p className="text-muted-foreground text-sm mt-1">
-                          Detailed personas with pain points, objections, and how to reach them
-                        </p>
+                <Collapsible>
+                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Users className="h-6 w-6 text-primary" />
+                          <h2 className="text-2xl font-bold">Your Target Customers</h2>
+                        </div>
+                        <Badge variant="secondary">Expand</Badge>
                       </div>
-                    </div>
-                    <Badge variant="default" className="flex items-center gap-2">
-                      View Personas
-                      <ArrowRight className="h-4 w-4" />
-                    </Badge>
-                  </div>
-                </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-6 pt-0">
+                      <p className="text-muted-foreground mb-8">
+                        Meet the 3-4 people most likely to buy from you
+                      </p>
+
+                      {/* Start With Callout */}
+                      {reportData.customer_personas[0] && (
+                        <Card className="p-6 bg-primary/10 border-primary/30 mb-8">
+                          <div className="flex items-start gap-4">
+                            <div className="shrink-0">
+                              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                                🎯
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg mb-2">START WITH {reportData.customer_personas[0].name?.toUpperCase()}</h3>
+                              <p className="text-foreground/90 mb-2">
+                                <strong>Why:</strong> {reportData.customer_personas[0].priority_reason}
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Persona Cards */}
+                      <div className="space-y-8">
+                        {reportData.customer_personas.map((persona: any, idx: number) => (
+                          <Card key={idx} className="p-6 bg-muted/30">
+                            <div className="space-y-6">
+                              {/* Header */}
+                              <div className="flex items-center justify-between pb-4 border-b">
+                                <h3 className="text-2xl font-bold">{persona.name}</h3>
+                                {idx === 0 && (
+                                  <Badge variant="default" className="text-sm">START HERE</Badge>
+                                )}
+                                {idx > 0 && (
+                                  <Badge variant="secondary" className="text-sm">{persona.priority} PRIORITY</Badge>
+                                )}
+                              </div>
+
+                              {/* Who They Are */}
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                  <Users className="h-5 w-5 text-primary" />
+                                  Who They Are
+                                </h4>
+                                <div className="grid md:grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Age:</span> <strong>{persona.age}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Job:</span> <strong>{persona.job}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Income:</span> <strong>{persona.income}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Location:</span> <strong>{persona.location}</strong>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground text-sm">Values:</p>
+                                  <p className="font-medium">{Array.isArray(persona.values) ? persona.values.join(', ') : persona.values}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground text-sm">Personality:</p>
+                                  <p className="font-medium">{Array.isArray(persona.personality) ? persona.personality.join(', ') : persona.personality}</p>
+                                </div>
+                              </div>
+
+                              {/* Pain Points */}
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                  <AlertTriangle className="h-5 w-5 text-warning" />
+                                  3 Big Pain Points
+                                </h4>
+                                <div className="space-y-3">
+                                  {persona.pain_points?.map((pp: any, i: number) => (
+                                    <div key={i} className="bg-warning/10 p-4 rounded-lg">
+                                      <p className="font-semibold text-warning">
+                                        {i === 0 ? 'PRIMARY' : i === 1 ? 'SECONDARY' : 'TERTIARY'}: {pp.pain}
+                                      </p>
+                                      <p className="text-sm text-foreground/80 mt-1">
+                                        <strong>Impact:</strong> {pp.impact}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="bg-muted/50 p-4 rounded-lg">
+                                  <p className="text-sm"><strong>Current broken solution:</strong> {persona.current_solution}</p>
+                                  <p className="text-sm mt-2"><strong>Dream outcome:</strong> {persona.dream_outcome}</p>
+                                </div>
+                              </div>
+
+                              {/* Objections */}
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                  <XCircle className="h-5 w-5 text-destructive" />
+                                  Objections (What stops them from buying)
+                                </h4>
+                                <div className="space-y-2">
+                                  {persona.objections?.map((obj: any, i: number) => (
+                                    <div key={i} className="bg-destructive/10 p-3 rounded-lg text-sm">
+                                      <p><strong>"{obj.objection}"</strong></p>
+                                      <p className="text-foreground/70 mt-1">→ Root cause: {obj.root_cause}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Closing Angles */}
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                  <Lightbulb className="h-5 w-5 text-success" />
+                                  Closing Angles (How to convert them)
+                                </h4>
+                                <div className="space-y-2">
+                                  {persona.closing_angles?.map((angle: any, i: number) => (
+                                    <div key={i} className="bg-success/10 p-3 rounded-lg text-sm">
+                                      <p className="font-semibold">{angle.angle}</p>
+                                      <p className="text-foreground/70 text-xs mt-1">Addresses: {angle.addresses}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="bg-muted/50 p-4 rounded-lg text-sm space-y-2">
+                                  <p><strong>Proof they need:</strong> {persona.proof_needed}</p>
+                                  <p><strong>Urgency trigger:</strong> {persona.urgency_trigger}</p>
+                                </div>
+                              </div>
+
+                              {/* Where to Find Them */}
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                  <MapPin className="h-5 w-5 text-primary" />
+                                  Where to Find Them
+                                </h4>
+                                {persona.channels?.map((channel: any, i: number) => (
+                                  <div key={i} className="bg-primary/10 p-4 rounded-lg space-y-3">
+                                    <p className="font-semibold">{i === 0 ? 'Primary' : 'Secondary'} Channel: {channel.platform}</p>
+                                    {channel.communities && channel.communities.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium mb-1">Specific communities:</p>
+                                        <p className="text-sm text-foreground/80">{channel.communities.join(', ')}</p>
+                                      </div>
+                                    )}
+                                    {channel.influencers && channel.influencers.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium mb-1">Influencers they follow:</p>
+                                        <p className="text-sm text-foreground/80">{channel.influencers.join(', ')}</p>
+                                      </div>
+                                    )}
+                                    {channel.outreach_template && (
+                                      <div className="mt-3 pt-3 border-t border-primary/20">
+                                        <p className="text-sm font-medium mb-2">How to reach out:</p>
+                                        <div className="bg-background p-3 rounded relative">
+                                          <p className="text-sm italic text-foreground/90">"{channel.outreach_template}"</p>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute top-2 right-2"
+                                            onClick={() => {
+                                              navigator.clipboard.writeText(channel.outreach_template);
+                                              toast.success("Copied to clipboard!");
+                                            }}
+                                          >
+                                            <Copy className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Content That Converts */}
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                  <FileText className="h-5 w-5 text-primary" />
+                                  Content That Converts
+                                </h4>
+                                <div className="space-y-3">
+                                  {persona.content_ideas?.map((idea: any, i: number) => (
+                                    <div key={i} className="bg-muted/50 p-4 rounded-lg">
+                                      <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
+                                          <p className="font-semibold mb-1">"{idea.title}"</p>
+                                          <p className="text-sm text-foreground/70">{idea.why_it_works}</p>
+                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(idea.title);
+                                            toast.success("Title copied!");
+                                          }}
+                                        >
+                                          <Copy className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
               )}
 
               {/* Competitive Landscape */}
