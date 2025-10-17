@@ -645,6 +645,116 @@ const ViewReport = () => {
                 </Collapsible>
               )}
 
+              {/* Porter's Five Forces */}
+              {reportData.porter_five_forces && (
+                <Collapsible>
+                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Target className="h-6 w-6 text-primary" />
+                          <h2 className="text-2xl font-bold">Porter's Five Forces Analysis</h2>
+                        </div>
+                        <Badge variant="secondary">Expand</Badge>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-6 pt-0">
+                      <div className="space-y-6">
+                        {/* Supplier Power */}
+                        {reportData.porter_five_forces.supplier_power && (
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="font-semibold text-lg">Supplier Power</h3>
+                              <Badge variant={
+                                reportData.porter_five_forces.supplier_power.rating === "High" ? "destructive" :
+                                reportData.porter_five_forces.supplier_power.rating === "Low" ? "default" : "secondary"
+                              }>
+                                {reportData.porter_five_forces.supplier_power.rating}
+                              </Badge>
+                            </div>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.supplier_power.analysis)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Buyer Power */}
+                        {reportData.porter_five_forces.buyer_power && (
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="font-semibold text-lg">Buyer Power</h3>
+                              <Badge variant={
+                                reportData.porter_five_forces.buyer_power.rating === "High" ? "destructive" :
+                                reportData.porter_five_forces.buyer_power.rating === "Low" ? "default" : "secondary"
+                              }>
+                                {reportData.porter_five_forces.buyer_power.rating}
+                              </Badge>
+                            </div>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.buyer_power.analysis)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Competitive Rivalry */}
+                        {reportData.porter_five_forces.competitive_rivalry && (
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="font-semibold text-lg">Competitive Rivalry</h3>
+                              <Badge variant={
+                                reportData.porter_five_forces.competitive_rivalry.rating === "High" ? "destructive" :
+                                reportData.porter_five_forces.competitive_rivalry.rating === "Low" ? "default" : "secondary"
+                              }>
+                                {reportData.porter_five_forces.competitive_rivalry.rating}
+                              </Badge>
+                            </div>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.competitive_rivalry.analysis)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Threat of Substitution */}
+                        {reportData.porter_five_forces.threat_of_substitution && (
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="font-semibold text-lg">Threat of Substitution</h3>
+                              <Badge variant={
+                                reportData.porter_five_forces.threat_of_substitution.rating === "High" ? "destructive" :
+                                reportData.porter_five_forces.threat_of_substitution.rating === "Low" ? "default" : "secondary"
+                              }>
+                                {reportData.porter_five_forces.threat_of_substitution.rating}
+                              </Badge>
+                            </div>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.threat_of_substitution.analysis)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Threat of New Entry */}
+                        {reportData.porter_five_forces.threat_of_new_entry && (
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="font-semibold text-lg">Threat of New Entry</h3>
+                              <Badge variant={
+                                reportData.porter_five_forces.threat_of_new_entry.rating === "High" ? "destructive" :
+                                reportData.porter_five_forces.threat_of_new_entry.rating === "Low" ? "default" : "secondary"
+                              }>
+                                {reportData.porter_five_forces.threat_of_new_entry.rating}
+                              </Badge>
+                            </div>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.threat_of_new_entry.analysis)} />
+                            </Card>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              )}
+
               {/* PESTEL Analysis */}
               {reportData.pestel_analysis && (
                 <Collapsible>

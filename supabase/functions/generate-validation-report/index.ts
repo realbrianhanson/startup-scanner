@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 8; // Updated to include customer personas, PESTEL, and CATWOE
+    const creditsNeeded = 9; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -72,6 +72,7 @@ serve(async (req) => {
           customer_personas: "pending",
           competitive_landscape: "pending",
           strategic_frameworks: "pending",
+          porter_five_forces: "pending",
           pestel_analysis: "pending",
           catwoe_analysis: "pending",
           financial_basics: "pending",
@@ -99,6 +100,7 @@ serve(async (req) => {
       generateCustomerPersonas(project, LOVABLE_API_KEY),
       generateCompetitiveLandscape(project, LOVABLE_API_KEY),
       generateStrategicFrameworks(project, LOVABLE_API_KEY),
+      generatePorterFiveForces(project, LOVABLE_API_KEY),
       generatePestelAnalysis(project, LOVABLE_API_KEY),
       generateCatwoeAnalysis(project, LOVABLE_API_KEY),
       generateFinancialBasics(project, LOVABLE_API_KEY),
@@ -110,6 +112,7 @@ serve(async (req) => {
       customerPersonas,
       competitiveLandscape,
       strategicFrameworks,
+      porterFiveForces,
       pestelAnalysis,
       catwoeAnalysis,
       financialBasics,
@@ -122,6 +125,7 @@ serve(async (req) => {
       customerPersonas,
       competitiveLandscape,
       strategicFrameworks,
+      porterFiveForces,
       pestelAnalysis,
       catwoeAnalysis,
       financialBasics,
@@ -134,6 +138,7 @@ serve(async (req) => {
       customer_personas: customerPersonas,
       competitive_landscape: competitiveLandscape,
       strategic_frameworks: strategicFrameworks,
+      porter_five_forces: porterFiveForces,
       pestel_analysis: pestelAnalysis,
       catwoe_analysis: catwoeAnalysis,
       financial_basics: financialBasics,
@@ -150,6 +155,7 @@ serve(async (req) => {
           customer_personas: "complete",
           competitive_landscape: "complete",
           strategic_frameworks: "complete",
+          porter_five_forces: "complete",
           pestel_analysis: "complete",
           catwoe_analysis: "complete",
           financial_basics: "complete",
@@ -335,14 +341,12 @@ Description: ${project.description}
 
 Provide strategic analysis:
 1. SWOT Analysis (5 items per quadrant)
-2. Porter's Five Forces (with High/Medium/Low ratings)
-3. Go-to-market strategy recommendations
+2. Go-to-market strategy recommendations
 
 CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
 
 Format as JSON with keys: 
 - swot {strengths, weaknesses, opportunities, threats} (all arrays of plain strings)
-- porters_five_forces {supplier_power, buyer_power, competitive_rivalry, threat_of_substitution, threat_of_new_entry}
 - gtm_strategy (array of plain strings - no bold formatting)`;
 
   const result = await callAI(prompt, apiKey);
@@ -351,8 +355,48 @@ Format as JSON with keys:
   } catch {
     return { 
       swot: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
-      porters_five_forces: { supplier_power: "Medium", buyer_power: "Medium", competitive_rivalry: "High", threat_of_substitution: "Medium", threat_of_new_entry: "Medium" },
       gtm_strategy: [result]
+    };
+  }
+}
+
+async function generatePorterFiveForces(project: any, apiKey: string) {
+  const prompt = `Business Idea: ${project.name}
+Industry: ${project.industry}
+Description: ${project.description}
+
+Provide a comprehensive Porter's Five Forces analysis:
+
+1. Supplier Power: How much power do suppliers have? Can they raise prices or reduce quality?
+2. Buyer Power: How much power do customers have? Can they drive prices down or demand more?
+3. Competitive Rivalry: How intense is the competition? How many competitors? How differentiated?
+4. Threat of Substitution: How easy is it for customers to find alternative solutions?
+5. Threat of New Entry: How easy is it for new competitors to enter this market?
+
+For each force, provide:
+- Rating: High, Medium, or Low
+- Analysis: 2-3 paragraphs explaining the rating, key factors, and strategic implications
+- Key considerations and recommendations
+
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
+
+Format as JSON with keys: 
+- supplier_power {rating, analysis} (rating is "High", "Medium", or "Low"; analysis is plain text string with newlines)
+- buyer_power {rating, analysis}
+- competitive_rivalry {rating, analysis}
+- threat_of_substitution {rating, analysis}
+- threat_of_new_entry {rating, analysis}`;
+
+  const result = await callAI(prompt, apiKey);
+  try {
+    return JSON.parse(result);
+  } catch {
+    return { 
+      supplier_power: { rating: "Medium", analysis: "Analysis pending" },
+      buyer_power: { rating: "Medium", analysis: "Analysis pending" },
+      competitive_rivalry: { rating: "High", analysis: "Analysis pending" },
+      threat_of_substitution: { rating: "Medium", analysis: "Analysis pending" },
+      threat_of_new_entry: { rating: "Medium", analysis: "Analysis pending" }
     };
   }
 }
