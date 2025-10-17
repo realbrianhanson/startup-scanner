@@ -443,8 +443,12 @@ Format as JSON with keys:
 
   const result = await callAI(prompt, apiKey);
   try {
-    return JSON.parse(result);
-  } catch {
+    const cleanedResult = cleanJsonFromMarkdown(result);
+    const parsed = JSON.parse(cleanedResult);
+    console.log("Porter's Five Forces generated successfully");
+    return parsed;
+  } catch (error) {
+    console.error("Porter's Five Forces parse error:", error, "Raw result:", result);
     return { 
       supplier_power: { rating: "Medium", analysis: "Analysis pending" },
       buyer_power: { rating: "Medium", analysis: "Analysis pending" },
