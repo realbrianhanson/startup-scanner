@@ -55,7 +55,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 6; // Updated to include customer personas
+    const creditsNeeded = 7; // Updated to include customer personas and PESTEL
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -72,6 +72,7 @@ serve(async (req) => {
           customer_personas: "pending",
           competitive_landscape: "pending",
           strategic_frameworks: "pending",
+          pestel_analysis: "pending",
           financial_basics: "pending",
         },
       })
@@ -97,6 +98,7 @@ serve(async (req) => {
       generateCustomerPersonas(project, LOVABLE_API_KEY),
       generateCompetitiveLandscape(project, LOVABLE_API_KEY),
       generateStrategicFrameworks(project, LOVABLE_API_KEY),
+      generatePestelAnalysis(project, LOVABLE_API_KEY),
       generateFinancialBasics(project, LOVABLE_API_KEY),
     ];
 
@@ -106,6 +108,7 @@ serve(async (req) => {
       customerPersonas,
       competitiveLandscape,
       strategicFrameworks,
+      pestelAnalysis,
       financialBasics,
     ] = await Promise.all(sections);
 
@@ -116,6 +119,7 @@ serve(async (req) => {
       customerPersonas,
       competitiveLandscape,
       strategicFrameworks,
+      pestelAnalysis,
       financialBasics,
     });
 
@@ -126,6 +130,7 @@ serve(async (req) => {
       customer_personas: customerPersonas,
       competitive_landscape: competitiveLandscape,
       strategic_frameworks: strategicFrameworks,
+      pestel_analysis: pestelAnalysis,
       financial_basics: financialBasics,
       validation_score: validationScore,
     };
@@ -140,6 +145,7 @@ serve(async (req) => {
           customer_personas: "complete",
           competitive_landscape: "complete",
           strategic_frameworks: "complete",
+          pestel_analysis: "complete",
           financial_basics: "complete",
         },
       })
@@ -487,6 +493,50 @@ Example revenue_model format: "Primarily a freemium model. The free workshop act
       revenue_model: result,
       cac_estimate: "Analysis pending",
       projections: { year1: "TBD", year2: "TBD", year3: "TBD" }
+    };
+  }
+}
+
+async function generatePestelAnalysis(project: any, apiKey: string) {
+  const prompt = `Business Idea: ${project.name}
+Industry: ${project.industry}
+Description: ${project.description}
+
+Provide a comprehensive PESTEL analysis covering all six factors that could impact this business:
+
+1. Political factors: Government policies, regulations, trade restrictions, tax policy, political stability
+2. Economic factors: Economic growth, interest rates, inflation, unemployment, consumer purchasing power
+3. Social factors: Demographics, cultural trends, lifestyle changes, consumer attitudes, population dynamics
+4. Technological factors: Innovation, automation, R&D activity, technology incentives, rate of tech change
+5. Environmental factors: Climate change, sustainability, environmental regulations, carbon footprint, resource scarcity
+6. Legal factors: Employment laws, consumer protection, health and safety regulations, antitrust laws, intellectual property
+
+For each factor, provide 2-3 paragraphs analyzing:
+- Current state and trends
+- Potential impact on the business (positive and negative)
+- Key considerations and recommendations
+
+CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
+
+Format as JSON with keys: 
+- political (plain text string with newlines for paragraphs)
+- economic (plain text string with newlines for paragraphs)
+- social (plain text string with newlines for paragraphs)
+- technological (plain text string with newlines for paragraphs)
+- environmental (plain text string with newlines for paragraphs)
+- legal (plain text string with newlines for paragraphs)`;
+
+  const result = await callAI(prompt, apiKey);
+  try {
+    return JSON.parse(result);
+  } catch {
+    return { 
+      political: "Analysis pending",
+      economic: "Analysis pending",
+      social: "Analysis pending",
+      technological: "Analysis pending",
+      environmental: "Analysis pending",
+      legal: "Analysis pending"
     };
   }
 }

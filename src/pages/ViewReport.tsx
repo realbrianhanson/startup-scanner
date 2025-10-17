@@ -645,6 +645,104 @@ const ViewReport = () => {
                 </Collapsible>
               )}
 
+              {/* PESTEL Analysis */}
+              {reportData.pestel_analysis && (
+                <Collapsible>
+                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Globe className="h-6 w-6 text-primary" />
+                          <h2 className="text-2xl font-bold">PESTEL Analysis</h2>
+                        </div>
+                        <Badge variant="secondary">Expand</Badge>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-6 pt-0">
+                      <div className="space-y-6">
+                        {/* Political */}
+                        {reportData.pestel_analysis.political && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <span className="text-xl">🏛️</span>
+                              Political Factors
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.pestel_analysis.political)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Economic */}
+                        {reportData.pestel_analysis.economic && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <DollarSign className="h-5 w-5 text-primary" />
+                              Economic Factors
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.pestel_analysis.economic)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Social */}
+                        {reportData.pestel_analysis.social && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <Users className="h-5 w-5 text-primary" />
+                              Social Factors
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.pestel_analysis.social)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Technological */}
+                        {reportData.pestel_analysis.technological && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <Zap className="h-5 w-5 text-primary" />
+                              Technological Factors
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.pestel_analysis.technological)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Environmental */}
+                        {reportData.pestel_analysis.environmental && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <span className="text-xl">🌱</span>
+                              Environmental Factors
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.pestel_analysis.environmental)} />
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Legal */}
+                        {reportData.pestel_analysis.legal && (
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <FileText className="h-5 w-5 text-primary" />
+                              Legal Factors
+                            </h3>
+                            <Card className="p-4 bg-muted/30">
+                              <MarkdownContent content={toMarkdownString(reportData.pestel_analysis.legal)} />
+                            </Card>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              )}
+
               {/* Financial Basics */}
               {reportData.financial_basics && (
                 <Collapsible>
