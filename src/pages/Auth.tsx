@@ -13,6 +13,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -64,6 +65,7 @@ const Auth = () => {
             emailRedirectTo: `${window.location.origin}/dashboard`,
             data: {
               full_name: fullName,
+              promo_code: promoCode.trim().toUpperCase(),
             },
           },
         });
@@ -164,6 +166,23 @@ const Auth = () => {
                 </p>
               )}
             </div>
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="promoCode">Promo Code (Optional)</Label>
+                <Input
+                  id="promoCode"
+                  type="text"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  disabled={loading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use code "REAL" to get 100 bonus credits!
+                </p>
+              </div>
+            )}
 
             <Button
               type="submit"
