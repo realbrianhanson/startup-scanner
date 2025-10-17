@@ -309,15 +309,16 @@ Create a brief executive summary with:
 1. Overall validation score (0-100) with justification
 2. Top 3 strengths
 3. Top 3 concerns
-4. Clear Go/No-Go recommendation
+4. Clear recommendation on whether to pursue this idea
 
 CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside the string values.
+Do NOT start the recommendation with "Go:" or "No-Go:" - just write the recommendation directly.
 
 Format as JSON with keys: 
 - score (number)
 - strengths (array of plain strings)
 - concerns (array of plain strings)
-- recommendation (plain text string with newlines for paragraphs - no markdown syntax)
+- recommendation (plain text string with newlines for paragraphs - no markdown syntax, no "Go:" prefix)
 - reasoning (plain text string with newlines for paragraphs - no markdown syntax)`;
 
   const result = await callAI(prompt, apiKey);

@@ -38,15 +38,18 @@ const ViewReport = () => {
   // Helper to safely convert content to string for MarkdownContent
   const toMarkdownString = (content: any): string => {
     if (!content) return '';
-    if (typeof content === 'string') return content;
+    if (typeof content === 'string') {
+      // Remove "Go:" or "No-Go:" prefix if present
+      return content.replace(/^(Go|No-Go):\s*/i, '').trim();
+    }
     if (typeof content === 'object') {
       // If it has a 'text' or 'content' property, use that
-      if (content.text) return String(content.text);
-      if (content.content) return String(content.content);
+      if (content.text) return String(content.text).replace(/^(Go|No-Go):\s*/i, '').trim();
+      if (content.content) return String(content.content).replace(/^(Go|No-Go):\s*/i, '').trim();
       // Otherwise stringify it
       return JSON.stringify(content, null, 2);
     }
-    return String(content);
+    return String(content).replace(/^(Go|No-Go):\s*/i, '').trim();
   };
 
   const [project, setProject] = useState<any>(null);
