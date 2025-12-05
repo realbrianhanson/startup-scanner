@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, Send, ArrowLeft, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,11 +16,6 @@ interface Message {
 interface Project {
   id: string;
   name: string;
-  validation_score: number | null;
-}
-
-interface Report {
-  report_data: any;
 }
 
 const STARTER_QUESTIONS = [
@@ -39,7 +32,6 @@ export default function Chat() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [project, setProject] = useState<Project | null>(null);
-  const [report, setReport] = useState<Report | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -47,7 +39,6 @@ export default function Chat() {
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     loadProjectAndChat();
@@ -106,15 +97,6 @@ export default function Chat() {
 
       if (projectError) throw projectError;
       setProject(projectData);
-
-      // Load report
-      const { data: reportData } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('project_id', projectId)
-        .single();
-
-      setReport(reportData);
 
       // Load or create conversation
       let { data: conversations } = await supabase
@@ -232,20 +214,6 @@ export default function Chat() {
     }
   };
 
-  const getScoreColor = (score: number | null) => {
-    if (!score) return 'secondary';
-    if (score >= 70) return 'default';
-    if (score >= 41) return 'secondary';
-    return 'destructive';
-  };
-
-  const getScoreLabel = (score: number | null) => {
-    if (!score) return 'Pending';
-    if (score >= 70) return 'Strong Potential';
-    if (score >= 41) return 'Moderate Potential';
-    return 'Needs Work';
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
@@ -259,79 +227,22 @@ export default function Chat() {
       <div className="h-screen flex flex-col">
         {/* Header */}
         <header className="border-b bg-card/50 backdrop-blur">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/projects/${projectId}/report`)}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold">{project?.name}</h1>
-                <p className="text-sm text-muted-foreground">Chat with Cora</p>
-              </div>
-            </div>
+          <div className="container mx-auto px-4 py-4 flex items-center gap-4">
             <Button
-              variant="outline"
-              size="sm"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(`/projects/${projectId}/report`)}
             >
-              {sidebarOpen ? 'Hide' : 'Show'} Summary
+              <ArrowLeft className="h-5 w-5" />
             </Button>
+            <div>
+              <h1 className="text-xl font-semibold">{project?.name}</h1>
+              <p className="text-sm text-muted-foreground">Chat with Cora</p>
+            </div>
           </div>
         </header>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
-          <aside
-            className={`${
-              sidebarOpen ? 'block' : 'hidden'
-            } lg:block w-full lg:w-80 border-r bg-card/30 backdrop-blur overflow-y-auto`}
-          >
-            <div className="p-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Validation Score</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <div className="text-4xl font-bold">
-                      {project?.validation_score || '—'}
-                    </div>
-                    <Badge variant={getScoreColor(project?.validation_score || null)}>
-                      {getScoreLabel(project?.validation_score || null)}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {report?.report_data && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Key Insights</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    {(report.report_data.executive_summary?.strengths || report.report_data.executiveSummary?.strengths)?.slice(0, 3).map((strength: string, i: number) => (
-                      <div key={i} className="flex gap-2">
-                        <div className="text-green-500 mt-0.5">✓</div>
-                        <div className="text-muted-foreground">{strength}</div>
-                      </div>
-                    ))}
-                    {(report.report_data.executive_summary?.concerns || report.report_data.executiveSummary?.concerns)?.slice(0, 2).map((concern: string, i: number) => (
-                      <div key={i} className="flex gap-2">
-                        <div className="text-amber-500 mt-0.5">⚠</div>
-                        <div className="text-muted-foreground">{concern}</div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </aside>
-
           {/* Chat Area */}
           <main className="flex-1 flex flex-col">
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
