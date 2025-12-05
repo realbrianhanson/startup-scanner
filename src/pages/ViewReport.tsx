@@ -30,6 +30,8 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { ReportNavigation } from "@/components/ReportNavigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const ViewReport = () => {
   const { id } = useParams();
@@ -261,17 +263,28 @@ const ViewReport = () => {
                 Validifier
               </span>
             </div>
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+              <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto space-y-8">
+        <div className="flex gap-8">
+          {/* Section Navigation */}
+          {project?.status === "complete" && Object.keys(reportData).length > 0 && (
+            <div className="hidden lg:block w-56 shrink-0">
+              <ReportNavigation reportData={reportData} />
+            </div>
+          )}
+          
+          <div className="flex-1 max-w-4xl space-y-8">
           {/* Header */}
           <div className="space-y-4">
             <div className="flex items-start justify-between">
@@ -318,7 +331,7 @@ const ViewReport = () => {
 
           {/* Quick Score (if available) */}
           {reportData.executive_summary && (
-            <Card className="p-8 bg-gradient-card border-2 shadow-large">
+            <Card id="executive-summary" className="p-8 bg-gradient-card border-2 shadow-large scroll-mt-28">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-3xl font-bold">Executive Summary</h2>
@@ -376,7 +389,7 @@ const ViewReport = () => {
               {/* Market Analysis */}
               {reportData.market_analysis && (
                 <Collapsible defaultOpen>
-                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                  <Card id="market-analysis" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
                     <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -440,7 +453,7 @@ const ViewReport = () => {
               {/* Customer Personas */}
               {reportData.customer_personas && Array.isArray(reportData.customer_personas) && reportData.customer_personas.length > 0 && (
                 <Collapsible>
-                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                  <Card id="customer-personas" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
                     <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -591,7 +604,7 @@ const ViewReport = () => {
               {/* Competitive Landscape */}
               {reportData.competitive_landscape && (
                 <Collapsible>
-                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                  <Card id="competitive-landscape" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
                     <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -640,7 +653,7 @@ const ViewReport = () => {
               {/* Strategic Frameworks */}
               {reportData.strategic_frameworks && (
                 <Collapsible>
-                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                  <Card id="strategic-frameworks" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
                     <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -710,7 +723,7 @@ const ViewReport = () => {
               {/* Porter's Five Forces */}
               {reportData.porter_five_forces && (
                 <Collapsible>
-                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                  <Card id="porter-five-forces" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
                     <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -820,7 +833,7 @@ const ViewReport = () => {
               {/* PESTEL Analysis */}
               {reportData.pestel_analysis && (
                 <Collapsible>
-                  <Card className="overflow-hidden border-2 hover:border-primary/20 transition-all">
+                  <Card id="pestel-analysis" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
                     <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -917,7 +930,7 @@ const ViewReport = () => {
 
         {/* CATWOE Analysis */}
         {reportData.catwoe_analysis && (
-          <Card>
+          <Card id="catwoe-analysis" className="scroll-mt-28">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -1693,6 +1706,7 @@ const ViewReport = () => {
               </Button>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
