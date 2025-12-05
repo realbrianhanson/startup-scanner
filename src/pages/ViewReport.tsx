@@ -1006,519 +1006,503 @@ const ViewReport = () => {
                 </Collapsible>
               )}
 
-        {/* CATWOE Analysis */}
-        {reportData.catwoe_analysis && (
-          <Card id="catwoe-analysis" className="scroll-mt-28">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                CATWOE Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="customers">
-                  <AccordionTrigger>Customers</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.customers.description}</p>
-                    <ul className="list-disc pl-6 space-y-1">
-                      {reportData.catwoe_analysis.customers.key_points.map((point: string, idx: number) => (
-                        <li key={idx}>{point}</li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="actors">
-                  <AccordionTrigger>Actors</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.actors.description}</p>
-                    <ul className="list-disc pl-6 space-y-1">
-                      {reportData.catwoe_analysis.actors.key_points.map((point: string, idx: number) => (
-                        <li key={idx}>{point}</li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="transformation">
-                  <AccordionTrigger>Transformation Process</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground mb-3">{reportData.catwoe_analysis.transformation.description}</p>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-semibold mb-2">Inputs:</h4>
-                        <ul className="list-disc pl-6">
-                          {reportData.catwoe_analysis.transformation.inputs.map((input: string, idx: number) => (
-                            <li key={idx}>{input}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Outputs:</h4>
-                        <ul className="list-disc pl-6">
-                          {reportData.catwoe_analysis.transformation.outputs.map((output: string, idx: number) => (
-                            <li key={idx}>{output}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="worldview">
-                  <AccordionTrigger>World View</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.world_view.description}</p>
-                    <h4 className="font-semibold mt-3 mb-2">Key Assumptions:</h4>
-                    <ul className="list-disc pl-6 space-y-1">
-                      {reportData.catwoe_analysis.world_view.assumptions.map((assumption: string, idx: number) => (
-                        <li key={idx}>{assumption}</li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="owners">
-                  <AccordionTrigger>Owners</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.owners.description}</p>
-                    <h4 className="font-semibold mt-3 mb-2">Key Stakeholders:</h4>
-                    <ul className="list-disc pl-6 space-y-1">
-                      {reportData.catwoe_analysis.owners.stakeholders.map((stakeholder: string, idx: number) => (
-                        <li key={idx}>{stakeholder}</li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="environmental">
-                  <AccordionTrigger>Environmental Constraints</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground mb-2">{reportData.catwoe_analysis.environmental_constraints.description}</p>
-                    <ul className="list-disc pl-6 space-y-1">
-                      {reportData.catwoe_analysis.environmental_constraints.constraints.map((constraint: string, idx: number) => (
-                        <li key={idx}>{constraint}</li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Path to MVP */}
-        {reportData.path_to_mvp && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5" />
-                Path to MVP
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="mvp-definition">
-                  <AccordionTrigger>MVP Definition</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground mb-2">{reportData.path_to_mvp.mvp_definition.description}</p>
-                    <div className="mt-3 p-3 bg-muted rounded-lg">
-                      <h4 className="font-semibold mb-1">Core Value:</h4>
-                      <p className="text-sm">{reportData.path_to_mvp.mvp_definition.core_value}</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="core-features">
-                  <AccordionTrigger>Core Features</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      {reportData.path_to_mvp.core_features.map((feature: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold">{feature.feature}</h4>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              feature.priority === 'high' ? 'bg-destructive/20 text-destructive' :
-                              feature.priority === 'medium' ? 'bg-primary/20 text-primary' :
-                              'bg-muted-foreground/20 text-muted-foreground'
-                            }`}>
-                              {feature.priority}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Effort:</span> {feature.effort}
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Value:</span> {feature.value}
-                            </div>
-                          </div>
+              {/* CATWOE Analysis */}
+              {reportData.catwoe_analysis && (
+                <Collapsible>
+                  <Card id="catwoe-analysis" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
+                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Users className="h-6 w-6 text-primary" />
+                          <h2 className="text-2xl font-bold">CATWOE Analysis</h2>
                         </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="development-phases">
-                  <AccordionTrigger>Development Phases</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4">
-                      {reportData.path_to_mvp.development_phases.map((phase: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold">{phase.phase}</h4>
-                            <span className="text-sm text-muted-foreground">{phase.duration}</span>
-                          </div>
-                          <div className="space-y-2">
+                        <Badge variant="secondary">Expand</Badge>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-6 pt-0">
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Customers */}
+                        <Card className="p-4 bg-primary/5">
+                          <h4 className="font-semibold mb-2 text-primary flex items-center gap-2">
+                            <span className="text-lg font-bold">C</span> Customers
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-3">{reportData.catwoe_analysis.customers?.description}</p>
+                          <ul className="space-y-1 text-sm">
+                            {reportData.catwoe_analysis.customers?.key_points?.map((point: string, i: number) => (
+                              <li key={i}>• {point}</li>
+                            ))}
+                          </ul>
+                        </Card>
+                        
+                        {/* Actors */}
+                        <Card className="p-4 bg-success/5">
+                          <h4 className="font-semibold mb-2 text-success flex items-center gap-2">
+                            <span className="text-lg font-bold">A</span> Actors
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-3">{reportData.catwoe_analysis.actors?.description}</p>
+                          <ul className="space-y-1 text-sm">
+                            {reportData.catwoe_analysis.actors?.key_points?.map((point: string, i: number) => (
+                              <li key={i}>• {point}</li>
+                            ))}
+                          </ul>
+                        </Card>
+                        
+                        {/* Transformation */}
+                        <Card className="p-4 bg-warning/5">
+                          <h4 className="font-semibold mb-2 text-warning flex items-center gap-2">
+                            <span className="text-lg font-bold">T</span> Transformation
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-3">{reportData.catwoe_analysis.transformation?.description}</p>
+                          <div className="space-y-2 text-sm">
                             <div>
-                              <h5 className="text-sm font-semibold mb-1">Deliverables:</h5>
-                              <ul className="list-disc pl-5 text-sm space-y-1">
-                                {phase.deliverables.map((item: string, i: number) => (
-                                  <li key={i}>{item}</li>
+                              <span className="font-medium">Inputs:</span>
+                              <ul className="ml-2">
+                                {reportData.catwoe_analysis.transformation?.inputs?.map((input: string, i: number) => (
+                                  <li key={i}>• {input}</li>
                                 ))}
                               </ul>
                             </div>
                             <div>
-                              <h5 className="text-sm font-semibold mb-1">Milestones:</h5>
-                              <ul className="list-disc pl-5 text-sm space-y-1">
-                                {phase.milestones.map((item: string, i: number) => (
-                                  <li key={i}>{item}</li>
+                              <span className="font-medium">Outputs:</span>
+                              <ul className="ml-2">
+                                {reportData.catwoe_analysis.transformation?.outputs?.map((output: string, i: number) => (
+                                  <li key={i}>• {output}</li>
                                 ))}
                               </ul>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="resources">
-                  <AccordionTrigger>Resource Requirements</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold mb-2">Team:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {reportData.path_to_mvp.resource_requirements.team.map((role: string, idx: number) => (
-                            <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                              {role}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Tools & Technologies:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {reportData.path_to_mvp.resource_requirements.tools.map((tool: string, idx: number) => (
-                            <span key={idx} className="px-3 py-1 bg-muted rounded-full text-sm">
-                              {tool}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="grid md:grid-cols-2 gap-4 mt-3">
-                        <div className="p-3 bg-muted rounded-lg">
-                          <h4 className="font-semibold mb-1">Estimated Budget:</h4>
-                          <p className="text-sm">{reportData.path_to_mvp.resource_requirements.estimated_budget}</p>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg">
-                          <h4 className="font-semibold mb-1">Timeline:</h4>
-                          <p className="text-sm">{reportData.path_to_mvp.resource_requirements.timeline}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="launch">
-                  <AccordionTrigger>Launch Strategy</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-semibold mb-1">Target Audience:</h4>
-                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.launch_strategy.target_audience}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Launch Channels:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {reportData.path_to_mvp.launch_strategy.channels.map((channel: string, idx: number) => (
-                            <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                              {channel}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Approach:</h4>
-                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.launch_strategy.approach}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Timeline:</h4>
-                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.launch_strategy.timeline}</p>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="metrics">
-                  <AccordionTrigger>Success Metrics</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      {reportData.path_to_mvp.success_metrics.map((metric: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <h4 className="font-semibold mb-2">{metric.metric}</h4>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Target:</span> {metric.target}
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Measurement:</span> {metric.measurement}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="iteration">
-                  <AccordionTrigger>Iteration Plan</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-semibold mb-2">Feedback Channels:</h4>
-                        <ul className="list-disc pl-5 text-sm space-y-1">
-                          {reportData.path_to_mvp.iteration_plan.feedback_channels.map((channel: string, idx: number) => (
-                            <li key={idx}>{channel}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Review Frequency:</h4>
-                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.iteration_plan.review_frequency}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Improvement Process:</h4>
-                        <p className="text-sm text-muted-foreground">{reportData.path_to_mvp.iteration_plan.improvement_process}</p>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Go-To-Market Strategy */}
-        {reportData.go_to_market_strategy && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Go-To-Market Strategy
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="target-segments">
-                  <AccordionTrigger>Target Market Segments</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4">
-                      {reportData.go_to_market_strategy.target_segments.map((segment: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <h4 className="font-semibold mb-2">{segment.segment}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{segment.description}</p>
-                          <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                            <div>
-                              <span className="text-muted-foreground">Market Size:</span> {segment.size}
-                            </div>
-                          </div>
-                          <div>
-                            <h5 className="text-sm font-semibold mb-1">Key Characteristics:</h5>
-                            <ul className="list-disc pl-5 text-sm">
-                              {segment.characteristics.map((char: string, i: number) => (
-                                <li key={i}>{char}</li>
+                        </Card>
+                        
+                        {/* World View */}
+                        <Card className="p-4 bg-secondary/50">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <span className="text-lg font-bold">W</span> World View
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-3">{reportData.catwoe_analysis.world_view?.description}</p>
+                          <div className="text-sm">
+                            <span className="font-medium">Assumptions:</span>
+                            <ul className="ml-2 mt-1">
+                              {reportData.catwoe_analysis.world_view?.assumptions?.map((assumption: string, i: number) => (
+                                <li key={i}>• {assumption}</li>
                               ))}
                             </ul>
                           </div>
+                        </Card>
+                        
+                        {/* Owners */}
+                        <Card className="p-4 bg-destructive/5">
+                          <h4 className="font-semibold mb-2 text-destructive flex items-center gap-2">
+                            <span className="text-lg font-bold">O</span> Owners
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-3">{reportData.catwoe_analysis.owners?.description}</p>
+                          <div className="text-sm">
+                            <span className="font-medium">Stakeholders:</span>
+                            <ul className="ml-2 mt-1">
+                              {reportData.catwoe_analysis.owners?.stakeholders?.map((stakeholder: string, i: number) => (
+                                <li key={i}>• {stakeholder}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </Card>
+                        
+                        {/* Environmental Constraints */}
+                        <Card className="p-4 bg-muted/50">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <span className="text-lg font-bold">E</span> Environment
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-3">{reportData.catwoe_analysis.environmental_constraints?.description}</p>
+                          <div className="text-sm">
+                            <span className="font-medium">Constraints:</span>
+                            <ul className="ml-2 mt-1">
+                              {reportData.catwoe_analysis.environmental_constraints?.constraints?.map((constraint: string, i: number) => (
+                                <li key={i}>• {constraint}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </Card>
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              )}
+
+              {/* Path to MVP */}
+              {reportData.path_to_mvp && (
+                <Collapsible>
+                  <Card id="path-to-mvp" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
+                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Lightbulb className="h-6 w-6 text-primary" />
+                          <h2 className="text-2xl font-bold">Path to MVP</h2>
                         </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="value-prop">
-                  <AccordionTrigger>Value Proposition</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <div className="p-3 bg-primary/10 rounded-lg">
-                        <h4 className="font-semibold mb-2">Primary Value Proposition:</h4>
-                        <p className="text-sm">{reportData.go_to_market_strategy.value_proposition.primary}</p>
+                        <Badge variant="secondary">Expand</Badge>
                       </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Key Differentiators:</h4>
-                        <ul className="list-disc pl-5 text-sm space-y-1">
-                          {reportData.go_to_market_strategy.value_proposition.differentiators.map((diff: string, idx: number) => (
-                            <li key={idx}>{diff}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="marketing-channels">
-                  <AccordionTrigger>Marketing Channels</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      {reportData.go_to_market_strategy.marketing_channels.map((channel: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <h4 className="font-semibold mb-2">{channel.channel}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{channel.strategy}</p>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Budget:</span> {channel.budget_allocation}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-6 pt-0">
+                      <div className="space-y-6">
+                        {/* MVP Definition */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">MVP Definition</h3>
+                          <Card className="p-4 bg-primary/5">
+                            <p className="text-muted-foreground mb-3">{reportData.path_to_mvp.mvp_definition?.description}</p>
+                            <div className="p-3 bg-background rounded-lg border">
+                              <span className="font-semibold text-primary">Core Value:</span>
+                              <p className="text-sm mt-1">{reportData.path_to_mvp.mvp_definition?.core_value}</p>
                             </div>
-                            <div>
-                              <span className="text-muted-foreground">Expected ROI:</span> {channel.expected_roi}
-                            </div>
+                          </Card>
+                        </div>
+
+                        {/* Core Features */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Core Features</h3>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            {reportData.path_to_mvp.core_features?.map((feature: any, idx: number) => (
+                              <Card key={idx} className="p-4 bg-muted/30">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h4 className="font-semibold">{feature.feature}</h4>
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    feature.priority === 'high' ? 'bg-destructive/20 text-destructive' :
+                                    feature.priority === 'medium' ? 'bg-primary/20 text-primary' :
+                                    'bg-muted-foreground/20 text-muted-foreground'
+                                  }`}>
+                                    {feature.priority}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div><span className="text-muted-foreground">Effort:</span> {feature.effort}</div>
+                                  <div><span className="text-muted-foreground">Value:</span> {feature.value}</div>
+                                </div>
+                              </Card>
+                            ))}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="sales-strategy">
-                  <AccordionTrigger>Sales Strategy</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-semibold mb-2">Sales Process:</h4>
-                        <p className="text-sm text-muted-foreground">{safeString(reportData.go_to_market_strategy.sales_strategy?.process, 'Sales process analysis in progress')}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Team Structure:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {safeArray(reportData.go_to_market_strategy.sales_strategy?.team_structure).map((role: string, idx: number) => (
-                            <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                              {typeof role === 'object' ? (role as any).role || (role as any).name || JSON.stringify(role) : role}
-                            </span>
-                          ))}
+
+                        {/* Development Phases */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Development Phases</h3>
+                          <div className="space-y-3">
+                            {reportData.path_to_mvp.development_phases?.map((phase: any, idx: number) => (
+                              <Card key={idx} className="p-4 bg-muted/30">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
+                                    {idx + 1}
+                                  </span>
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold">{phase.phase}</h4>
+                                    <span className="text-xs text-muted-foreground">{phase.duration}</span>
+                                  </div>
+                                </div>
+                                <ul className="text-sm space-y-1 ml-11">
+                                  {phase.deliverables?.map((d: string, i: number) => (
+                                    <li key={i}>• {d}</li>
+                                  ))}
+                                </ul>
+                              </Card>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Conversion Tactics:</h4>
-                        <ul className="list-disc pl-5 text-sm space-y-1">
-                          {safeArray(reportData.go_to_market_strategy.sales_strategy?.conversion_tactics).map((tactic: string, idx: number) => (
-                            <li key={idx}>{tactic}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="pricing">
-                  <AccordionTrigger>Pricing Strategy</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <div className="p-3 bg-muted rounded-lg">
-                        <h4 className="font-semibold mb-1">Pricing Model:</h4>
-                        <p className="text-sm">{reportData.go_to_market_strategy.pricing_strategy.model}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Pricing Tiers:</h4>
-                        <div className="space-y-2">
-                          {reportData.go_to_market_strategy.pricing_strategy.tiers.map((tier: any, idx: number) => (
-                            <div key={idx} className="p-3 bg-muted rounded-lg">
-                              <div className="flex items-center justify-between mb-2">
-                                <h5 className="font-semibold">{tier.name}</h5>
-                                <span className="text-lg font-bold text-primary">{tier.price}</span>
+
+                        {/* Resources & Launch */}
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {/* Resource Requirements */}
+                          <Card className="p-4 bg-success/5">
+                            <h3 className="font-semibold text-lg mb-3 text-success">Resources</h3>
+                            <div className="space-y-3">
+                              <div>
+                                <h4 className="font-semibold text-sm mb-2">Team:</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {reportData.path_to_mvp.resource_requirements?.team?.map((member: string, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-success/10 rounded text-xs">{member}</span>
+                                  ))}
+                                </div>
                               </div>
-                              <ul className="list-disc pl-5 text-sm space-y-1">
-                                {tier.features.map((feature: string, i: number) => (
-                                  <li key={i}>{feature}</li>
-                                ))}
-                              </ul>
+                              <div>
+                                <h4 className="font-semibold text-sm mb-2">Tools:</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {reportData.path_to_mvp.resource_requirements?.tools?.map((tool: string, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-muted rounded text-xs">{tool}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
+                                <div><span className="text-muted-foreground">Budget:</span> {reportData.path_to_mvp.resource_requirements?.estimated_budget}</div>
+                                <div><span className="text-muted-foreground">Timeline:</span> {reportData.path_to_mvp.resource_requirements?.timeline}</div>
+                              </div>
                             </div>
-                          ))}
+                          </Card>
+
+                          {/* Launch Strategy */}
+                          <Card className="p-4 bg-primary/5">
+                            <h3 className="font-semibold text-lg mb-3 text-primary">Launch Strategy</h3>
+                            <div className="space-y-3 text-sm">
+                              <div>
+                                <span className="font-semibold">Target:</span>
+                                <p className="text-muted-foreground">{reportData.path_to_mvp.launch_strategy?.target_audience}</p>
+                              </div>
+                              <div>
+                                <span className="font-semibold">Channels:</span>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {reportData.path_to_mvp.launch_strategy?.channels?.map((channel: string, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-primary/10 text-primary rounded text-xs">{channel}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="font-semibold">Approach:</span>
+                                <p className="text-muted-foreground">{reportData.path_to_mvp.launch_strategy?.approach}</p>
+                              </div>
+                            </div>
+                          </Card>
+                        </div>
+
+                        {/* Success Metrics */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Success Metrics</h3>
+                          <div className="grid md:grid-cols-3 gap-3">
+                            {reportData.path_to_mvp.success_metrics?.map((metric: any, idx: number) => (
+                              <Card key={idx} className="p-4 bg-muted/30">
+                                <h4 className="font-semibold text-sm mb-2">{metric.metric}</h4>
+                                <div className="text-xs space-y-1">
+                                  <div><span className="text-muted-foreground">Target:</span> {metric.target}</div>
+                                  <div><span className="text-muted-foreground">How:</span> {metric.measurement}</div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Iteration Plan */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Iteration Plan</h3>
+                          <Card className="p-4 bg-muted/30">
+                            <div className="grid md:grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="font-semibold">Feedback Channels:</span>
+                                <ul className="mt-1">
+                                  {reportData.path_to_mvp.iteration_plan?.feedback_channels?.map((channel: string, i: number) => (
+                                    <li key={i}>• {channel}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div>
+                                <span className="font-semibold">Review Frequency:</span>
+                                <p className="text-muted-foreground mt-1">{reportData.path_to_mvp.iteration_plan?.review_frequency}</p>
+                              </div>
+                              <div>
+                                <span className="font-semibold">Process:</span>
+                                <p className="text-muted-foreground mt-1">{reportData.path_to_mvp.iteration_plan?.improvement_process}</p>
+                              </div>
+                            </div>
+                          </Card>
                         </div>
                       </div>
-                      <div className="p-3 bg-primary/10 rounded-lg">
-                        <h4 className="font-semibold mb-1">Competitive Position:</h4>
-                        <p className="text-sm">{reportData.go_to_market_strategy.pricing_strategy.competitive_position}</p>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              )}
+
+              {/* Go-To-Market Strategy */}
+              {reportData.go_to_market_strategy && (
+                <Collapsible>
+                  <Card id="go-to-market" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
+                    <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Target className="h-6 w-6 text-primary" />
+                          <h2 className="text-2xl font-bold">Go-To-Market Strategy</h2>
+                        </div>
+                        <Badge variant="secondary">Expand</Badge>
                       </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="launch-phases">
-                  <AccordionTrigger>Launch Phases</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4">
-                      {reportData.go_to_market_strategy.launch_phases.map((phase: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold">{phase.phase}</h4>
-                            <span className="text-sm text-muted-foreground">{phase.duration}</span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-6 pt-0">
+                      <div className="space-y-6">
+                        {/* Value Proposition */}
+                        <Card className="p-4 bg-primary/5 border-primary/20">
+                          <h3 className="font-semibold text-lg mb-3 text-primary">Value Proposition</h3>
+                          <p className="mb-3">{reportData.go_to_market_strategy.value_proposition?.primary}</p>
+                          <div>
+                            <span className="font-semibold text-sm">Differentiators:</span>
+                            <ul className="mt-2 space-y-1">
+                              {reportData.go_to_market_strategy.value_proposition?.differentiators?.map((diff: string, i: number) => (
+                                <li key={i} className="flex items-start text-sm">
+                                  <CheckCircle2 className="h-4 w-4 mr-2 text-success shrink-0 mt-0.5" />
+                                  {diff}
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                          <div className="space-y-2">
-                            <div>
-                              <h5 className="text-sm font-semibold mb-1">Activities:</h5>
-                              <ul className="list-disc pl-5 text-sm space-y-1">
-                                {phase.activities.map((activity: string, i: number) => (
-                                  <li key={i}>{activity}</li>
+                        </Card>
+
+                        {/* Target Segments */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Target Market Segments</h3>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            {reportData.go_to_market_strategy.target_segments?.map((segment: any, idx: number) => (
+                              <Card key={idx} className="p-4 bg-muted/30">
+                                <h4 className="font-semibold mb-2">{segment.segment}</h4>
+                                <p className="text-sm text-muted-foreground mb-2">{segment.description}</p>
+                                <div className="text-xs mb-2"><span className="text-muted-foreground">Size:</span> {segment.size}</div>
+                                <ul className="text-sm space-y-1">
+                                  {segment.characteristics?.map((char: string, i: number) => (
+                                    <li key={i}>• {char}</li>
+                                  ))}
+                                </ul>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Marketing Channels & Pricing */}
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {/* Marketing Channels */}
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3">Marketing Channels</h3>
+                            <div className="space-y-3">
+                              {reportData.go_to_market_strategy.marketing_channels?.map((channel: any, idx: number) => (
+                                <Card key={idx} className="p-3 bg-success/5">
+                                  <h4 className="font-semibold text-sm mb-1">{channel.channel}</h4>
+                                  <p className="text-xs text-muted-foreground mb-2">{channel.strategy}</p>
+                                  <div className="flex gap-4 text-xs">
+                                    <span><span className="text-muted-foreground">Budget:</span> {channel.budget_allocation}</span>
+                                    <span><span className="text-muted-foreground">ROI:</span> {channel.expected_roi}</span>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Pricing Strategy */}
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3">Pricing Strategy</h3>
+                            <Card className="p-4 bg-warning/5">
+                              <div className="mb-3">
+                                <span className="font-semibold text-sm">Model:</span>
+                                <p className="text-sm">{reportData.go_to_market_strategy.pricing_strategy?.model}</p>
+                              </div>
+                              <div className="space-y-2">
+                                {reportData.go_to_market_strategy.pricing_strategy?.tiers?.map((tier: any, idx: number) => (
+                                  <div key={idx} className="p-2 bg-background rounded border">
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="font-semibold text-sm">{tier.name}</span>
+                                      <span className="text-primary font-bold">{tier.price}</span>
+                                    </div>
+                                    <ul className="text-xs space-y-0.5">
+                                      {tier.features?.slice(0, 3).map((f: string, i: number) => (
+                                        <li key={i}>• {f}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-3 pt-2 border-t">{reportData.go_to_market_strategy.pricing_strategy?.competitive_position}</p>
+                            </Card>
+                          </div>
+                        </div>
+
+                        {/* Sales Strategy */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Sales Strategy</h3>
+                          <Card className="p-4 bg-muted/30">
+                            <div className="grid md:grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="font-semibold">Process:</span>
+                                <p className="text-muted-foreground mt-1">{safeString(reportData.go_to_market_strategy.sales_strategy?.process, 'TBD')}</p>
+                              </div>
+                              <div>
+                                <span className="font-semibold">Team:</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {safeArray(reportData.go_to_market_strategy.sales_strategy?.team_structure).map((role: string, i: number) => (
+                                    <span key={i} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
+                                      {typeof role === 'object' ? (role as any).role || (role as any).name || JSON.stringify(role) : role}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="font-semibold">Tactics:</span>
+                                <ul className="mt-1">
+                                  {safeArray(reportData.go_to_market_strategy.sales_strategy?.conversion_tactics).slice(0, 3).map((t: string, i: number) => (
+                                    <li key={i}>• {t}</li>
+                                  ))}
+                                </ul>
+                              </div>
                             </div>
-                            <div>
-                              <h5 className="text-sm font-semibold mb-1">Goals:</h5>
-                              <ul className="list-disc pl-5 text-sm space-y-1">
-                                {phase.goals.map((goal: string, i: number) => (
-                                  <li key={i}>{goal}</li>
-                                ))}
-                              </ul>
+                          </Card>
+                        </div>
+
+                        {/* Launch Phases */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Launch Phases</h3>
+                          <div className="space-y-3">
+                            {reportData.go_to_market_strategy.launch_phases?.map((phase: any, idx: number) => (
+                              <Card key={idx} className="p-4 bg-muted/30">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
+                                    {idx + 1}
+                                  </span>
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold">{phase.phase}</h4>
+                                    <span className="text-xs text-muted-foreground">{phase.duration}</span>
+                                  </div>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4 ml-11 text-sm">
+                                  <div>
+                                    <span className="font-semibold">Activities:</span>
+                                    <ul className="mt-1">
+                                      {phase.activities?.map((a: string, i: number) => (
+                                        <li key={i}>• {a}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Goals:</span>
+                                    <ul className="mt-1">
+                                      {phase.goals?.map((g: string, i: number) => (
+                                        <li key={i}>• {g}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Growth Tactics & Metrics */}
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3">Growth Tactics</h3>
+                            <div className="space-y-2">
+                              {reportData.go_to_market_strategy.growth_tactics?.map((tactic: any, idx: number) => (
+                                <Card key={idx} className="p-3 bg-success/5">
+                                  <h4 className="font-semibold text-sm mb-1">{tactic.tactic}</h4>
+                                  <p className="text-xs text-muted-foreground">{tactic.description}</p>
+                                  <p className="text-xs mt-1"><span className="text-muted-foreground">Impact:</span> {tactic.expected_impact}</p>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg mb-3">Key Metrics</h3>
+                            <div className="space-y-2">
+                              {reportData.go_to_market_strategy.key_metrics?.map((metric: any, idx: number) => (
+                                <Card key={idx} className="p-3 bg-primary/5">
+                                  <h4 className="font-semibold text-sm mb-1">{metric.metric}</h4>
+                                  <div className="flex gap-4 text-xs">
+                                    <span><span className="text-muted-foreground">Target:</span> {metric.target}</span>
+                                    <span><span className="text-muted-foreground">Frequency:</span> {metric.measurement_frequency}</span>
+                                  </div>
+                                </Card>
+                              ))}
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="growth-tactics">
-                  <AccordionTrigger>Growth Tactics</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      {reportData.go_to_market_strategy.growth_tactics.map((tactic: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <h4 className="font-semibold mb-2">{tactic.tactic}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{tactic.description}</p>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Implementation:</span>
-                              <p className="text-xs mt-1">{tactic.implementation}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Expected Impact:</span>
-                              <p className="text-xs mt-1">{tactic.expected_impact}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="key-metrics">
-                  <AccordionTrigger>Key Metrics</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      {reportData.go_to_market_strategy.key_metrics.map((metric: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                          <h4 className="font-semibold mb-2">{metric.metric}</h4>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Target:</span> {metric.target}
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Frequency:</span> {metric.measurement_frequency}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
-        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              )}
 
         {/* USP Analysis */}
         {reportData.usp_analysis && (
