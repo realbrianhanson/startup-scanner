@@ -8,14 +8,13 @@ import {
   BarChart3,
   Plus,
   FolderOpen,
-  MessageSquare,
   Settings,
   LogOut,
   Zap,
-  TrendingUp,
   Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -109,21 +108,18 @@ const Dashboard = () => {
                 </span>
               </div>
               <div className="hidden md:flex items-center space-x-6">
-                <Button variant="ghost" className="font-medium">
+                <Button variant="ghost" className="font-medium bg-muted/50">
                   Dashboard
                 </Button>
-                <Button variant="ghost" className="font-medium">
+                <Button variant="ghost" className="font-medium" onClick={() => navigate("/dashboard")}>
                   <FolderOpen className="mr-2 h-4 w-4" />
                   My Projects
-                </Button>
-                <Button variant="ghost" className="font-medium">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Chat
                 </Button>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
                 <Settings className="h-5 w-5" />
               </Button>
@@ -226,35 +222,6 @@ const Dashboard = () => {
               New Project
             </Button>
           </Card>
-
-          {/* Quick Actions */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-8 space-y-4 border-2 hover:border-primary/20 transition-all hover:shadow-medium cursor-pointer">
-              <div className="p-3 bg-gradient-hero rounded-xl w-fit">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold">View Analytics</h3>
-              <p className="text-muted-foreground">
-                Track your validation history and insights across all projects
-              </p>
-              <Button variant="outline" className="w-full">
-                Coming Soon
-              </Button>
-            </Card>
-
-            <Card className="p-8 space-y-4 border-2 hover:border-primary/20 transition-all hover:shadow-medium cursor-pointer">
-              <div className="p-3 bg-secondary/10 rounded-xl w-fit">
-                <MessageSquare className="h-6 w-6 text-secondary" />
-              </div>
-              <h3 className="text-xl font-bold">AI Chat Assistant</h3>
-              <p className="text-muted-foreground">
-                Get instant answers to your business validation questions
-              </p>
-              <Button variant="outline" className="w-full">
-                Coming Soon
-              </Button>
-            </Card>
-          </div>
 
           {/* Empty State - Recent Projects */}
           {projects.length === 0 ? (

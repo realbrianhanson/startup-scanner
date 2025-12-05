@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { 
   BarChart3, 
@@ -18,6 +19,7 @@ import {
   TrendingUp,
   ArrowLeft 
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -130,6 +132,7 @@ const Settings = () => {
               <span className="text-xl font-bold">Settings</span>
             </div>
           </div>
+          <ThemeToggle />
         </div>
       </nav>
 
@@ -323,42 +326,42 @@ const Settings = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-medium">Report Completion</h4>
+                    <Label htmlFor="report-completion" className="font-medium cursor-pointer">Report Completion</Label>
                     <p className="text-sm text-muted-foreground">
                       Get notified when validation reports are ready
                     </p>
                   </div>
-                  <input type="checkbox" defaultChecked className="h-5 w-5" />
+                  <Switch id="report-completion" defaultChecked />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-medium">Credit Alerts</h4>
+                    <Label htmlFor="credit-alerts" className="font-medium cursor-pointer">Credit Alerts</Label>
                     <p className="text-sm text-muted-foreground">
                       Alert when you've used 75% of monthly credits
                     </p>
                   </div>
-                  <input type="checkbox" defaultChecked className="h-5 w-5" />
+                  <Switch id="credit-alerts" defaultChecked />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-medium">Weekly Digest</h4>
+                    <Label htmlFor="weekly-digest" className="font-medium cursor-pointer">Weekly Digest</Label>
                     <p className="text-sm text-muted-foreground">
                       Weekly summary of your validation activity
                     </p>
                   </div>
-                  <input type="checkbox" className="h-5 w-5" />
+                  <Switch id="weekly-digest" />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-medium">Product Updates</h4>
+                    <Label htmlFor="product-updates" className="font-medium cursor-pointer">Product Updates</Label>
                     <p className="text-sm text-muted-foreground">
                       News about new features and improvements
                     </p>
                   </div>
-                  <input type="checkbox" className="h-5 w-5" />
+                  <Switch id="product-updates" />
                 </div>
               </div>
             </Card>

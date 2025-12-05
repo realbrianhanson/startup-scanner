@@ -225,7 +225,10 @@ const Auth = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          By continuing, you agree to our{" "}
+          <a href="#" className="underline hover:text-primary transition-colors">Terms of Service</a>
+          {" "}and{" "}
+          <a href="#" className="underline hover:text-primary transition-colors">Privacy Policy</a>
         </p>
       </div>
     </div>

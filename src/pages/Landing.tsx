@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Zap, Target, Users, Check, ArrowRight, BarChart3, Globe, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ const Landing = () => {
             </span>
           </div>
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <Button variant="ghost" onClick={() => navigate("/auth")}>
               Sign In
             </Button>
@@ -86,10 +88,10 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="space-y-4">
-              <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
                 Validate Your Business Idea in{" "}
                 <span className="bg-gradient-hero bg-clip-text text-transparent">
-                  90 Seconds
+                  60 Seconds
                 </span>
               </h1>
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">

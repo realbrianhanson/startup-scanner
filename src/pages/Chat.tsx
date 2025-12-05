@@ -314,13 +314,13 @@ export default function Chat() {
                     <CardTitle className="text-lg">Key Insights</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
-                    {report.report_data.executiveSummary?.strengths?.slice(0, 3).map((strength: string, i: number) => (
+                    {(report.report_data.executive_summary?.strengths || report.report_data.executiveSummary?.strengths)?.slice(0, 3).map((strength: string, i: number) => (
                       <div key={i} className="flex gap-2">
                         <div className="text-green-500 mt-0.5">✓</div>
                         <div className="text-muted-foreground">{strength}</div>
                       </div>
                     ))}
-                    {report.report_data.executiveSummary?.concerns?.slice(0, 2).map((concern: string, i: number) => (
+                    {(report.report_data.executive_summary?.concerns || report.report_data.executiveSummary?.concerns)?.slice(0, 2).map((concern: string, i: number) => (
                       <div key={i} className="flex gap-2">
                         <div className="text-amber-500 mt-0.5">⚠</div>
                         <div className="text-muted-foreground">{concern}</div>
