@@ -27,6 +27,8 @@ import {
   Globe,
   FileText,
   Share2,
+  AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -1679,23 +1681,40 @@ const ViewReport = () => {
 
                     {/* Current Positioning */}
                     {reportData.usp_analysis.current_positioning && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Current Positioning</h4>
-                        <p className="mb-3">{reportData.usp_analysis.current_positioning.summary}</p>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-2">Strengths:</p>
-                            <ul className="list-disc list-inside space-y-1">
+                      <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-6 border border-border/50">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Target className="w-4 h-4 text-primary" />
+                          </div>
+                          <h4 className="font-semibold text-lg">Current Positioning</h4>
+                        </div>
+                        <p className="mb-5 text-muted-foreground leading-relaxed">{reportData.usp_analysis.current_positioning.summary}</p>
+                        <div className="grid md:grid-cols-2 gap-5">
+                          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              <p className="font-medium text-emerald-600 dark:text-emerald-400">Strengths</p>
+                            </div>
+                            <ul className="space-y-2">
                               {reportData.usp_analysis.current_positioning.strengths?.map((strength: string, i: number) => (
-                                <li key={i}>{strength}</li>
+                                <li key={i} className="flex items-start gap-2 text-sm">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
+                                  <span>{strength}</span>
+                                </li>
                               ))}
                             </ul>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-2">Gaps:</p>
-                            <ul className="list-disc list-inside space-y-1">
+                          <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <AlertCircle className="w-4 h-4 text-amber-500" />
+                              <p className="font-medium text-amber-600 dark:text-amber-400">Gaps to Address</p>
+                            </div>
+                            <ul className="space-y-2">
                               {reportData.usp_analysis.current_positioning.gaps?.map((gap: string, i: number) => (
-                                <li key={i}>{gap}</li>
+                                <li key={i} className="flex items-start gap-2 text-sm">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                                  <span>{gap}</span>
+                                </li>
                               ))}
                             </ul>
                           </div>
@@ -1706,13 +1725,26 @@ const ViewReport = () => {
                     {/* Key Differentiators */}
                     {reportData.usp_analysis.key_differentiators && (
                       <div>
-                        <h4 className="font-semibold mb-3">Key Differentiators</h4>
-                        <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                          </div>
+                          <h4 className="font-semibold text-lg">Key Differentiators</h4>
+                        </div>
+                        <div className="grid gap-4">
                           {reportData.usp_analysis.key_differentiators.map((diff: any, i: number) => (
-                            <div key={i} className="border-l-2 border-primary pl-4">
-                              <p className="font-medium">{diff.differentiator}</p>
-                              <p className="text-sm text-muted-foreground">{diff.description}</p>
-                              <p className="text-sm mt-1"><span className="font-medium">Impact:</span> {diff.impact}</p>
+                            <div key={i} className="group relative bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-xl p-5 border border-primary/10 hover:border-primary/30 transition-all duration-300">
+                              <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                                {i + 1}
+                              </div>
+                              <div className="ml-12">
+                                <p className="font-semibold text-foreground mb-1">{diff.differentiator}</p>
+                                <p className="text-sm text-muted-foreground mb-3">{diff.description}</p>
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-xs font-medium text-primary">
+                                  <Zap className="w-3 h-3" />
+                                  Impact: {diff.impact}
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
