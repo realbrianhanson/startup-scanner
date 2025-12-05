@@ -30,6 +30,11 @@ export const safeArray = (value: any, fallback: string[] = []): string[] => {
   
   // If it's already an array
   if (Array.isArray(value)) {
+    // EDGE CASE: Array contains a single complex object with nested 'trends'
+    if (value.length === 1 && typeof value[0] === 'object' && value[0].trends) {
+      return safeArray(value[0].trends, fallback);
+    }
+    
     return value.map(item => {
       if (typeof item === 'string') return item;
       if (typeof item === 'object') {
