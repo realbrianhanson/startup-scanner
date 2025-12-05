@@ -39,6 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { safeString, safeArray, isPlaceholder } from "@/lib/reportHelpers";
 
 const ViewReport = () => {
   const { id } = useParams();
@@ -412,39 +413,37 @@ const ViewReport = () => {
                           <Card className="p-5 bg-muted/30">
                             <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Total Addressable Market</p>
                             <div className="text-xl font-bold text-primary">
-                              {typeof reportData.market_analysis.tam === 'object' 
-                                ? reportData.market_analysis.tam.estimate || JSON.stringify(reportData.market_analysis.tam)
-                                : reportData.market_analysis.tam}
+                              {safeString(reportData.market_analysis.tam, 'Analysis in progress')}
                             </div>
                           </Card>
                           <Card className="p-5 bg-muted/30">
                             <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Serviceable Available Market</p>
                             <div className="text-xl font-bold text-primary">
-                              {typeof reportData.market_analysis.sam === 'object' 
-                                ? reportData.market_analysis.sam.estimate || JSON.stringify(reportData.market_analysis.sam)
-                                : reportData.market_analysis.sam}
+                              {safeString(reportData.market_analysis.sam, 'Analysis in progress')}
                             </div>
                           </Card>
                           <Card className="p-5 bg-muted/30">
                             <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Serviceable Obtainable Market</p>
                             <div className="text-xl font-bold text-primary">
-                              {typeof reportData.market_analysis.som === 'object' 
-                                ? reportData.market_analysis.som.estimate || JSON.stringify(reportData.market_analysis.som)
-                                : reportData.market_analysis.som}
+                              {safeString(reportData.market_analysis.som, 'Analysis in progress')}
                             </div>
                           </Card>
                         </div>
                         
                         <div className="bg-muted/20 p-5 rounded-lg">
                           <h3 className="font-semibold text-lg mb-3">Market Trends</h3>
-                          <ul className="space-y-3">
-                            {reportData.market_analysis.trends?.map((trend: string, i: number) => (
-                              <li key={i} className="flex items-start leading-relaxed">
-                                <span className="text-primary mr-3 mt-1">→</span>
-                                <span className="text-foreground/90">{trend}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          {safeArray(reportData.market_analysis.trends).length > 0 ? (
+                            <ul className="space-y-3">
+                              {safeArray(reportData.market_analysis.trends).map((trend: string, i: number) => (
+                                <li key={i} className="flex items-start leading-relaxed">
+                                  <span className="text-primary mr-3 mt-1">→</span>
+                                  <span className="text-foreground/90">{trend}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-muted-foreground italic">Trend analysis in progress...</p>
+                          )}
                         </div>
 
                         <div>
@@ -649,7 +648,7 @@ const ViewReport = () => {
 
                         <div>
                           <h3 className="font-semibold text-lg mb-3">Positioning Recommendation</h3>
-                          <MarkdownContent content={toMarkdownString(reportData.competitive_landscape.positioning)} />
+                          <MarkdownContent content={safeString(reportData.competitive_landscape.positioning, 'Positioning analysis in progress...')} />
                         </div>
                       </div>
                     </CollapsibleContent>
@@ -1312,14 +1311,14 @@ const ViewReport = () => {
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-semibold mb-2">Sales Process:</h4>
-                        <p className="text-sm text-muted-foreground">{reportData.go_to_market_strategy.sales_strategy.process}</p>
+                        <p className="text-sm text-muted-foreground">{safeString(reportData.go_to_market_strategy.sales_strategy?.process, 'Sales process analysis in progress')}</p>
                       </div>
                       <div>
                         <h4 className="font-semibold mb-2">Team Structure:</h4>
                         <div className="flex flex-wrap gap-2">
-                          {reportData.go_to_market_strategy.sales_strategy.team_structure.map((role: string, idx: number) => (
+                          {safeArray(reportData.go_to_market_strategy.sales_strategy?.team_structure).map((role: string, idx: number) => (
                             <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                              {role}
+                              {typeof role === 'object' ? (role as any).role || (role as any).name || JSON.stringify(role) : role}
                             </span>
                           ))}
                         </div>
@@ -1327,7 +1326,7 @@ const ViewReport = () => {
                       <div>
                         <h4 className="font-semibold mb-2">Conversion Tactics:</h4>
                         <ul className="list-disc pl-5 text-sm space-y-1">
-                          {reportData.go_to_market_strategy.sales_strategy.conversion_tactics.map((tactic: string, idx: number) => (
+                          {safeArray(reportData.go_to_market_strategy.sales_strategy?.conversion_tactics).map((tactic: string, idx: number) => (
                             <li key={idx}>{tactic}</li>
                           ))}
                         </ul>
