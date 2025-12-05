@@ -20,11 +20,13 @@ import {
   ArrowLeft 
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MobileNav } from "@/components/MobileNav";
 
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [usageLogs, setUsageLogs] = useState<any[]>([]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -35,16 +37,18 @@ const Settings = () => {
 
   const loadData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user: userData } } = await supabase.auth.getUser();
+      if (!userData) {
         navigate("/auth");
         return;
       }
 
+      setUser(userData);
+
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", userData.id)
         .single();
 
       if (profileData) {
@@ -56,7 +60,7 @@ const Settings = () => {
       const { data: logs } = await supabase
         .from("ai_usage_logs")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userData.id)
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -124,7 +128,8 @@ const Settings = () => {
       <nav className="border-b bg-background sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+            <MobileNav user={user} profile={profile} />
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="hidden md:flex">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center space-x-2">

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   BarChart3,
   Plus,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MobileNav } from "@/components/MobileNav";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -22,7 +23,6 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -76,10 +76,7 @@ const Dashboard = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You've been successfully signed out.",
-    });
+    toast.success("You've been successfully signed out.");
     navigate("/");
   };
 
@@ -100,7 +97,8 @@ const Dashboard = () => {
       <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-4 md:space-x-8">
+              <MobileNav user={user} profile={profile} />
               <div className="flex items-center space-x-2">
                 <BarChart3 className="h-8 w-8 text-primary" />
                 <span className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
@@ -118,7 +116,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
               <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
                 <Settings className="h-5 w-5" />
