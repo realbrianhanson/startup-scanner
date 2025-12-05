@@ -66,9 +66,20 @@ const ViewReport = () => {
   const tryParseJson = (value: any): any => {
     if (typeof value !== 'string') return value;
     try {
+      // Try direct parsing first
       return JSON.parse(value);
-    } catch {
-      return value;
+    } catch (e) {
+      // Try to clean up common JSON issues
+      try {
+        // Remove leading/trailing whitespace
+        let cleaned = value.trim();
+        // Fix trailing commas
+        cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+        return JSON.parse(cleaned);
+      } catch {
+        console.log('Failed to parse JSON string:', value.substring(0, 200));
+        return value;
+      }
     }
   };
 
@@ -77,11 +88,15 @@ const ViewReport = () => {
     if (!value) return true;
     if (typeof value === 'string') {
       const lower = value.toLowerCase().trim();
+      // Check if it's a short placeholder string (not a long paragraph)
+      if (lower.length > 100) return false; // Long strings are likely real content
       return lower === 'tbd' || 
-             lower.includes('pending') || 
-             lower.includes('analysis in progress') ||
+             lower === 'analysis pending' ||
+             lower === 'pending' ||
+             lower.includes('in progress') ||
              lower === 'not available' ||
-             lower === 'n/a';
+             lower === 'n/a' ||
+             lower === 'review analysis';
     }
     return false;
   };
@@ -90,8 +105,14 @@ const ViewReport = () => {
   const getMarketData = (marketAnalysis: any) => {
     if (!marketAnalysis) return {};
     
+    console.log('getMarketData input:', JSON.stringify(marketAnalysis).substring(0, 500));
+    
     // First, try to find data nested inside trends[0] (common malformed response)
-    let nestedData = tryParseJson(marketAnalysis?.trends?.[0]);
+    const trendsFirstItem = marketAnalysis?.trends?.[0];
+    console.log('trends[0] type:', typeof trendsFirstItem);
+    
+    let nestedData = tryParseJson(trendsFirstItem);
+    console.log('nestedData type:', typeof nestedData, 'hasTam:', nestedData?.tam ? 'yes' : 'no');
     
     // Check if the entire market_analysis is a JSON string
     if (typeof marketAnalysis === 'string') {
@@ -103,8 +124,10 @@ const ViewReport = () => {
       const hasTam = nestedData.tam && !isPendingContent(nestedData.tam);
       const hasTrends = Array.isArray(nestedData.trends) && nestedData.trends.length > 0;
       
+      console.log('hasTam:', hasTam, 'hasTrends:', hasTrends);
+      
       if (hasTam || hasTrends) {
-        return {
+        const result = {
           tam: !isPendingContent(nestedData.tam) ? nestedData.tam : marketAnalysis.tam,
           sam: !isPendingContent(nestedData.sam) ? nestedData.sam : marketAnalysis.sam,
           som: !isPendingContent(nestedData.som) ? nestedData.som : marketAnalysis.som,
@@ -113,6 +136,8 @@ const ViewReport = () => {
           barriers: Array.isArray(nestedData.barriers) ? nestedData.barriers : (marketAnalysis.barriers || []),
           timing_assessment: !isPendingContent(nestedData.timing_assessment) ? nestedData.timing_assessment : marketAnalysis.timing_assessment
         };
+        console.log('Returning extracted data with tam:', result.tam?.substring(0, 100));
+        return result;
       }
     }
     
@@ -125,6 +150,7 @@ const ViewReport = () => {
         .filter(Boolean);
     }
     
+    console.log('Returning fallback marketAnalysis');
     return {
       ...marketAnalysis,
       trends,
@@ -136,25 +162,32 @@ const ViewReport = () => {
   const getCompetitiveLandscape = (competitiveLandscape: any) => {
     if (!competitiveLandscape) return {};
     
+    console.log('getCompetitiveLandscape input:', JSON.stringify(competitiveLandscape).substring(0, 500));
+    
     // Check if the entire thing is a JSON string
     competitiveLandscape = tryParseJson(competitiveLandscape);
     
     // Check if positioning contains the actual data (malformed response)
     let positioning = tryParseJson(competitiveLandscape.positioning);
+    console.log('positioning type:', typeof positioning, 'isObject:', positioning && typeof positioning === 'object');
     
     // If positioning is an object with nested competitor data, extract it
     if (positioning && typeof positioning === 'object') {
       const hasDirectComp = Array.isArray(positioning.direct_competitors) && positioning.direct_competitors.length > 0;
       const hasAdvantages = Array.isArray(positioning.competitive_advantages) && positioning.competitive_advantages.length > 0;
       
+      console.log('hasDirectComp:', hasDirectComp, 'hasAdvantages:', hasAdvantages);
+      
       if (hasDirectComp || hasAdvantages) {
-        return {
+        const result = {
           direct_competitors: positioning.direct_competitors || [],
           indirect_competitors: positioning.indirect_competitors || [],
           competitive_advantages: positioning.competitive_advantages || [],
           positioning: typeof positioning.positioning === 'string' ? positioning.positioning : 
                        typeof positioning.market_positioning === 'string' ? positioning.market_positioning : ''
         };
+        console.log('Returning extracted competitive data with', result.direct_competitors?.length, 'competitors');
+        return result;
       }
     }
     
@@ -176,6 +209,7 @@ const ViewReport = () => {
     const positioningStr = typeof positioning === 'string' ? positioning : 
                           typeof competitiveLandscape.positioning === 'string' ? competitiveLandscape.positioning : '';
     
+    console.log('Returning fallback competitive data');
     return {
       direct_competitors: Array.isArray(competitiveLandscape.direct_competitors) ? competitiveLandscape.direct_competitors : [],
       indirect_competitors: Array.isArray(competitiveLandscape.indirect_competitors) ? competitiveLandscape.indirect_competitors : [],
@@ -566,7 +600,15 @@ const ViewReport = () => {
                     </CollapsibleTrigger>
                      <CollapsibleContent className="p-6 pt-0">
                       {(() => {
-                        const marketData = getMarketData(reportData.market_analysis);
+                        const marketData = getMarketData(reportData.market_analysis) as {
+                          tam?: string;
+                          sam?: string;
+                          som?: string;
+                          growth_rate?: string;
+                          trends?: string[];
+                          barriers?: string[];
+                          timing_assessment?: string;
+                        };
                         return (
                           <div className="space-y-6">
                             <div className="grid md:grid-cols-3 gap-4">
@@ -784,13 +826,18 @@ const ViewReport = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-6 pt-0">
                       {(() => {
-                        const compData = getCompetitiveLandscape(reportData.competitive_landscape);
+                        const compData = getCompetitiveLandscape(reportData.competitive_landscape) as {
+                          direct_competitors?: any[];
+                          indirect_competitors?: any[];
+                          competitive_advantages?: string[];
+                          positioning?: string;
+                        };
                         return (
                           <div className="space-y-6">
                             <div>
                               <h3 className="font-semibold text-lg mb-4">Direct Competitors</h3>
                               <div className="space-y-4">
-                                {compData.direct_competitors?.length > 0 ? (
+                                {compData.direct_competitors && compData.direct_competitors.length > 0 ? (
                                   compData.direct_competitors.map((comp: any, i: number) => (
                                     <Card key={i} className="p-5 bg-muted/30">
                                       <p className="font-semibold text-lg mb-2">{comp.name}</p>
@@ -805,7 +852,7 @@ const ViewReport = () => {
 
                             <div className="bg-success/10 p-5 rounded-lg">
                               <h3 className="font-semibold text-lg mb-3">Your Competitive Advantages</h3>
-                              {compData.competitive_advantages?.length > 0 ? (
+                              {compData.competitive_advantages && compData.competitive_advantages.length > 0 ? (
                                 <ul className="space-y-3">
                                   {compData.competitive_advantages.map((adv: string, i: number) => (
                                     <li key={i} className="flex items-start leading-relaxed">
@@ -821,7 +868,7 @@ const ViewReport = () => {
 
                             <div>
                               <h3 className="font-semibold text-lg mb-3">Positioning Recommendation</h3>
-                              <MarkdownContent content={safeString(compData.positioning, 'Positioning analysis in progress...')} />
+                              <MarkdownContent content={safeString(compData.positioning || '', 'Positioning analysis in progress...')} />
                             </div>
                           </div>
                         );
