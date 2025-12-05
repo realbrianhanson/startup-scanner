@@ -297,9 +297,52 @@ function validateAndFixJson(jsonStr: string, expectedKeys: string[]): any {
     try {
       return JSON.parse(fixed);
     } catch {
-      return null;
+      // Try more aggressive fixes - balance brackets
+      fixed = balanceBrackets(fixed);
+      try {
+        return JSON.parse(fixed);
+      } catch {
+        return null;
+      }
     }
   }
+}
+
+function balanceBrackets(jsonStr: string): string {
+  let result = jsonStr;
+  
+  // Fix common AI mistake: using } instead of ] to close arrays
+  // Look for patterns like: ["item", "item2" } -> ["item", "item2" ]
+  result = result.replace(/(\[[^\[\]]*)\s*\}/g, (match, before) => {
+    // Only fix if this doesn't have a matching ]
+    return before + ']';
+  });
+  
+  // Count brackets and braces
+  let braceCount = 0;
+  let bracketCount = 0;
+  
+  for (const char of result) {
+    if (char === '{') braceCount++;
+    if (char === '}') braceCount--;
+    if (char === '[') bracketCount++;
+    if (char === ']') bracketCount--;
+  }
+  
+  // Add missing closing brackets/braces
+  while (bracketCount > 0) {
+    result += ']';
+    bracketCount--;
+  }
+  while (braceCount > 0) {
+    result += '}';
+    braceCount--;
+  }
+  
+  // Fix trailing commas again after bracket balancing
+  result = result.replace(/,(\s*[}\]])/g, '$1');
+  
+  return result;
 }
 
 async function callAI(prompt: string, apiKey: string, maxTokens?: number): Promise<string> {
@@ -571,18 +614,30 @@ CRITICAL:
 - No generic "join industry groups" - name the actual groups
 - Format as array of persona objects with keys: priority, priority_reason, name, age, job, income, location, values, personality, pain_points (array of 3 objects with "pain" and "impact"), current_solution, dream_outcome, objections (array of 4 objects with "objection" and "root_cause"), closing_angles (array of 4 objects with "angle" and "addresses"), proof_needed, urgency_trigger, channels (array of objects with "platform", "communities", "influencers", "outreach_template"), content_ideas (array of 3 objects with "title" and "why_it_works")`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 8000); // Increase tokens for large persona data
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     const parsed = JSON.parse(cleanedResult);
     console.log("Customer personas generated successfully:", parsed.length, "personas");
     return parsed;
   } catch (error) {
-    console.error("Customer personas parse error:", error, "Raw result:", result);
+    console.error("Customer personas initial parse error, trying to fix JSON...");
+    // Try to fix the JSON
+    const fixedJson = validateAndFixJson(result, ['priority', 'name', 'pain_points', 'objections']);
+    if (fixedJson && Array.isArray(fixedJson)) {
+      console.log("Customer personas recovered via JSON fix:", fixedJson.length, "personas");
+      return fixedJson;
+    }
+    if (fixedJson && typeof fixedJson === 'object') {
+      // Single persona returned as object instead of array
+      console.log("Customer personas recovered as single object");
+      return [fixedJson];
+    }
+    console.error("Customer personas parse error:", error, "Raw result:", result?.substring(0, 1000));
     return [
       {
         priority: "1st",
-        priority_reason: "Analysis pending",
+        priority_reason: "Analysis pending - please regenerate report",
         name: "Target Customer",
         age: "TBD",
         job: "TBD",
