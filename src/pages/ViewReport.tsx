@@ -26,12 +26,19 @@ import {
   Lightbulb,
   Globe,
   FileText,
+  Share2,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { ReportNavigation } from "@/components/ReportNavigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ViewReport = () => {
   const { id } = useParams();
@@ -1675,7 +1682,7 @@ const ViewReport = () => {
 
           {/* Action Buttons */}
           {project?.status === "complete" && (
-            <div className="flex items-center justify-center space-x-4 pt-8">
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-8">
               <Button 
                 variant="default" 
                 size="lg"
@@ -1684,26 +1691,44 @@ const ViewReport = () => {
                 <MessageSquare className="mr-2 h-5 w-5" />
                 Chat with Cora
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={async () => {
-                  toast.info("Generating PDF... This may take 10 seconds");
-                  try {
-                    const { data, error } = await supabase.functions.invoke('generate-pdf', {
-                      body: { project_id: id }
-                    });
-                    if (error) throw error;
-                    toast.success("PDF generated! Check your downloads");
-                  } catch (error) {
-                    console.error('PDF generation error:', error);
-                    toast.error("Failed to generate PDF");
-                  }
-                }}
-              >
-                <Download className="mr-2 h-5 w-5" />
-                Export as PDF
-              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="lg">
+                    <Share2 className="mr-2 h-5 w-5" />
+                    Share
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      toast.success("Link copied to clipboard!");
+                    }}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Link
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      toast.info("Generating PDF... This may take 10 seconds");
+                      try {
+                        const { data, error } = await supabase.functions.invoke('generate-pdf', {
+                          body: { project_id: id }
+                        });
+                        if (error) throw error;
+                        toast.success("PDF generated! Check your downloads");
+                      } catch (error) {
+                        console.error('PDF generation error:', error);
+                        toast.error("Failed to generate PDF");
+                      }
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>
