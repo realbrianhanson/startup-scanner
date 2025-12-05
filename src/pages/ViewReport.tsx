@@ -62,82 +62,160 @@ const ViewReport = () => {
     return String(content).replace(/^(Go|No-Go):\s*/i, '').trim();
   };
 
+  // Helper to safely parse JSON strings that might be embedded in data
+  const tryParseJson = (value: any): any => {
+    if (typeof value !== 'string') return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  };
+
+  // Helper to check if value is placeholder/pending content
+  const isPendingContent = (value: any): boolean => {
+    if (!value) return true;
+    if (typeof value === 'string') {
+      const lower = value.toLowerCase().trim();
+      return lower === 'tbd' || 
+             lower.includes('pending') || 
+             lower.includes('analysis in progress') ||
+             lower === 'not available' ||
+             lower === 'n/a';
+    }
+    return false;
+  };
+
   // Helper to extract market data from potentially nested structures
   const getMarketData = (marketAnalysis: any) => {
     if (!marketAnalysis) return {};
     
-    // Check if data is nested inside trends array (malformed response)
-    let nestedData = marketAnalysis?.trends?.[0];
+    // First, try to find data nested inside trends[0] (common malformed response)
+    let nestedData = tryParseJson(marketAnalysis?.trends?.[0]);
     
-    // Handle case where trends[0] is a JSON string
-    if (typeof nestedData === 'string') {
-      try {
-        nestedData = JSON.parse(nestedData);
-      } catch (e) {
-        // Not valid JSON, continue
+    // Check if the entire market_analysis is a JSON string
+    if (typeof marketAnalysis === 'string') {
+      marketAnalysis = tryParseJson(marketAnalysis);
+    }
+    
+    // If nested data has actual market values (not placeholder), use them
+    if (nestedData && typeof nestedData === 'object') {
+      const hasTam = nestedData.tam && !isPendingContent(nestedData.tam);
+      const hasTrends = Array.isArray(nestedData.trends) && nestedData.trends.length > 0;
+      
+      if (hasTam || hasTrends) {
+        return {
+          tam: !isPendingContent(nestedData.tam) ? nestedData.tam : marketAnalysis.tam,
+          sam: !isPendingContent(nestedData.sam) ? nestedData.sam : marketAnalysis.sam,
+          som: !isPendingContent(nestedData.som) ? nestedData.som : marketAnalysis.som,
+          growth_rate: !isPendingContent(nestedData.growth_rate) ? nestedData.growth_rate : marketAnalysis.growth_rate,
+          trends: hasTrends ? nestedData.trends.map((t: any) => typeof t === 'string' ? t : (t.trend || t.name || t.description || String(t))) : [],
+          barriers: Array.isArray(nestedData.barriers) ? nestedData.barriers : (marketAnalysis.barriers || []),
+          timing_assessment: !isPendingContent(nestedData.timing_assessment) ? nestedData.timing_assessment : marketAnalysis.timing_assessment
+        };
       }
     }
     
-    // If nested data has the actual values (tam, sam, som), use them
-    if (nestedData && typeof nestedData === 'object' && (nestedData.tam || nestedData.trends)) {
-      return {
-        tam: nestedData.tam || marketAnalysis.tam,
-        sam: nestedData.sam || marketAnalysis.sam,
-        som: nestedData.som || marketAnalysis.som,
-        growth_rate: nestedData.growth_rate || marketAnalysis.growth_rate,
-        trends: Array.isArray(nestedData.trends) ? nestedData.trends : [],
-        barriers: nestedData.barriers || marketAnalysis.barriers || [],
-        timing_assessment: nestedData.timing_assessment || marketAnalysis.timing_assessment
-      };
+    // Normalize trends array to strings
+    let trends = marketAnalysis.trends || [];
+    if (Array.isArray(trends)) {
+      trends = trends
+        .filter((t: any) => t && typeof t !== 'object' || (typeof t === 'object' && !t.tam)) // Filter out nested market data objects
+        .map((t: any) => typeof t === 'string' ? t : (t?.trend || t?.name || t?.description || ''))
+        .filter(Boolean);
     }
     
-    return marketAnalysis;
+    return {
+      ...marketAnalysis,
+      trends,
+      barriers: Array.isArray(marketAnalysis.barriers) ? marketAnalysis.barriers : []
+    };
   };
 
   // Helper to extract competitive landscape data from potentially nested structures
   const getCompetitiveLandscape = (competitiveLandscape: any) => {
     if (!competitiveLandscape) return {};
     
+    // Check if the entire thing is a JSON string
+    competitiveLandscape = tryParseJson(competitiveLandscape);
+    
     // Check if positioning contains the actual data (malformed response)
-    let positioning = competitiveLandscape.positioning;
+    let positioning = tryParseJson(competitiveLandscape.positioning);
     
-    // Try parsing positioning as JSON string
-    if (positioning && typeof positioning === 'string') {
-      try {
-        positioning = JSON.parse(positioning);
-      } catch (e) {
-        // Not valid JSON, keep as string
+    // If positioning is an object with nested competitor data, extract it
+    if (positioning && typeof positioning === 'object') {
+      const hasDirectComp = Array.isArray(positioning.direct_competitors) && positioning.direct_competitors.length > 0;
+      const hasAdvantages = Array.isArray(positioning.competitive_advantages) && positioning.competitive_advantages.length > 0;
+      
+      if (hasDirectComp || hasAdvantages) {
+        return {
+          direct_competitors: positioning.direct_competitors || [],
+          indirect_competitors: positioning.indirect_competitors || [],
+          competitive_advantages: positioning.competitive_advantages || [],
+          positioning: typeof positioning.positioning === 'string' ? positioning.positioning : 
+                       typeof positioning.market_positioning === 'string' ? positioning.market_positioning : ''
+        };
       }
-    }
-    
-    // If positioning is an object with nested data
-    if (positioning && typeof positioning === 'object' && positioning.direct_competitors) {
-      return {
-        direct_competitors: Array.isArray(positioning.direct_competitors) ? positioning.direct_competitors : [],
-        indirect_competitors: Array.isArray(positioning.indirect_competitors) ? positioning.indirect_competitors : [],
-        competitive_advantages: Array.isArray(positioning.competitive_advantages) ? positioning.competitive_advantages : [],
-        positioning: typeof positioning.positioning === 'string' ? positioning.positioning : ''
-      };
     }
     
     // Check if direct_competitors is nested inside an array item
     const directComp = competitiveLandscape.direct_competitors;
-    if (Array.isArray(directComp) && directComp.length === 1 && typeof directComp[0] === 'object' && directComp[0].direct_competitors) {
+    if (Array.isArray(directComp) && directComp.length === 1 && typeof directComp[0] === 'object') {
       const nested = directComp[0];
-      return {
-        direct_competitors: Array.isArray(nested.direct_competitors) ? nested.direct_competitors : [],
-        indirect_competitors: Array.isArray(nested.indirect_competitors) ? nested.indirect_competitors : [],
-        competitive_advantages: Array.isArray(nested.competitive_advantages) ? nested.competitive_advantages : [],
-        positioning: nested.positioning || competitiveLandscape.positioning || ''
-      };
+      if (nested.direct_competitors || nested.competitive_advantages) {
+        return {
+          direct_competitors: Array.isArray(nested.direct_competitors) ? nested.direct_competitors : [],
+          indirect_competitors: Array.isArray(nested.indirect_competitors) ? nested.indirect_competitors : [],
+          competitive_advantages: Array.isArray(nested.competitive_advantages) ? nested.competitive_advantages : [],
+          positioning: nested.positioning || competitiveLandscape.positioning || ''
+        };
+      }
     }
     
-    // Return with safe defaults
+    // Return with safe defaults, handling positioning string properly
+    const positioningStr = typeof positioning === 'string' ? positioning : 
+                          typeof competitiveLandscape.positioning === 'string' ? competitiveLandscape.positioning : '';
+    
     return {
       direct_competitors: Array.isArray(competitiveLandscape.direct_competitors) ? competitiveLandscape.direct_competitors : [],
       indirect_competitors: Array.isArray(competitiveLandscape.indirect_competitors) ? competitiveLandscape.indirect_competitors : [],
       competitive_advantages: Array.isArray(competitiveLandscape.competitive_advantages) ? competitiveLandscape.competitive_advantages : [],
-      positioning: typeof competitiveLandscape.positioning === 'string' ? competitiveLandscape.positioning : safeString(competitiveLandscape.positioning, '')
+      positioning: positioningStr
+    };
+  };
+
+  // Helper to extract Porter's Five Forces data
+  const getPorterFiveForces = (porterData: any) => {
+    if (!porterData) return null;
+    
+    porterData = tryParseJson(porterData);
+    
+    const defaultForce = { rating: "Medium", analysis: "Analysis in progress..." };
+    
+    return {
+      supplier_power: porterData.supplier_power || defaultForce,
+      buyer_power: porterData.buyer_power || defaultForce,
+      competitive_rivalry: porterData.competitive_rivalry || defaultForce,
+      threat_of_substitution: porterData.threat_of_substitution || defaultForce,
+      threat_of_new_entry: porterData.threat_of_new_entry || defaultForce
+    };
+  };
+
+  // Helper to extract Go-To-Market data
+  const getGoToMarketData = (gtmData: any) => {
+    if (!gtmData) return null;
+    
+    gtmData = tryParseJson(gtmData);
+    
+    return {
+      target_segments: Array.isArray(gtmData.target_segments) ? gtmData.target_segments : [],
+      value_proposition: gtmData.value_proposition || {},
+      marketing_channels: Array.isArray(gtmData.marketing_channels) ? gtmData.marketing_channels : [],
+      sales_strategy: gtmData.sales_strategy || {},
+      pricing_strategy: gtmData.pricing_strategy || {},
+      launch_phases: Array.isArray(gtmData.launch_phases) ? gtmData.launch_phases : [],
+      growth_tactics: Array.isArray(gtmData.growth_tactics) ? gtmData.growth_tactics : [],
+      key_metrics: Array.isArray(gtmData.key_metrics) ? gtmData.key_metrics : []
     };
   };
 
@@ -837,97 +915,93 @@ const ViewReport = () => {
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-6 pt-0">
-                      <div className="space-y-6">
-                        {/* Supplier Power */}
-                        {reportData.porter_five_forces.supplier_power && (
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold text-lg">Supplier Power</h3>
-                              <Badge variant={
-                                reportData.porter_five_forces.supplier_power.rating === "High" ? "destructive" :
-                                reportData.porter_five_forces.supplier_power.rating === "Low" ? "default" : "secondary"
-                              }>
-                                {reportData.porter_five_forces.supplier_power.rating}
-                              </Badge>
+                      {(() => {
+                        const porterData = getPorterFiveForces(reportData.porter_five_forces);
+                        if (!porterData) return <p className="text-muted-foreground italic">Analysis in progress...</p>;
+                        return (
+                          <div className="space-y-6">
+                            {/* Supplier Power */}
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-lg">Supplier Power</h3>
+                                <Badge variant={
+                                  porterData.supplier_power?.rating === "High" ? "destructive" :
+                                  porterData.supplier_power?.rating === "Low" ? "default" : "secondary"
+                                }>
+                                  {porterData.supplier_power?.rating || "Medium"}
+                                </Badge>
+                              </div>
+                              <Card className="p-4 bg-muted/30">
+                                <MarkdownContent content={toMarkdownString(porterData.supplier_power?.analysis)} />
+                              </Card>
                             </div>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.supplier_power.analysis)} />
-                            </Card>
-                          </div>
-                        )}
 
-                        {/* Buyer Power */}
-                        {reportData.porter_five_forces.buyer_power && (
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold text-lg">Buyer Power</h3>
-                              <Badge variant={
-                                reportData.porter_five_forces.buyer_power.rating === "High" ? "destructive" :
-                                reportData.porter_five_forces.buyer_power.rating === "Low" ? "default" : "secondary"
-                              }>
-                                {reportData.porter_five_forces.buyer_power.rating}
-                              </Badge>
+                            {/* Buyer Power */}
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-lg">Buyer Power</h3>
+                                <Badge variant={
+                                  porterData.buyer_power?.rating === "High" ? "destructive" :
+                                  porterData.buyer_power?.rating === "Low" ? "default" : "secondary"
+                                }>
+                                  {porterData.buyer_power?.rating || "Medium"}
+                                </Badge>
+                              </div>
+                              <Card className="p-4 bg-muted/30">
+                                <MarkdownContent content={toMarkdownString(porterData.buyer_power?.analysis)} />
+                              </Card>
                             </div>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.buyer_power.analysis)} />
-                            </Card>
-                          </div>
-                        )}
 
-                        {/* Competitive Rivalry */}
-                        {reportData.porter_five_forces.competitive_rivalry && (
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold text-lg">Competitive Rivalry</h3>
-                              <Badge variant={
-                                reportData.porter_five_forces.competitive_rivalry.rating === "High" ? "destructive" :
-                                reportData.porter_five_forces.competitive_rivalry.rating === "Low" ? "default" : "secondary"
-                              }>
-                                {reportData.porter_five_forces.competitive_rivalry.rating}
-                              </Badge>
+                            {/* Competitive Rivalry */}
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-lg">Competitive Rivalry</h3>
+                                <Badge variant={
+                                  porterData.competitive_rivalry?.rating === "High" ? "destructive" :
+                                  porterData.competitive_rivalry?.rating === "Low" ? "default" : "secondary"
+                                }>
+                                  {porterData.competitive_rivalry?.rating || "Medium"}
+                                </Badge>
+                              </div>
+                              <Card className="p-4 bg-muted/30">
+                                <MarkdownContent content={toMarkdownString(porterData.competitive_rivalry?.analysis)} />
+                              </Card>
                             </div>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.competitive_rivalry.analysis)} />
-                            </Card>
-                          </div>
-                        )}
 
-                        {/* Threat of Substitution */}
-                        {reportData.porter_five_forces.threat_of_substitution && (
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold text-lg">Threat of Substitution</h3>
-                              <Badge variant={
-                                reportData.porter_five_forces.threat_of_substitution.rating === "High" ? "destructive" :
-                                reportData.porter_five_forces.threat_of_substitution.rating === "Low" ? "default" : "secondary"
-                              }>
-                                {reportData.porter_five_forces.threat_of_substitution.rating}
-                              </Badge>
+                            {/* Threat of Substitution */}
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-lg">Threat of Substitution</h3>
+                                <Badge variant={
+                                  porterData.threat_of_substitution?.rating === "High" ? "destructive" :
+                                  porterData.threat_of_substitution?.rating === "Low" ? "default" : "secondary"
+                                }>
+                                  {porterData.threat_of_substitution?.rating || "Medium"}
+                                </Badge>
+                              </div>
+                              <Card className="p-4 bg-muted/30">
+                                <MarkdownContent content={toMarkdownString(porterData.threat_of_substitution?.analysis)} />
+                              </Card>
                             </div>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.threat_of_substitution.analysis)} />
-                            </Card>
-                          </div>
-                        )}
 
-                        {/* Threat of New Entry */}
-                        {reportData.porter_five_forces.threat_of_new_entry && (
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold text-lg">Threat of New Entry</h3>
-                              <Badge variant={
-                                reportData.porter_five_forces.threat_of_new_entry.rating === "High" ? "destructive" :
-                                reportData.porter_five_forces.threat_of_new_entry.rating === "Low" ? "default" : "secondary"
-                              }>
-                                {reportData.porter_five_forces.threat_of_new_entry.rating}
-                              </Badge>
+                            {/* Threat of New Entry */}
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold text-lg">Threat of New Entry</h3>
+                                <Badge variant={
+                                  porterData.threat_of_new_entry?.rating === "High" ? "destructive" :
+                                  porterData.threat_of_new_entry?.rating === "Low" ? "default" : "secondary"
+                                }>
+                                  {porterData.threat_of_new_entry?.rating || "Medium"}
+                                </Badge>
+                              </div>
+                              <Card className="p-4 bg-muted/30">
+                                <MarkdownContent content={toMarkdownString(porterData.threat_of_new_entry?.analysis)} />
+                              </Card>
                             </div>
-                            <Card className="p-4 bg-muted/30">
-                              <MarkdownContent content={toMarkdownString(reportData.porter_five_forces.threat_of_new_entry.analysis)} />
-                            </Card>
                           </div>
-                        )}
-                      </div>
+                        );
+                      })()}
                     </CollapsibleContent>
                   </Card>
                 </Collapsible>
@@ -1341,15 +1415,19 @@ const ViewReport = () => {
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-6 pt-0">
+                      {(() => {
+                        const gtmData = getGoToMarketData(reportData.go_to_market_strategy);
+                        if (!gtmData) return <p className="text-muted-foreground italic">Analysis in progress...</p>;
+                        return (
                       <div className="space-y-6">
                         {/* Value Proposition */}
                         <Card className="p-4 bg-primary/5 border-primary/20">
                           <h3 className="font-semibold text-lg mb-3 text-primary">Value Proposition</h3>
-                          <p className="mb-3">{reportData.go_to_market_strategy.value_proposition?.primary}</p>
+                          <p className="mb-3">{gtmData.value_proposition?.primary || 'Analysis in progress...'}</p>
                           <div>
                             <span className="font-semibold text-sm">Differentiators:</span>
                             <ul className="mt-2 space-y-1">
-                              {reportData.go_to_market_strategy.value_proposition?.differentiators?.map((diff: string, i: number) => (
+                              {gtmData.value_proposition?.differentiators?.map((diff: string, i: number) => (
                                 <li key={i} className="flex items-start text-sm">
                                   <CheckCircle2 className="h-4 w-4 mr-2 text-success shrink-0 mt-0.5" />
                                   {diff}
@@ -1363,7 +1441,7 @@ const ViewReport = () => {
                         <div>
                           <h3 className="font-semibold text-lg mb-3">Target Market Segments</h3>
                           <div className="grid md:grid-cols-2 gap-4">
-                            {reportData.go_to_market_strategy.target_segments?.map((segment: any, idx: number) => (
+                            {gtmData.target_segments?.map((segment: any, idx: number) => (
                               <Card key={idx} className="p-4 bg-muted/30">
                                 <h4 className="font-semibold mb-2">{segment.segment}</h4>
                                 <p className="text-sm text-muted-foreground mb-2">{segment.description}</p>
@@ -1384,7 +1462,7 @@ const ViewReport = () => {
                           <div>
                             <h3 className="font-semibold text-lg mb-3">Marketing Channels</h3>
                             <div className="space-y-3">
-                              {reportData.go_to_market_strategy.marketing_channels?.map((channel: any, idx: number) => (
+                              {gtmData.marketing_channels?.map((channel: any, idx: number) => (
                                 <Card key={idx} className="p-3 bg-success/5">
                                   <h4 className="font-semibold text-sm mb-1">{channel.channel}</h4>
                                   <p className="text-xs text-muted-foreground mb-2">{channel.strategy}</p>
@@ -1403,10 +1481,10 @@ const ViewReport = () => {
                             <Card className="p-4 bg-warning/5">
                               <div className="mb-3">
                                 <span className="font-semibold text-sm">Model:</span>
-                                <p className="text-sm">{reportData.go_to_market_strategy.pricing_strategy?.model}</p>
+                                <p className="text-sm">{gtmData.pricing_strategy?.model}</p>
                               </div>
                               <div className="space-y-2">
-                                {reportData.go_to_market_strategy.pricing_strategy?.tiers?.map((tier: any, idx: number) => (
+                                {gtmData.pricing_strategy?.tiers?.map((tier: any, idx: number) => (
                                   <div key={idx} className="p-2 bg-background rounded border">
                                     <div className="flex justify-between items-center mb-1">
                                       <span className="font-semibold text-sm">{tier.name}</span>
@@ -1420,7 +1498,7 @@ const ViewReport = () => {
                                   </div>
                                 ))}
                               </div>
-                              <p className="text-xs text-muted-foreground mt-3 pt-2 border-t">{reportData.go_to_market_strategy.pricing_strategy?.competitive_position}</p>
+                              <p className="text-xs text-muted-foreground mt-3 pt-2 border-t">{gtmData.pricing_strategy?.competitive_position}</p>
                             </Card>
                           </div>
                         </div>
@@ -1432,12 +1510,12 @@ const ViewReport = () => {
                             <div className="grid md:grid-cols-3 gap-4 text-sm">
                               <div>
                                 <span className="font-semibold">Process:</span>
-                                <p className="text-muted-foreground mt-1">{safeString(reportData.go_to_market_strategy.sales_strategy?.process, 'TBD')}</p>
+                                <p className="text-muted-foreground mt-1">{safeString(gtmData.sales_strategy?.process, 'TBD')}</p>
                               </div>
                               <div>
                                 <span className="font-semibold">Team:</span>
                                 <div className="flex flex-wrap gap-1 mt-1">
-                                  {safeArray(reportData.go_to_market_strategy.sales_strategy?.team_structure).map((role: string, i: number) => (
+                                  {safeArray(gtmData.sales_strategy?.team_structure).map((role: string, i: number) => (
                                     <span key={i} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
                                       {typeof role === 'object' ? (role as any).role || (role as any).name || JSON.stringify(role) : role}
                                     </span>
@@ -1447,7 +1525,7 @@ const ViewReport = () => {
                               <div>
                                 <span className="font-semibold">Tactics:</span>
                                 <ul className="mt-1">
-                                  {safeArray(reportData.go_to_market_strategy.sales_strategy?.conversion_tactics).slice(0, 3).map((t: string, i: number) => (
+                                  {safeArray(gtmData.sales_strategy?.conversion_tactics).slice(0, 3).map((t: string, i: number) => (
                                     <li key={i}>• {t}</li>
                                   ))}
                                 </ul>
@@ -1460,7 +1538,7 @@ const ViewReport = () => {
                         <div>
                           <h3 className="font-semibold text-lg mb-3">Launch Phases</h3>
                           <div className="space-y-3">
-                            {reportData.go_to_market_strategy.launch_phases?.map((phase: any, idx: number) => (
+                            {gtmData.launch_phases?.map((phase: any, idx: number) => (
                               <Card key={idx} className="p-4 bg-muted/30">
                                 <div className="flex items-center gap-3 mb-2">
                                   <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
@@ -1499,7 +1577,7 @@ const ViewReport = () => {
                           <div>
                             <h3 className="font-semibold text-lg mb-3">Growth Tactics</h3>
                             <div className="space-y-2">
-                              {reportData.go_to_market_strategy.growth_tactics?.map((tactic: any, idx: number) => (
+                              {gtmData.growth_tactics?.map((tactic: any, idx: number) => (
                                 <Card key={idx} className="p-3 bg-success/5">
                                   <h4 className="font-semibold text-sm mb-1">{tactic.tactic}</h4>
                                   <p className="text-xs text-muted-foreground">{tactic.description}</p>
@@ -1511,7 +1589,7 @@ const ViewReport = () => {
                           <div>
                             <h3 className="font-semibold text-lg mb-3">Key Metrics</h3>
                             <div className="space-y-2">
-                              {reportData.go_to_market_strategy.key_metrics?.map((metric: any, idx: number) => (
+                              {gtmData.key_metrics?.map((metric: any, idx: number) => (
                                 <Card key={idx} className="p-3 bg-primary/5">
                                   <h4 className="font-semibold text-sm mb-1">{metric.metric}</h4>
                                   <div className="flex gap-4 text-xs">
@@ -1524,6 +1602,8 @@ const ViewReport = () => {
                           </div>
                         </div>
                       </div>
+                        );
+                      })()}
                     </CollapsibleContent>
                   </Card>
                 </Collapsible>
