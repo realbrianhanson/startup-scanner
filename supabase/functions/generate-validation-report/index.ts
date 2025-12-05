@@ -463,46 +463,48 @@ Format as JSON with keys:
 }
 
 async function generatePorterFiveForces(project: any, apiKey: string) {
-  const prompt = `Business Idea: ${project.name}
-Industry: ${project.industry}
-Description: ${project.description}
+  const prompt = `Analyze "${project.name}" (${project.industry}) using Porter's Five Forces.
 
-Provide a comprehensive Porter's Five Forces analysis:
+For each force, give a rating (High/Medium/Low) and 2-3 sentence analysis.
 
-1. Supplier Power: How much power do suppliers have? Can they raise prices or reduce quality?
-2. Buyer Power: How much power do customers have? Can they drive prices down or demand more?
-3. Competitive Rivalry: How intense is the competition? How many competitors? How differentiated?
-4. Threat of Substitution: How easy is it for customers to find alternative solutions?
-5. Threat of New Entry: How easy is it for new competitors to enter this market?
+Return JSON:
+{
+  "supplier_power": {"rating": "Low/Medium/High", "analysis": "plain text"},
+  "buyer_power": {"rating": "Low/Medium/High", "analysis": "plain text"},
+  "competitive_rivalry": {"rating": "Low/Medium/High", "analysis": "plain text"},
+  "threat_of_substitution": {"rating": "Low/Medium/High", "analysis": "plain text"},
+  "threat_of_new_entry": {"rating": "Low/Medium/High", "analysis": "plain text"}
+}
 
-For each force, provide:
-- Rating: High, Medium, or Low
-- Analysis: 2-3 paragraphs explaining the rating, key factors, and strategic implications
-- Key considerations and recommendations
+Business: ${project.description?.substring(0, 500)}
 
-CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
+IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.`;
 
-Format as JSON with keys: 
-- supplier_power {rating, analysis} (rating is "High", "Medium", or "Low"; analysis is plain text string with newlines)
-- buyer_power {rating, analysis}
-- competitive_rivalry {rating, analysis}
-- threat_of_substitution {rating, analysis}
-- threat_of_new_entry {rating, analysis}`;
-
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 2000);
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     const parsed = JSON.parse(cleanedResult);
     console.log("Porter's Five Forces generated successfully");
     return parsed;
   } catch (error) {
-    console.error("Porter's Five Forces parse error:", error, "Raw result:", result);
+    console.error("Porter's Five Forces parse error:", error, "Raw result:", result?.substring(0, 500));
+    // Try to extract with regex as last resort
+    const extractedJson = validateAndFixJson(result, ['supplier_power', 'buyer_power', 'competitive_rivalry', 'threat_of_substitution', 'threat_of_new_entry']);
+    if (extractedJson) {
+      try {
+        const parsed = JSON.parse(extractedJson);
+        console.log("Porter's Five Forces recovered via validation");
+        return parsed;
+      } catch (e) {
+        console.error("Recovery also failed");
+      }
+    }
     return { 
-      supplier_power: { rating: "Medium", analysis: "Analysis pending" },
-      buyer_power: { rating: "Medium", analysis: "Analysis pending" },
-      competitive_rivalry: { rating: "High", analysis: "Analysis pending" },
-      threat_of_substitution: { rating: "Medium", analysis: "Analysis pending" },
-      threat_of_new_entry: { rating: "Medium", analysis: "Analysis pending" }
+      supplier_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
+      buyer_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
+      competitive_rivalry: { rating: "High", analysis: "Unable to generate analysis. Please try regenerating the report." },
+      threat_of_substitution: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
+      threat_of_new_entry: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." }
     };
   }
 }
