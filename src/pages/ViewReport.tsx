@@ -81,6 +81,41 @@ const ViewReport = () => {
     return marketAnalysis;
   };
 
+  // Helper to extract competitive landscape data from potentially nested structures
+  const getCompetitiveLandscape = (competitiveLandscape: any) => {
+    if (!competitiveLandscape) return {};
+    
+    // Check if positioning contains the actual data (malformed response)
+    const positioning = competitiveLandscape.positioning;
+    if (positioning && typeof positioning === 'object' && positioning.direct_competitors) {
+      return {
+        direct_competitors: positioning.direct_competitors || [],
+        indirect_competitors: positioning.indirect_competitors || [],
+        competitive_advantages: positioning.competitive_advantages || [],
+        positioning: positioning.positioning || ''
+      };
+    }
+    
+    // Try parsing positioning as JSON string
+    if (positioning && typeof positioning === 'string' && positioning.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(positioning);
+        if (parsed.direct_competitors) {
+          return {
+            direct_competitors: parsed.direct_competitors || [],
+            indirect_competitors: parsed.indirect_competitors || [],
+            competitive_advantages: parsed.competitive_advantages || [],
+            positioning: parsed.positioning || ''
+          };
+        }
+      } catch (e) {
+        // Not valid JSON, use as-is
+      }
+    }
+    
+    return competitiveLandscape;
+  };
+
   const [project, setProject] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -645,36 +680,49 @@ const ViewReport = () => {
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-6 pt-0">
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="font-semibold text-lg mb-4">Direct Competitors</h3>
-                          <div className="space-y-4">
-                            {reportData.competitive_landscape.direct_competitors?.map((comp: any, i: number) => (
-                              <Card key={i} className="p-5 bg-muted/30">
-                                <p className="font-semibold text-lg mb-2">{comp.name}</p>
-                                <p className="text-foreground/80 leading-relaxed">{comp.description}</p>
-                              </Card>
-                            ))}
+                      {(() => {
+                        const compData = getCompetitiveLandscape(reportData.competitive_landscape);
+                        return (
+                          <div className="space-y-6">
+                            <div>
+                              <h3 className="font-semibold text-lg mb-4">Direct Competitors</h3>
+                              <div className="space-y-4">
+                                {compData.direct_competitors?.length > 0 ? (
+                                  compData.direct_competitors.map((comp: any, i: number) => (
+                                    <Card key={i} className="p-5 bg-muted/30">
+                                      <p className="font-semibold text-lg mb-2">{comp.name}</p>
+                                      <p className="text-foreground/80 leading-relaxed">{comp.description}</p>
+                                    </Card>
+                                  ))
+                                ) : (
+                                  <p className="text-muted-foreground italic">Competitor analysis in progress...</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="bg-success/10 p-5 rounded-lg">
+                              <h3 className="font-semibold text-lg mb-3">Your Competitive Advantages</h3>
+                              {compData.competitive_advantages?.length > 0 ? (
+                                <ul className="space-y-3">
+                                  {compData.competitive_advantages.map((adv: string, i: number) => (
+                                    <li key={i} className="flex items-start leading-relaxed">
+                                      <CheckCircle2 className="h-5 w-5 mr-3 text-success shrink-0 mt-0.5" />
+                                      <span className="text-foreground/90">{adv}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-muted-foreground italic">Advantage analysis in progress...</p>
+                              )}
+                            </div>
+
+                            <div>
+                              <h3 className="font-semibold text-lg mb-3">Positioning Recommendation</h3>
+                              <MarkdownContent content={safeString(compData.positioning, 'Positioning analysis in progress...')} />
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="bg-success/10 p-5 rounded-lg">
-                          <h3 className="font-semibold text-lg mb-3">Your Competitive Advantages</h3>
-                          <ul className="space-y-3">
-                            {reportData.competitive_landscape.competitive_advantages?.map((adv: string, i: number) => (
-                              <li key={i} className="flex items-start leading-relaxed">
-                                <CheckCircle2 className="h-5 w-5 mr-3 text-success shrink-0 mt-0.5" />
-                                <span className="text-foreground/90">{adv}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div>
-                          <h3 className="font-semibold text-lg mb-3">Positioning Recommendation</h3>
-                          <MarkdownContent content={safeString(reportData.competitive_landscape.positioning, 'Positioning analysis in progress...')} />
-                        </div>
-                      </div>
+                        );
+                      })()}
                     </CollapsibleContent>
                   </Card>
                 </Collapsible>
