@@ -28,53 +28,67 @@ export const safeString = (value: any, fallback = 'Not available'): string => {
 export const safeArray = (value: any, fallback: string[] = []): string[] => {
   if (!value) return fallback;
   
+  // Handle JSON string input first
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return safeArray(parsed, fallback);
+      if (typeof parsed === 'object' && parsed !== null) {
+        // Check for nested array properties
+        for (const key of ['trends', 'items', 'list', 'data', 'barriers']) {
+          if (parsed[key] && Array.isArray(parsed[key])) {
+            return safeArray(parsed[key], fallback);
+          }
+        }
+      }
+      return [value];
+    } catch {
+      // Not JSON, return as single item if non-empty
+      return value.trim() ? [value] : fallback;
+    }
+  }
+  
   // If it's already an array
   if (Array.isArray(value)) {
-    // EDGE CASE: Array contains a single complex object with nested 'trends'
-    if (value.length === 1 && typeof value[0] === 'object' && value[0].trends) {
-      return safeArray(value[0].trends, fallback);
+    // EDGE CASE: Array contains a single complex object with nested arrays
+    if (value.length === 1 && typeof value[0] === 'object' && value[0] !== null) {
+      const obj = value[0];
+      // Check for nested array properties
+      for (const key of ['trends', 'items', 'list', 'data', 'barriers', 'direct_competitors', 'indirect_competitors']) {
+        if (obj[key] && Array.isArray(obj[key])) {
+          return safeArray(obj[key], fallback);
+        }
+      }
+      // If it has tam/sam/som, it's market data - skip
+      if (obj.tam || obj.sam || obj.som) {
+        return fallback;
+      }
     }
     
     return value.map(item => {
       if (typeof item === 'string') return item;
-      if (typeof item === 'object') {
-        // Try to extract meaningful text from objects
-        if (item.name) return item.name;
-        if (item.text) return item.text;
-        if (item.title) return item.title;
-        if (item.description) return item.description;
-        if (item.trend) return item.trend;
-        if (item.value) return item.value;
-        // For complex objects, try to create a readable summary
-        const keys = Object.keys(item);
-        if (keys.length > 0) {
-          const firstKey = keys[0];
-          const firstValue = item[firstKey];
-          if (typeof firstValue === 'string') return firstValue;
+      if (typeof item === 'number') return String(item);
+      if (typeof item === 'object' && item !== null) {
+        // Try to extract meaningful text from objects - prioritize display-friendly keys
+        for (const key of ['name', 'text', 'title', 'description', 'trend', 'value', 'summary', 'content']) {
+          if (item[key] && typeof item[key] === 'string') return item[key];
         }
+        // Try first string value
+        const firstStringValue = Object.values(item).find(v => typeof v === 'string');
+        if (firstStringValue) return firstStringValue as string;
         return null; // Will be filtered out
       }
       return String(item);
     }).filter(Boolean) as string[];
   }
   
-  // If it's a string that might be JSON
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) return safeArray(parsed, fallback);
-      return [value];
-    } catch {
-      return [value];
-    }
-  }
-  
   // If it's an object with an array property
-  if (typeof value === 'object') {
-    if (value.trends) return safeArray(value.trends, fallback);
-    if (value.items) return safeArray(value.items, fallback);
-    if (value.list) return safeArray(value.list, fallback);
-    if (value.data) return safeArray(value.data, fallback);
+  if (typeof value === 'object' && value !== null) {
+    for (const key of ['trends', 'items', 'list', 'data', 'barriers', 'direct_competitors', 'indirect_competitors', 'competitive_advantages']) {
+      if (value[key] && Array.isArray(value[key])) {
+        return safeArray(value[key], fallback);
+      }
+    }
   }
   
   return fallback;
