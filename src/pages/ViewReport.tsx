@@ -65,19 +65,32 @@ const ViewReport = () => {
   // Helper to extract market data from potentially nested structures
   const getMarketData = (marketAnalysis: any) => {
     if (!marketAnalysis) return {};
-    // Check if data is nested inside trends array
-    const nestedData = marketAnalysis?.trends?.[0];
-    if (nestedData && typeof nestedData === 'object' && nestedData.tam) {
+    
+    // Check if data is nested inside trends array (malformed response)
+    let nestedData = marketAnalysis?.trends?.[0];
+    
+    // Handle case where trends[0] is a JSON string
+    if (typeof nestedData === 'string') {
+      try {
+        nestedData = JSON.parse(nestedData);
+      } catch (e) {
+        // Not valid JSON, continue
+      }
+    }
+    
+    // If nested data has the actual values (tam, sam, som), use them
+    if (nestedData && typeof nestedData === 'object' && (nestedData.tam || nestedData.trends)) {
       return {
         tam: nestedData.tam || marketAnalysis.tam,
         sam: nestedData.sam || marketAnalysis.sam,
         som: nestedData.som || marketAnalysis.som,
         growth_rate: nestedData.growth_rate || marketAnalysis.growth_rate,
-        trends: nestedData.trends || [],
-        barriers: nestedData.barriers || marketAnalysis.barriers,
+        trends: Array.isArray(nestedData.trends) ? nestedData.trends : [],
+        barriers: nestedData.barriers || marketAnalysis.barriers || [],
         timing_assessment: nestedData.timing_assessment || marketAnalysis.timing_assessment
       };
     }
+    
     return marketAnalysis;
   };
 
@@ -86,34 +99,46 @@ const ViewReport = () => {
     if (!competitiveLandscape) return {};
     
     // Check if positioning contains the actual data (malformed response)
-    const positioning = competitiveLandscape.positioning;
-    if (positioning && typeof positioning === 'object' && positioning.direct_competitors) {
-      return {
-        direct_competitors: positioning.direct_competitors || [],
-        indirect_competitors: positioning.indirect_competitors || [],
-        competitive_advantages: positioning.competitive_advantages || [],
-        positioning: positioning.positioning || ''
-      };
-    }
+    let positioning = competitiveLandscape.positioning;
     
     // Try parsing positioning as JSON string
-    if (positioning && typeof positioning === 'string' && positioning.startsWith('{')) {
+    if (positioning && typeof positioning === 'string') {
       try {
-        const parsed = JSON.parse(positioning);
-        if (parsed.direct_competitors) {
-          return {
-            direct_competitors: parsed.direct_competitors || [],
-            indirect_competitors: parsed.indirect_competitors || [],
-            competitive_advantages: parsed.competitive_advantages || [],
-            positioning: parsed.positioning || ''
-          };
-        }
+        positioning = JSON.parse(positioning);
       } catch (e) {
-        // Not valid JSON, use as-is
+        // Not valid JSON, keep as string
       }
     }
     
-    return competitiveLandscape;
+    // If positioning is an object with nested data
+    if (positioning && typeof positioning === 'object' && positioning.direct_competitors) {
+      return {
+        direct_competitors: Array.isArray(positioning.direct_competitors) ? positioning.direct_competitors : [],
+        indirect_competitors: Array.isArray(positioning.indirect_competitors) ? positioning.indirect_competitors : [],
+        competitive_advantages: Array.isArray(positioning.competitive_advantages) ? positioning.competitive_advantages : [],
+        positioning: typeof positioning.positioning === 'string' ? positioning.positioning : ''
+      };
+    }
+    
+    // Check if direct_competitors is nested inside an array item
+    const directComp = competitiveLandscape.direct_competitors;
+    if (Array.isArray(directComp) && directComp.length === 1 && typeof directComp[0] === 'object' && directComp[0].direct_competitors) {
+      const nested = directComp[0];
+      return {
+        direct_competitors: Array.isArray(nested.direct_competitors) ? nested.direct_competitors : [],
+        indirect_competitors: Array.isArray(nested.indirect_competitors) ? nested.indirect_competitors : [],
+        competitive_advantages: Array.isArray(nested.competitive_advantages) ? nested.competitive_advantages : [],
+        positioning: nested.positioning || competitiveLandscape.positioning || ''
+      };
+    }
+    
+    // Return with safe defaults
+    return {
+      direct_competitors: Array.isArray(competitiveLandscape.direct_competitors) ? competitiveLandscape.direct_competitors : [],
+      indirect_competitors: Array.isArray(competitiveLandscape.indirect_competitors) ? competitiveLandscape.indirect_competitors : [],
+      competitive_advantages: Array.isArray(competitiveLandscape.competitive_advantages) ? competitiveLandscape.competitive_advantages : [],
+      positioning: typeof competitiveLandscape.positioning === 'string' ? competitiveLandscape.positioning : safeString(competitiveLandscape.positioning, '')
+    };
   };
 
   const [project, setProject] = useState<any>(null);
