@@ -364,13 +364,13 @@ const ViewReport = () => {
     }
   };
 
-  const startReportGeneration = async () => {
-    console.log("Starting report generation for project:", id);
+  const startReportGeneration = async (regenerate = false) => {
+    console.log("Starting report generation for project:", id, "regenerate:", regenerate);
     setGenerating(true);
     setProgress(0); // Initialize progress to 0
     try {
       const { data, error } = await supabase.functions.invoke("generate-validation-report", {
-        body: { project_id: id },
+        body: { project_id: id, regenerate },
       });
 
       if (error) {
@@ -379,7 +379,7 @@ const ViewReport = () => {
       }
 
       console.log("Report generation response:", data);
-      toast.success("Report generation started!");
+      toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
     } catch (error: any) {
       console.error("Error generating report:", error);
       toast.error(error.message || "Failed to start report generation");
@@ -492,16 +492,25 @@ const ViewReport = () => {
                 </p>
               </div>
               {project?.status === "complete" && (
-                <div className="text-right">
+                <div className="text-right space-y-2">
                   <div className={`text-6xl font-bold ${getScoreColor(validationScore)}`}>
                     {validationScore}
                   </div>
                   <Badge
                     variant={validationScore >= 70 ? "default" : validationScore >= 40 ? "secondary" : "destructive"}
-                    className="mt-2"
                   >
                     {getScoreStatus(validationScore)}
                   </Badge>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => startReportGeneration(true)}
+                    disabled={isGenerating}
+                    className="mt-2 block"
+                  >
+                    <Zap className="h-4 w-4 mr-1" />
+                    Regenerate
+                  </Button>
                 </div>
               )}
             </div>
