@@ -269,20 +269,16 @@ const ViewReport = () => {
     try {
       console.log("Loading project and report for ID:", id);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("No user found, redirecting to auth");
-        navigate("/auth");
-        return;
-      }
+      
+      // Check if user is the owner (for showing owner-specific features)
+      const isOwner = !!user;
+      console.log("User authenticated:", user?.id, "isOwner:", isOwner);
 
-      console.log("User authenticated:", user.id);
-
-      // Load project
+      // Load project (public access via RLS)
       const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("*")
         .eq("id", id)
-        .eq("user_id", user.id)
         .single();
 
       if (projectError) {
@@ -293,7 +289,7 @@ const ViewReport = () => {
       console.log("Project loaded:", projectData);
       setProject(projectData);
 
-      // Load report
+      // Load report (public access via RLS)
       const { data: reportData, error: reportError } = await supabase
         .from("reports")
         .select("*")
@@ -315,8 +311,8 @@ const ViewReport = () => {
         } else {
           updateProgress(reportData.generation_status);
         }
-      } else {
-        // No report yet, trigger generation
+      } else if (isOwner && projectData.user_id === user?.id) {
+        // Only trigger generation if user is the owner
         console.log("No report found, triggering generation");
         startReportGeneration();
       }
