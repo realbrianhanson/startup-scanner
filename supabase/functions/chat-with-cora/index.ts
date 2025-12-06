@@ -132,6 +132,13 @@ INSTRUCTIONS:
 - Be specific with numbers and data from the report when available
 - If the report is still generating, acknowledge that and provide general guidance
 
+FORMATTING RULES (CRITICAL):
+- Do NOT use markdown formatting like **bold**, *italic*, # headers, or - bullet points
+- Write in natural paragraphs with line breaks between sections
+- Use numbered lists (1. 2. 3.) when listing items, not bullet points
+- For emphasis, use CAPS sparingly or rephrase to make points clear naturally
+- Keep your writing clean and readable without any special formatting characters
+
 USER QUESTION:
 ${user_message}
 
