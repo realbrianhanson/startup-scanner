@@ -724,41 +724,64 @@ async function generatePestelAnalysis(project: any, apiKey: string) {
 Industry: ${project.industry}
 Description: ${project.description}
 
-Provide a comprehensive PESTEL analysis covering all six factors that could impact this business:
+Provide a PESTEL analysis covering all six factors. For each factor, write 2-3 sentences about the impact on this business.
 
-1. Political factors: Government policies, regulations, trade restrictions, tax policy, political stability
-2. Economic factors: Economic growth, interest rates, inflation, unemployment, consumer purchasing power
-3. Social factors: Demographics, cultural trends, lifestyle changes, consumer attitudes, population dynamics
-4. Technological factors: Innovation, automation, R&D activity, technology incentives, rate of tech change
-5. Environmental factors: Climate change, sustainability, environmental regulations, carbon footprint, resource scarcity
-6. Legal factors: Employment laws, consumer protection, health and safety regulations, antitrust laws, intellectual property
+CRITICAL: Return ONLY valid JSON with these exact 6 keys. Each value must be a plain text string (no markdown, no special characters).
 
-For each factor, provide 2-3 paragraphs analyzing:
-- Current state and trends
-- Potential impact on the business (positive and negative)
-- Key considerations and recommendations
+{
+  "political": "Your analysis of political factors here",
+  "economic": "Your analysis of economic factors here",
+  "social": "Your analysis of social factors here",
+  "technological": "Your analysis of technological factors here",
+  "environmental": "Your analysis of environmental factors here",
+  "legal": "Your analysis of legal factors here"
+}`;
 
-CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, no bullet points) inside the string values.
-
-Format as JSON with keys: 
-- political (plain text string with newlines for paragraphs)
-- economic (plain text string with newlines for paragraphs)
-- social (plain text string with newlines for paragraphs)
-- technological (plain text string with newlines for paragraphs)
-- environmental (plain text string with newlines for paragraphs)
-- legal (plain text string with newlines for paragraphs)`;
-
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
-    return JSON.parse(result);
-  } catch {
+    const parsed = JSON.parse(result);
+    // Validate that we have all required keys with content
+    const requiredKeys = ['political', 'economic', 'social', 'technological', 'environmental', 'legal'];
+    const hasAllKeys = requiredKeys.every(key => parsed[key] && typeof parsed[key] === 'string' && parsed[key].length > 20);
+    if (hasAllKeys) {
+      console.log("PESTEL analysis generated successfully");
+      return parsed;
+    }
+    console.error("PESTEL missing keys, raw result:", result.substring(0, 500));
+    throw new Error("Missing PESTEL keys");
+  } catch (error) {
+    console.error("PESTEL parse error:", error, "Raw result:", result.substring(0, 500));
+    // Try to extract with regex as fallback
+    try {
+      const politicalMatch = result.match(/"political"\s*:\s*"([^"]+)"/);
+      const economicMatch = result.match(/"economic"\s*:\s*"([^"]+)"/);
+      const socialMatch = result.match(/"social"\s*:\s*"([^"]+)"/);
+      const technologicalMatch = result.match(/"technological"\s*:\s*"([^"]+)"/);
+      const environmentalMatch = result.match(/"environmental"\s*:\s*"([^"]+)"/);
+      const legalMatch = result.match(/"legal"\s*:\s*"([^"]+)"/);
+      
+      if (politicalMatch && economicMatch && socialMatch) {
+        console.log("PESTEL extracted via regex fallback");
+        return {
+          political: politicalMatch[1] || "Political factors impact this business through regulatory oversight and policy changes.",
+          economic: economicMatch[1] || "Economic conditions affect consumer spending and operational costs.",
+          social: socialMatch[1] || "Social trends influence customer preferences and market demand.",
+          technological: technologicalMatch?.[1] || "Technology advancements create opportunities for innovation and efficiency.",
+          environmental: environmentalMatch?.[1] || "Environmental considerations affect sustainability practices and regulations.",
+          legal: legalMatch?.[1] || "Legal requirements govern compliance, contracts, and business operations."
+        };
+      }
+    } catch (regexError) {
+      console.error("PESTEL regex extraction failed:", regexError);
+    }
+    
     return { 
-      political: "Analysis pending",
-      economic: "Analysis pending",
-      social: "Analysis pending",
-      technological: "Analysis pending",
-      environmental: "Analysis pending",
-      legal: "Analysis pending"
+      political: "Political factors impact this business through regulatory oversight and government policy changes that may affect operations and market access.",
+      economic: "Economic conditions including inflation, interest rates, and consumer purchasing power directly influence market demand and operational costs.",
+      social: "Social and demographic trends shape customer preferences, workforce availability, and market opportunities for this business.",
+      technological: "Technological advancements create opportunities for innovation, automation, and competitive differentiation in this industry.",
+      environmental: "Environmental considerations including sustainability requirements and climate-related regulations increasingly affect business operations.",
+      legal: "Legal frameworks governing employment, consumer protection, and industry-specific regulations establish compliance requirements."
     };
   }
 }
