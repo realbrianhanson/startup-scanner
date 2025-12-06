@@ -34,9 +34,10 @@ export function ReportNavigation({ reportData }: ReportNavigationProps) {
     ...(reportData.porter_five_forces ? [{ id: "porter-five-forces", label: "Porter's Five Forces", icon: <Target className="h-4 w-4" /> }] : []),
     ...(reportData.pestel_analysis ? [{ id: "pestel-analysis", label: "PESTEL Analysis", icon: <Globe className="h-4 w-4" /> }] : []),
     ...(reportData.catwoe_analysis ? [{ id: "catwoe-analysis", label: "CATWOE Analysis", icon: <Users className="h-4 w-4" /> }] : []),
-    ...(reportData.financial_projections ? [{ id: "financial-projections", label: "Financial Projections", icon: <DollarSign className="h-4 w-4" /> }] : []),
-    ...(reportData.risk_assessment ? [{ id: "risk-assessment", label: "Risk Assessment", icon: <FileText className="h-4 w-4" /> }] : []),
-    ...(reportData.action_plan ? [{ id: "action-plan", label: "Action Plan", icon: <Lightbulb className="h-4 w-4" /> }] : []),
+    ...(reportData.path_to_mvp ? [{ id: "path-to-mvp", label: "Path to MVP", icon: <Lightbulb className="h-4 w-4" /> }] : []),
+    ...(reportData.go_to_market_strategy ? [{ id: "go-to-market", label: "Go-to-Market", icon: <Target className="h-4 w-4" /> }] : []),
+    ...(reportData.usp_analysis ? [{ id: "usp-analysis", label: "USP Analysis", icon: <Zap className="h-4 w-4" /> }] : []),
+    ...(reportData.financial_basics ? [{ id: "financial-basics", label: "Financial Basics", icon: <DollarSign className="h-4 w-4" /> }] : []),
   ];
 
   useEffect(() => {
