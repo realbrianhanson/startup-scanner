@@ -553,75 +553,70 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.`;
 }
 
 async function generateCustomerPersonas(project: any, apiKey: string) {
-  const prompt = `Generate 3-4 distinct customer personas for: ${project.name}
+  const prompt = `Generate 3 distinct customer personas for: ${project.name}
 
 Industry: ${project.industry}
-Description: ${project.description}
+Description: ${project.description?.substring(0, 800)}
 
-For each persona:
+For each persona, provide:
+1. Targeting priority (1st, 2nd, or 3rd) and why
+2. Name (first name + role like "Sarah the Marketing Director")
+3. Demographics: age range, job/role, income range, location type
+4. Values (3 things they care about) and personality traits (2-3)
+5. Three pain points with their impact
+6. Current broken solution and dream outcome
+7. Four objections with root causes
+8. Four closing angles that address the objections
+9. Proof they need and urgency trigger
 
-**TARGETING PRIORITY:**
-- Which to target: [1st / 2nd / 3rd / 4th]
-- Why: [1 sentence - ease of reach + conversion likelihood]
+Return JSON array with this structure:
+[
+  {
+    "priority": "1st",
+    "priority_reason": "Easiest to reach and highest conversion likelihood",
+    "name": "Sarah the Marketing Director",
+    "age": "32-38",
+    "job": "Marketing Director at mid-size SaaS",
+    "income": "$90K-$120K",
+    "location": "Urban, tech hub cities",
+    "values": ["Efficiency", "Data-driven decisions", "Career growth"],
+    "personality": ["Analytical", "Results-oriented"],
+    "pain_points": [
+      {"pain": "Specific problem", "impact": "How it affects them"},
+      {"pain": "Another problem", "impact": "The consequence"},
+      {"pain": "Third problem", "impact": "The result"}
+    ],
+    "current_solution": "What they do now and why it fails",
+    "dream_outcome": "What they really want to achieve",
+    "objections": [
+      {"objection": "What they say", "root_cause": "Real reason behind it"},
+      {"objection": "Second concern", "root_cause": "Underlying issue"},
+      {"objection": "Third hesitation", "root_cause": "True cause"},
+      {"objection": "Fourth doubt", "root_cause": "Real barrier"}
+    ],
+    "closing_angles": [
+      {"angle": "How to overcome", "addresses": "Which objection"},
+      {"angle": "Approach two", "addresses": "Objection it solves"},
+      {"angle": "Third method", "addresses": "Related objection"},
+      {"angle": "Fourth tactic", "addresses": "Final objection"}
+    ],
+    "proof_needed": "What evidence convinces them",
+    "urgency_trigger": "What makes them act now"
+  }
+]
 
-**WHO THEY ARE:**
-- Name: [First name + role, e.g. "Sarah the Marketing Director"]
-- Age: [Range, e.g. 32-38]
-- Job/Role: [Specific]
-- Income: [Range]
-- Location: [Type + context]
-- Values: [Top 3 things they care about]
-- Personality: [2-3 traits affecting purchase decisions]
+CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text.`;
 
-**3 BIG PAIN POINTS:**
-1. [PRIMARY PAIN]: [Specific problem] → Impact: [How it affects their life/work/money]
-2. [SECONDARY PAIN]: [Specific problem] → Impact: [Consequence]
-3. [TERTIARY PAIN]: [Specific problem] → Impact: [Consequence]
-
-Current broken solution: [What they're doing now and why it sucks]
-Dream outcome: [What they actually want]
-
-**OBJECTIONS (What stops them from buying):**
-1. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
-2. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
-3. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
-4. [OBJECTION]: [What they say/think] → Root cause: [Real reason]
-
-**CLOSING ANGLES (How to overcome objections and convert):**
-- Angle 1: [Specific approach] → Addresses: [Which objection(s)]
-- Angle 2: [Specific approach] → Addresses: [Which objection(s)]
-- Angle 3: [Specific approach] → Addresses: [Which objection(s)]
-- Angle 4: [Specific approach] → Addresses: [Which objection(s)]
-- Proof they need: [Testimonials/data/guarantees/case studies]
-- Urgency trigger: [What makes them buy NOW vs later]
-
-**WHERE TO FIND THEM (Top 2-3 channels with SPECIFIC NAMES):**
-- Primary channel: [LinkedIn/Reddit/Facebook/etc]
-  * Specific communities: [Exact group/subreddit names - 2-3 real ones]
-  * Influencers they follow: [2-3 actual names]
-- Secondary channel: [Platform]
-  * Specific communities: [Exact names - 2-3 real ones]
-- How to reach out: [Best approach + opening line template]
-
-**CONTENT THAT CONVERTS (3 ideas):**
-1. [Blog/video title]: [Why it works for this persona]
-2. [Social post angle]: [Why it resonates]
-3. [Email subject]: [Why they'll open]
-
-CRITICAL: 
-- Return ONLY valid JSON with no markdown formatting
-- Use REAL, SPECIFIC names (actual groups, real people, existing communities)
-- No generic "join industry groups" - name the actual groups
-- Format as array of persona objects with keys: priority, priority_reason, name, age, job, income, location, values, personality, pain_points (array of 3 objects with "pain" and "impact"), current_solution, dream_outcome, objections (array of 4 objects with "objection" and "root_cause"), closing_angles (array of 4 objects with "angle" and "addresses"), proof_needed, urgency_trigger, channels (array of objects with "platform", "communities", "influencers", "outreach_template"), content_ideas (array of 3 objects with "title" and "why_it_works")`;
-
-  const result = await callAI(prompt, apiKey, 8000); // Increase tokens for large persona data
+  const result = await callAI(prompt, apiKey, 6000);
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     const parsed = JSON.parse(cleanedResult);
-    console.log("Customer personas generated successfully:", parsed.length, "personas");
-    return parsed;
+    console.log("Customer personas generated successfully:", Array.isArray(parsed) ? parsed.length : 1, "personas");
+    return Array.isArray(parsed) ? parsed : [parsed];
   } catch (error) {
     console.error("Customer personas initial parse error, trying to fix JSON...");
+    console.error("Raw result preview:", result?.substring(0, 500));
+    
     // Try to fix the JSON
     const fixedJson = validateAndFixJson(result, ['priority', 'name', 'pain_points', 'objections']);
     if (fixedJson && Array.isArray(fixedJson)) {
@@ -629,31 +624,41 @@ CRITICAL:
       return fixedJson;
     }
     if (fixedJson && typeof fixedJson === 'object') {
-      // Single persona returned as object instead of array
       console.log("Customer personas recovered as single object");
       return [fixedJson];
     }
-    console.error("Customer personas parse error:", error, "Raw result:", result?.substring(0, 1000));
+    
+    // Try one more extraction method - find array in the result
+    try {
+      const arrayMatch = result?.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        const extracted = JSON.parse(arrayMatch[0]);
+        console.log("Customer personas extracted via regex:", Array.isArray(extracted) ? extracted.length : 1, "personas");
+        return Array.isArray(extracted) ? extracted : [extracted];
+      }
+    } catch (e) {
+      console.error("Regex extraction also failed");
+    }
+    
+    console.error("Customer personas parse error:", error);
     return [
       {
         priority: "1st",
-        priority_reason: "Analysis pending - please regenerate report",
+        priority_reason: "Analysis failed - please regenerate report",
         name: "Target Customer",
-        age: "TBD",
-        job: "TBD",
-        income: "TBD",
-        location: "TBD",
-        values: ["TBD"],
-        personality: ["TBD"],
-        pain_points: [{ pain: "Analysis pending", impact: "TBD" }],
-        current_solution: "TBD",
-        dream_outcome: "TBD",
-        objections: [{ objection: "TBD", root_cause: "TBD" }],
-        closing_angles: [{ angle: "TBD", addresses: "TBD" }],
-        proof_needed: "TBD",
-        urgency_trigger: "TBD",
-        channels: [{ platform: "TBD", communities: [], influencers: [], outreach_template: "TBD" }],
-        content_ideas: [{ title: "TBD", why_it_works: "TBD" }]
+        age: "25-45",
+        job: "Professional in target industry",
+        income: "Varies by market",
+        location: "Primary market areas",
+        values: ["Value proposition alignment", "Problem resolution", "Efficiency"],
+        personality: ["Decision-maker", "Solution-oriented"],
+        pain_points: [{ pain: "Core problem your product solves", impact: "Significant time/money loss" }],
+        current_solution: "Existing alternatives that fall short",
+        dream_outcome: "The ideal state your product enables",
+        objections: [{ objection: "Common concern", root_cause: "Underlying uncertainty" }],
+        closing_angles: [{ angle: "Address with proof and guarantees", addresses: "Main objections" }],
+        proof_needed: "Case studies, testimonials, demos",
+        urgency_trigger: "Limited time offer or growing pain point"
       }
     ];
   }
