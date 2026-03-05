@@ -1,4 +1,5 @@
 import { TrendingUp, Landmark, ArrowUp, CheckCircle2, AlertTriangle } from "lucide-react";
+import { InsightCallout } from "./InsightCallout";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LabelList, Line, ComposedChart } from "recharts";
 import { ReportSectionCard } from "./ReportSectionCard";
 import {
@@ -415,22 +416,14 @@ export const FinancialBasicsSection = ({ reportData }: Props) => {
       {/* Funding & Break-Even */}
       <div className="grid md:grid-cols-2 gap-6">
         {fin.funding_recommendation && (
-          <div>
-            <h4 className="font-sans text-sm font-semibold mb-2 flex items-center gap-2">
-              <Landmark className="h-4 w-4 text-primary" />
-              Funding Recommendation
-            </h4>
-            <p className="text-sm text-muted-foreground">{fin.funding_recommendation}</p>
-          </div>
+          <InsightCallout type="action" title="Funding Recommendation">
+            {fin.funding_recommendation}
+          </InsightCallout>
         )}
         {fin.break_even_estimate && (
-          <div>
-            <h4 className="font-sans text-sm font-semibold mb-2 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              Break-Even Estimate
-            </h4>
-            <p className="text-sm text-muted-foreground">{fin.break_even_estimate}</p>
-          </div>
+          <InsightCallout type="insight" title="Path to Break-Even">
+            {fin.break_even_estimate}
+          </InsightCallout>
         )}
       </div>
     </ReportSectionCard>

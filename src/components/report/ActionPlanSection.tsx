@@ -1,4 +1,5 @@
 import { Flag, Calendar, Wrench, Users, DollarSign, Zap, CheckCircle2 } from "lucide-react";
+import { InsightCallout } from "./InsightCallout";
 import { Badge } from "@/components/ui/badge";
 import { safeArray } from "@/lib/reportHelpers";
 import { ScrollReveal } from "@/components/ScrollReveal";
@@ -43,10 +44,9 @@ export const ActionPlanSection = ({ reportData }: Props) => {
             </h3>
             <div className="space-y-2">
               {safeArray(data.quick_wins).map((win: string, i: number) => (
-                <div key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <p className="text-sm font-medium">{win}</p>
-                </div>
+                <InsightCallout key={i} type="action">
+                  {win}
+                </InsightCallout>
               ))}
             </div>
           </div>
