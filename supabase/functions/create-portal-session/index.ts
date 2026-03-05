@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const origin = req.headers.get("origin") || "https://startup-scanner.lovable.app";
+    const origin = req.headers.get("origin") || "https://validifier.com";
     const portalRes = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
       method: "POST",
       headers: {

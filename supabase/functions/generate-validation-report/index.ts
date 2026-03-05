@@ -445,7 +445,7 @@ serve(async (req) => {
                 project_name: project.name,
                 validation_score: validationScore,
                 top_insights: topInsights,
-                report_url: `${req.headers.get("origin") || "https://startup-scanner.lovable.app"}/projects/${project_id}/report`,
+                report_url: `${req.headers.get("origin") || "https://validifier.com"}/projects/${project_id}/report`,
               },
             }),
           });

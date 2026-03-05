@@ -24,7 +24,7 @@ const Landing = () => {
       operatingSystem: "Web",
       description:
         "Validate your business idea in 90 seconds. Full strategic analysis across 14 frameworks with viability score, competitor analysis, financial projections, and action plan.",
-      url: "https://startup-scanner.lovable.app",
+      url: "https://validifier.com",
       offers: [
         { "@type": "Offer", price: "0", priceCurrency: "USD", name: "Free" },
         { "@type": "Offer", price: "29", priceCurrency: "USD", name: "Pro" },
