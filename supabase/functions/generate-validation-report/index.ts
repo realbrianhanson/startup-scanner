@@ -433,7 +433,7 @@ serve(async (req) => {
                 project_name: project.name,
                 validation_score: validationScore,
                 top_insights: topInsights,
-                report_url: `https://startup-scanner.lovable.app/report/${project_id}`,
+                report_url: `${req.headers.get("origin") || "https://startup-scanner.lovable.app"}/projects/${project_id}/report`,
               },
             }),
           });
