@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.compare-projects]
+verify_jwt = false
