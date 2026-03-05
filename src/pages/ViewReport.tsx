@@ -171,7 +171,7 @@ const ViewReport = () => {
   const isGenerating = project?.status === "analyzing" || generating;
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-gradient-subtle animate-fade-in" style={{ opacity: 1 }}>
       <nav className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">

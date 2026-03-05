@@ -207,7 +207,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-subtle relative overflow-hidden animate-fade-in" style={{ opacity: 1 }}>
       {/* ── Background floating orbs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-primary/[0.04] blur-[120px]" />

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Zap, Target, Users, Check, ArrowRight, BarChart3, Globe, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const AnimatedCounter = ({ target, suffix = "" }: { target: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
@@ -101,7 +102,7 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen animate-fade-in" style={{ opacity: 1 }}>
       {/* Navigation */}
       <nav className="glass-nav-dark sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -253,6 +254,7 @@ const Landing = () => {
       </section>
 
       {/* Value Props */}
+      <ScrollReveal>
       <section id="features" className="py-24 md:py-32 bg-background relative overflow-hidden">
         <div className="container mx-auto px-4">
           {/* Section heading */}
@@ -284,8 +286,10 @@ const Landing = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* How It Works */}
+      <ScrollReveal>
       <section id="how-it-works" className="py-24 md:py-32 bg-gradient-subtle relative overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
@@ -347,8 +351,10 @@ const Landing = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* Pricing */}
+      <ScrollReveal>
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
@@ -411,8 +417,10 @@ const Landing = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* Testimonials */}
+      <ScrollReveal>
       <section className="py-20 bg-gradient-subtle">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
@@ -433,6 +441,7 @@ const Landing = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-hero text-white">
