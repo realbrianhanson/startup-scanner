@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, BarChart3, ArrowLeft } from "lucide-react";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
@@ -22,7 +22,6 @@ const Auth = () => {
   const [promoCode, setPromoCode] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (isReset) {
@@ -59,7 +58,7 @@ const Auth = () => {
       if (view === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast({ title: "Welcome back!", description: "You've successfully logged in." });
+        toast.success("Welcome back!");
       } else if (view === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -73,14 +72,10 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast({ title: "Account created!", description: "Welcome to Validifier. Let's validate your first idea." });
+        toast.success("Account created! Welcome to Validifier.");
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: error.message || "Something went wrong. Please try again.",
-      });
+      toast.error(error.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -96,13 +91,9 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/auth?reset=true`,
       });
       if (error) throw error;
-      toast({ title: "Check your email", description: "We've sent you a password reset link." });
+      toast.success("Check your email for a password reset link");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to send reset email.",
-      });
+      toast.error(error.message || "Failed to send reset email.");
     } finally {
       setLoading(false);
     }
@@ -111,11 +102,11 @@ const Auth = () => {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast({ variant: "destructive", title: "Passwords don't match", description: "Please make sure both passwords are the same." });
+      toast.error("Passwords don't match. Please make sure both passwords are the same.");
       return;
     }
     if (password.length < 6) {
-      toast({ variant: "destructive", title: "Password too short", description: "Password must be at least 6 characters." });
+      toast.error("Password must be at least 6 characters.");
       return;
     }
     setLoading(true);
@@ -123,14 +114,10 @@ const Auth = () => {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast({ title: "Password updated!", description: "You can now sign in with your new password." });
+      toast.success("Password updated! You can now sign in with your new password.");
       navigate("/dashboard");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to update password.",
-      });
+      toast.error(error.message || "Failed to update password.");
     } finally {
       setLoading(false);
     }
@@ -175,190 +162,82 @@ const Auth = () => {
         </div>
 
         <Card className="p-8 border-2 shadow-large">
-          {/* Login / Signup form */}
           {(view === "login" || view === "signup") && (
             <>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {view === "signup" && (
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="John Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      disabled={loading}
-                    />
+                    <Input id="fullName" type="text" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required disabled={loading} />
                   </div>
                 )}
-
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
+                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    minLength={6}
-                  />
-                  {view === "signup" && (
-                    <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
-                  )}
+                  <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} minLength={6} />
+                  {view === "signup" && <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>}
                 </div>
-
                 {view === "signup" && (
                   <div className="space-y-2">
                     <Label htmlFor="promoCode">Promo Code (Optional)</Label>
-                    <Input
-                      id="promoCode"
-                      type="text"
-                      placeholder="Enter promo code"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                      disabled={loading}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Use code "REAL" to get 100 bonus credits!
-                    </p>
+                    <Input id="promoCode" type="text" placeholder="Enter promo code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} disabled={loading} />
+                    <p className="text-xs text-muted-foreground">Use code "REAL" to get 100 bonus credits!</p>
                   </div>
                 )}
-
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {view === "login" ? "Signing in..." : "Creating account..."}
-                    </>
-                  ) : view === "login" ? "Sign In" : "Create Account"}
+                  {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />{view === "login" ? "Signing in..." : "Creating account..."}</>) : view === "login" ? "Sign In" : "Create Account"}
                 </Button>
               </form>
-
               {view === "login" && (
                 <div className="mt-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setView("forgot")}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    disabled={loading}
-                  >
+                  <button type="button" onClick={() => setView("forgot")} className="text-sm text-muted-foreground hover:text-primary transition-colors" disabled={loading}>
                     Forgot your password?
                   </button>
                 </div>
               )}
-
               <div className="mt-4 text-center">
-                <button
-                  type="button"
-                  onClick={() => setView(view === "login" ? "signup" : "login")}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  disabled={loading}
-                >
-                  {view === "login" ? (
-                    <>Don't have an account? <span className="font-semibold text-primary">Sign up</span></>
-                  ) : (
-                    <>Already have an account? <span className="font-semibold text-primary">Sign in</span></>
-                  )}
+                <button type="button" onClick={() => setView(view === "login" ? "signup" : "login")} className="text-sm text-muted-foreground hover:text-primary transition-colors" disabled={loading}>
+                  {view === "login" ? (<>Don't have an account? <span className="font-semibold text-primary">Sign up</span></>) : (<>Already have an account? <span className="font-semibold text-primary">Sign in</span></>)}
                 </button>
               </div>
             </>
           )}
 
-          {/* Forgot password form */}
           {view === "forgot" && (
             <>
               <form onSubmit={handleForgotPassword} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="resetEmail">Email</Label>
-                  <Input
-                    id="resetEmail"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
+                  <Input id="resetEmail" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
                 </div>
-
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : "Send Reset Link"}
+                  {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>) : "Send Reset Link"}
                 </Button>
               </form>
-
               <div className="mt-4 text-center">
-                <button
-                  type="button"
-                  onClick={() => setView("login")}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
+                <button type="button" onClick={() => setView("login")} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Back to <span className="font-semibold text-primary">Sign in</span>
                 </button>
               </div>
             </>
           )}
 
-          {/* Reset password form */}
           {view === "reset" && (
             <form onSubmit={handleResetPassword} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                />
+                <Input id="newPassword" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} minLength={6} />
                 <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                />
+                <Input id="confirmPassword" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={loading} minLength={6} />
               </div>
-
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : "Update Password"}
+                {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Updating...</>) : "Update Password"}
               </Button>
             </form>
           )}
