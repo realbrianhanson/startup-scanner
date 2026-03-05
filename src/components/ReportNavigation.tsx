@@ -10,7 +10,7 @@ import {
   DollarSign,
   Lightbulb,
   FileText,
-  Rocket,
+  Sparkles,
 } from "lucide-react";
 
 interface Section {
@@ -28,6 +28,7 @@ export function ReportNavigation({ reportData }: ReportNavigationProps) {
 
   const sections: Section[] = [
     ...(reportData.executive_summary ? [{ id: "executive-summary", label: "Executive Summary", icon: <Zap className="h-4 w-4" /> }] : []),
+    ...(reportData.game_changing_idea ? [{ id: "game-changing-idea", label: "Game-Changing Idea", icon: <Sparkles className="h-4 w-4" /> }] : []),
     ...(reportData.market_analysis ? [{ id: "market-analysis", label: "Market Analysis", icon: <TrendingUp className="h-4 w-4" /> }] : []),
     ...(reportData.customer_personas?.length > 0 ? [{ id: "customer-personas", label: "Target Customers", icon: <Users className="h-4 w-4" /> }] : []),
     ...(reportData.competitive_landscape ? [{ id: "competitive-landscape", label: "Competition", icon: <Target className="h-4 w-4" /> }] : []),
@@ -38,7 +39,6 @@ export function ReportNavigation({ reportData }: ReportNavigationProps) {
     ...(reportData.path_to_mvp ? [{ id: "path-to-mvp", label: "Path to MVP", icon: <Lightbulb className="h-4 w-4" /> }] : []),
     ...(reportData.go_to_market_strategy ? [{ id: "go-to-market", label: "Go-to-Market", icon: <Target className="h-4 w-4" /> }] : []),
     ...(reportData.usp_analysis ? [{ id: "usp-analysis", label: "USP Analysis", icon: <Zap className="h-4 w-4" /> }] : []),
-    ...(reportData.game_changing_idea ? [{ id: "game-changing-idea", label: "Game-Changing Idea", icon: <Rocket className="h-4 w-4" /> }] : []),
     ...(reportData.financial_basics ? [{ id: "financial-basics", label: "Financial Basics", icon: <DollarSign className="h-4 w-4" /> }] : []),
   ];
 
