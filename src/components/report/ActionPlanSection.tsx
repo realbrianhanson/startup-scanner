@@ -184,20 +184,20 @@ export const ActionPlanSection = ({ reportData }: Props) => {
                   const successMetric = typeof ms === 'object' ? (ms.success_metric || ms.metric || ms.kpi || '') : '';
                   
                   return (
-                    <div key={i} className="relative bg-card rounded-lg border border-border/50 p-4 text-center">
+                    <div key={i} className="relative bg-card rounded-lg border border-border/50 p-4 text-center flex flex-col items-center gap-2">
                       {/* Dot on the line */}
                       <div className="hidden md:block absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-background z-10" />
                       {milestoneText && (
-                        <p className="text-sm font-semibold text-foreground mb-2 mt-1">{milestoneText}</p>
+                        <p className="text-sm font-semibold text-foreground mt-1">{milestoneText}</p>
                       )}
                       {targetDate && (
-                        <Badge variant="outline" className="text-[10px] mb-2">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {targetDate}
-                        </Badge>
+                        <div className="inline-flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5">
+                          <Calendar className="h-3 w-3" />
+                          <span>{targetDate}</span>
+                        </div>
                       )}
                       {successMetric && (
-                        <p className="text-xs text-muted-foreground mt-1">{successMetric}</p>
+                        <p className="text-xs text-muted-foreground">{successMetric}</p>
                       )}
                     </div>
                   );
