@@ -15,12 +15,23 @@ import {
   MessageSquare,
   Download,
   AlertTriangle,
-  Zap,
+  RefreshCw,
   Copy,
   Share2,
 } from "lucide-react";
 import { ReportNavigation } from "@/components/ReportNavigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -202,10 +213,6 @@ const ViewReport = () => {
                     <Badge variant={validationScore >= 70 ? "default" : validationScore >= 40 ? "secondary" : "destructive"}>
                       {getScoreStatus(validationScore)}
                     </Badge>
-                    <Button variant="outline" size="sm" onClick={() => startReportGeneration(true)} disabled={isGenerating} className="mt-2 block">
-                      <Zap className="h-4 w-4 mr-1" />
-                      Regenerate
-                    </Button>
                   </div>
                 )}
               </div>
@@ -257,6 +264,31 @@ const ViewReport = () => {
                   <MessageSquare className="mr-2 h-5 w-5" />
                   Chat with Cora
                 </Button>
+
+                {isOwner && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="lg" disabled={isGenerating}>
+                        <RefreshCw className="mr-2 h-5 w-5" />
+                        Regenerate Report
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Regenerate Report?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure? This will regenerate your entire validation report and use ~12 AI credits.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => startReportGeneration(true)}>
+                          Regenerate
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
                 
                 {isOwner && (
                   <div className="flex items-center space-x-2">
