@@ -14,11 +14,29 @@ import {
   Zap,
   Clock,
   Rocket,
+  MoreVertical,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNav } from "@/components/MobileNav";
 import { ValidationScoreRing } from "@/components/report/ValidationScoreRing";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /* ── Micro-sparkline SVG (decorative) ── */
 const Sparkline = ({ variant = "up" }: { variant?: "up" | "wave" | "flat" }) => {
@@ -95,6 +113,7 @@ const Dashboard = () => {
   const [totalProjects, setTotalProjects] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -140,6 +159,20 @@ const Dashboard = () => {
     await supabase.auth.signOut();
     toast.success("You've been successfully signed out.");
     navigate("/");
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const { error } = await supabase.from("projects").delete().eq("id", projectId);
+      if (error) throw error;
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      setTotalProjects((prev) => prev - 1);
+      toast.success("Project deleted");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete project");
+    } finally {
+      setDeleteTarget(null);
+    }
   };
 
   /* ── Counter refs ── */
@@ -434,11 +467,35 @@ const Dashboard = () => {
                           <span>{new Date(project.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      {project.validation_score && (
-                        <div className="ml-4 shrink-0">
+                      <div className="flex items-center gap-2 ml-4 shrink-0">
+                        {project.validation_score && (
                           <ValidationScoreRing score={project.validation_score} size="sm" showBadge={false} />
-                        </div>
-                      )}
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget(project);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Project
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -455,6 +512,27 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete '{deleteTarget?.name}'? This will permanently delete the project, its validation report, and all chat history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && handleDeleteProject(deleteTarget.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
