@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { NetworkOfflineBanner } from "@/components/NetworkOfflineBanner";
+import { CookieConsent } from "@/components/CookieConsent";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <CookieConsent />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
