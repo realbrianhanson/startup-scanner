@@ -131,6 +131,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          notification_preferences: Json
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
         }
@@ -141,6 +142,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          notification_preferences?: Json
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
@@ -151,6 +153,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          notification_preferences?: Json
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
