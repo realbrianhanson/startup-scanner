@@ -300,6 +300,11 @@ const ViewReport = () => {
               <ExecutiveSummarySection reportData={reportData} />
             </ReportSectionErrorBoundary>
 
+            {/* Game-Changing Idea — right after executive summary for maximum impact */}
+            <ReportSectionErrorBoundary sectionName="Game-Changing Idea">
+              <GameChangingIdeaSection reportData={reportData} />
+            </ReportSectionErrorBoundary>
+
             {/* Report Sections */}
             {project?.status === "complete" && (
               <div className="space-y-6">
@@ -332,9 +337,6 @@ const ViewReport = () => {
                 </ReportSectionErrorBoundary>
                 <ReportSectionErrorBoundary sectionName="USP Analysis">
                   <UspAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Game-Changing Idea">
-                  <GameChangingIdeaSection reportData={reportData} />
                 </ReportSectionErrorBoundary>
                 <ReportSectionErrorBoundary sectionName="Financial Basics">
                   <FinancialBasicsSection reportData={reportData} />
