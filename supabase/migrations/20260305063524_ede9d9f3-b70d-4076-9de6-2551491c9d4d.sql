@@ -1,0 +1,1 @@
+UPDATE projects SET status = 'draft' WHERE id = 'daf673b4-d945-47e8-8fe7-5952493366aa'
