@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, BarChart3, X, ChevronDown, Star, Sparkles, Quote } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const PLANS = [
   {
@@ -186,7 +187,7 @@ const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in" style={{ opacity: 1 }}>
       {/* Navigation */}
       <nav className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -354,6 +355,7 @@ const Pricing = () => {
         </div>
       </section>
 
+      <ScrollReveal>
       {/* Feature Comparison Table */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -395,7 +397,9 @@ const Pricing = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
+      <ScrollReveal>
       {/* Social Proof Strip */}
       <section className="py-16">
         <div className="container mx-auto px-4">
@@ -424,7 +428,9 @@ const Pricing = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
+      <ScrollReveal>
       {/* FAQ Section */}
       <section className="py-16 bg-muted/20">
         <div className="container mx-auto px-4">
@@ -440,6 +446,7 @@ const Pricing = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* CTA Section */}
       <section className="py-20 relative overflow-hidden">
