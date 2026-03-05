@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -25,7 +26,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Globe, Lightbulb, Loader2, Zap, BarChart3,
   Check, Building2, ShoppingCart, MapPin, HeartPulse, Landmark, MoreHorizontal,
-  Target, Users, Briefcase, Tag,
+  Target, Users, Briefcase, Tag, Sparkles, Lock,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { INSPIRATION_IDEAS } from "@/lib/inspirationIdeas";
@@ -170,6 +171,19 @@ const CreateProject = () => {
   const [targetMarket, setTargetMarket] = useState("");
   const [competitors, setCompetitors] = useState("");
   const [businessModel, setBusinessModel] = useState("");
+  const [reportQuality, setReportQuality] = useState<"standard" | "premium">("standard");
+  const [userTier, setUserTier] = useState<string>("free");
+
+  useEffect(() => {
+    const fetchTier = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
+        if (profile) setUserTier(profile.subscription_tier);
+      }
+    };
+    fetchTier();
+  }, []);
 
   /* Compute current step */
   const getCurrentStep = () => {
@@ -217,9 +231,10 @@ const CreateProject = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      const qualityToUse = userTier === "free" ? "standard" : reportQuality;
       const projectData = useWebsite
-        ? { user_id: user.id, name: projectName, description: extractedData?.description || "", website_url: websiteUrl, industry, status: "draft" }
-        : { user_id: user.id, name: projectName, description: `${description}\n\nTarget Market: ${targetMarket}\nCompetitors: ${competitors || "Not specified"}\nBusiness Model: ${businessModel}`, industry, status: "draft" };
+        ? { user_id: user.id, name: projectName, description: extractedData?.description || "", website_url: websiteUrl, industry, status: "draft", report_quality: qualityToUse }
+        : { user_id: user.id, name: projectName, description: `${description}\n\nTarget Market: ${targetMarket}\nCompetitors: ${competitors || "Not specified"}\nBusiness Model: ${businessModel}`, industry, status: "draft", report_quality: qualityToUse };
 
       const { data: project, error: projectError } = await supabase.from("projects").insert(projectData).select().single();
       if (projectError) throw projectError;
@@ -304,6 +319,70 @@ const CreateProject = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Report Quality Selector */}
+              <div className="space-y-3">
+                <Label className="font-medium">Report Quality</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Standard */}
+                  <button
+                    type="button"
+                    onClick={() => setReportQuality("standard")}
+                    disabled={loading}
+                    className={`relative rounded-xl border-2 p-4 text-left transition-all duration-200 ${
+                      reportQuality === "standard"
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="h-4 w-4 text-primary" />
+                      <span className="font-semibold text-sm">Standard</span>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">All Plans</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Powered by Gemini 3 Flash</p>
+                    <p className="text-xs text-muted-foreground mt-1">Fast validation for initial idea screening</p>
+                    <p className="text-xs font-medium text-primary mt-2">~5 AI credits</p>
+                  </button>
+
+                  {/* Premium */}
+                  <button
+                    type="button"
+                    onClick={() => userTier !== "free" && setReportQuality("premium")}
+                    disabled={loading || userTier === "free"}
+                    className={`relative rounded-xl border-2 p-4 text-left transition-all duration-200 ${
+                      reportQuality === "premium"
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : userTier === "free"
+                        ? "border-border opacity-60 cursor-not-allowed"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    {userTier === "free" && (
+                      <div className="absolute top-3 right-3">
+                        <Lock className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-secondary" />
+                      <span className="font-semibold text-sm">Premium</span>
+                      <Badge className="text-[10px] px-1.5 py-0 bg-gradient-to-r from-primary to-secondary text-primary-foreground border-0">Pro AI</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Powered by Gemini 3.1 Pro — Google's most intelligent model</p>
+                    <p className="text-xs text-muted-foreground mt-1">Deeper analysis with real competitors, specific market data, detailed financials</p>
+                    <p className="text-xs font-medium text-primary mt-2">~12 AI credits</p>
+                    {userTier === "free" && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); navigate("/pricing"); }}
+                        className="text-xs text-primary hover:underline mt-2 font-medium"
+                      >
+                        Upgrade to Starter to unlock →
+                      </button>
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -397,14 +476,14 @@ const CreateProject = () => {
                                 <>
                                   <Zap className="mr-2 h-5 w-5" />
                                   Start Validation
-                                  <span className="ml-2 text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">~5 credits</span>
+                                   <span className="ml-2 text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">~{reportQuality === "premium" ? "12" : "5"} credits</span>
                                 </>
                               )}
                             </Button>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
-                          <p className="text-xs">This will generate a comprehensive 12-section report</p>
+                          <p className="text-xs">This will generate a comprehensive 12-section {reportQuality === "premium" ? "premium" : "standard"} report</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -501,14 +580,14 @@ const CreateProject = () => {
                                 <>
                                   <Zap className="mr-2 h-5 w-5" />
                                   Start Validation
-                                  <span className="ml-2 text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">~5 credits</span>
+                                   <span className="ml-2 text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">~{reportQuality === "premium" ? "12" : "5"} credits</span>
                                 </>
                               )}
                             </Button>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
-                          <p className="text-xs">This will generate a comprehensive 12-section report</p>
+                          <p className="text-xs">This will generate a comprehensive 12-section {reportQuality === "premium" ? "premium" : "standard"} report</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

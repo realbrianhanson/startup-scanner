@@ -26,6 +26,9 @@ import {
   CalendarCheck,
   Sparkles,
   Trophy,
+  Zap,
+  Lock,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   formatExecutiveSummaryText,
@@ -99,8 +102,20 @@ const ViewReport = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCompletionCTA, setShowCompletionCTA] = useState(false);
   const [celebrationPhase, setCelebrationPhase] = useState(false);
+  const [userTier, setUserTier] = useState<string>("free");
   const wasGeneratingRef = useRef(false);
   const { openCalendly: openCompletionCalendly } = useCalendly();
+
+  useEffect(() => {
+    const fetchTier = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
+        if (profile) setUserTier(profile.subscription_tier);
+      }
+    };
+    fetchTier();
+  }, []);
 
   const handleDeleteProject = async () => {
     try {
@@ -162,11 +177,12 @@ const ViewReport = () => {
     }
   };
 
-  const startReportGeneration = async (regenerate = false) => {
+  const startReportGeneration = async (regenerate = false, qualityOverride?: string) => {
     setGenerating(true);
     setProgress(0);
     try {
-      const { error } = await supabase.functions.invoke("generate-validation-report", { body: { project_id: id, regenerate } });
+      const quality = qualityOverride || project?.report_quality || 'standard';
+      const { error } = await supabase.functions.invoke("generate-validation-report", { body: { project_id: id, regenerate, quality } });
       if (error) throw error;
       trackEvent('report_generation_started', { project_id: id, regenerate });
       toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
@@ -306,7 +322,20 @@ const ViewReport = () => {
             <div className="space-y-4">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
-                  <h1 className="text-4xl font-bold">{project?.name}</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-4xl font-bold">{project?.name}</h1>
+                    {project?.status === "complete" && (
+                      project?.report_quality === "premium" ? (
+                        <Badge className="bg-gradient-to-r from-primary to-secondary text-primary-foreground border-0 gap-1">
+                          <Sparkles className="h-3 w-3" /> Premium Analysis
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1">
+                          <Zap className="h-3 w-3" /> Standard Analysis
+                        </Badge>
+                      )
+                    )}
+                  </div>
                   <p className="text-muted-foreground">
                     {project?.industry} • Created {new Date(project?.created_at).toLocaleDateString()}
                   </p>
@@ -315,6 +344,41 @@ const ViewReport = () => {
                   <ValidationScoreRing score={validationScore} size="lg" />
                 )}
               </div>
+
+              {/* Upsell banner for standard reports */}
+              {project?.status === "complete" && project?.report_quality !== "premium" && isOwner && userTier !== "free" && (
+                <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-5 py-3">
+                  <Sparkles className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-sm text-muted-foreground flex-1">
+                    Want deeper insights? Regenerate with <span className="font-semibold text-foreground">Premium AI</span> for more specific competitors, detailed financials, and strategic recommendations.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 gap-1"
+                    disabled={generating}
+                    onClick={() => startReportGeneration(true, "premium")}
+                  >
+                    Upgrade Report <ArrowUpRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {project?.status === "complete" && project?.report_quality !== "premium" && isOwner && userTier === "free" && (
+                <div className="flex items-center gap-3 bg-muted/50 border border-border rounded-xl px-5 py-3">
+                  <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <p className="text-sm text-muted-foreground flex-1">
+                    Unlock <span className="font-semibold text-foreground">Premium AI reports</span> with deeper analysis, real competitor names, and detailed financials.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 gap-1"
+                    onClick={() => navigate("/pricing")}
+                  >
+                    Upgrade Plan <ArrowUpRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Generation Experience */}
@@ -418,7 +482,7 @@ const ViewReport = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Regenerate Report?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure? This will regenerate your entire validation report and use ~15 AI credits.
+                          Are you sure? This will regenerate your entire validation report and use ~{project?.report_quality === "premium" ? "12" : "5"} AI credits.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

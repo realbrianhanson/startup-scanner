@@ -278,6 +278,7 @@ export type Database = {
           industry: string
           is_public: boolean
           name: string
+          report_quality: string
           status: string
           updated_at: string
           user_id: string
@@ -291,6 +292,7 @@ export type Database = {
           industry: string
           is_public?: boolean
           name: string
+          report_quality?: string
           status?: string
           updated_at?: string
           user_id: string
@@ -304,6 +306,7 @@ export type Database = {
           industry?: string
           is_public?: boolean
           name?: string
+          report_quality?: string
           status?: string
           updated_at?: string
           user_id?: string
