@@ -29,7 +29,10 @@ import {
   ArrowLeft,
   ExternalLink,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Gift,
+  Copy,
+  Users,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNav } from "@/components/MobileNav";
@@ -40,6 +43,7 @@ const Settings = () => {
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [usageLogs, setUsageLogs] = useState<any[]>([]);
+  const [referralCount, setReferralCount] = useState(0);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [notifPrefs, setNotifPrefs] = useState({
@@ -91,6 +95,13 @@ const Settings = () => {
         .limit(50);
 
       setUsageLogs(logs || []);
+
+      // Load referral count
+      const { count } = await supabase
+        .from("referrals" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("referrer_id", userData.id);
+      setReferralCount(count || 0);
     } catch (error) {
       toast.error("Failed to load settings");
     } finally {
@@ -308,6 +319,50 @@ const Settings = () => {
                 >
                   Replay Tour
                 </Button>
+              </div>
+            </Card>
+
+            {/* Refer & Earn */}
+            <Card className="p-6 space-y-4 border-primary/20">
+              <div className="flex items-center gap-2">
+                <Gift className="h-5 w-5 text-primary" />
+                <h3 className="text-xl font-bold">Refer & Earn</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Earn <span className="font-semibold text-primary">20 bonus credits</span> for each friend who signs up!
+              </p>
+
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Your referral link</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`}
+                      className="bg-muted text-sm font-mono"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`);
+                        toast.success("Referral link copied!");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Users className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">You've referred <span className="text-primary font-bold">{referralCount}</span> {referralCount === 1 ? 'user' : 'users'}</p>
+                    {referralCount > 0 && (
+                      <p className="text-xs text-muted-foreground">That's {referralCount * 20} bonus credits earned!</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </Card>
 

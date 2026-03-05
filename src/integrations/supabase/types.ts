@@ -198,6 +198,8 @@ export type Database = {
           id: string
           notification_preferences: Json
           onboarding_completed: boolean
+          referral_code: string
+          referral_source: string | null
           stripe_customer_id: string | null
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
@@ -212,6 +214,8 @@ export type Database = {
           id: string
           notification_preferences?: Json
           onboarding_completed?: boolean
+          referral_code?: string
+          referral_source?: string | null
           stripe_customer_id?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
@@ -226,6 +230,8 @@ export type Database = {
           id?: string
           notification_preferences?: Json
           onboarding_completed?: boolean
+          referral_code?: string
+          referral_source?: string | null
           stripe_customer_id?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
@@ -276,6 +282,45 @@ export type Database = {
           {
             foreignKeyName: "projects_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          credits_awarded: number | null
+          id: string
+          referred_id: string
+          referrer_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_awarded?: number | null
+          id?: string
+          referred_id: string
+          referrer_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_awarded?: number | null
+          id?: string
+          referred_id?: string
+          referrer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
