@@ -20,8 +20,18 @@ const getInitials = (name: string) =>
 export const CustomerPersonasSection = ({ reportData }: Props) => {
   if (!reportData.customer_personas || !Array.isArray(reportData.customer_personas) || reportData.customer_personas.length === 0) return null;
 
+  // Detect fallback/placeholder data from a failed generation
+  const isFallback = reportData.customer_personas.some(
+    (p: any) => p.priority_reason?.toLowerCase().includes("analysis failed") || p.name === "Target Customer"
+  );
+
   return (
     <ReportSectionCard id="customer-personas" title="Your Target Customers">
+      {isFallback && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 text-sm text-amber-700 dark:text-amber-400 mb-2">
+          ⚠️ This section didn't generate properly. Try regenerating the report for real customer persona data.
+        </div>
+      )}
       <p className="text-sm text-muted-foreground">Meet the people most likely to buy from you</p>
 
       {/* Priority callout */}
