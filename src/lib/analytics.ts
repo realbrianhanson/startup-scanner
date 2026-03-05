@@ -1,12 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
+import { hasAnalyticsConsent } from '@/components/CookieConsent';
 
 export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
-  // Push to Google Analytics if available
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', eventName, properties);
+  // Only send to external analytics if user consented
+  if (hasAnalyticsConsent()) {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', eventName, properties);
+    }
   }
 
-  // Log to database for internal analytics (fire-and-forget)
+  // Internal analytics are essential for service operation (always log)
   try {
     supabase.auth.getUser().then(({ data: { user } }) => {
       supabase
