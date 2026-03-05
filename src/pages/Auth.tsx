@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,16 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, BarChart3, ArrowLeft } from "lucide-react";
 
+type AuthView = "login" | "signup" | "forgot" | "reset";
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const isReset = searchParams.get("reset") === "true";
+
+  const [view, setView] = useState<AuthView>(isReset ? "reset" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +25,11 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if already logged in
+    if (isReset) {
+      setView("reset");
+      return;
+    }
+
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -28,36 +38,29 @@ const Auth = () => {
     };
     checkUser();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (event === "PASSWORD_RECOVERY") {
+        setView("reset");
+        return;
+      }
+      if (session && view !== "reset") {
         navigate("/dashboard");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isReset]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isLogin) {
-        // Login
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
+      if (view === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully logged in.",
-        });
-      } else {
-        // Sign up
+        toast({ title: "Welcome back!", description: "You've successfully logged in." });
+      } else if (view === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -69,13 +72,8 @@ const Auth = () => {
             },
           },
         });
-
         if (error) throw error;
-
-        toast({
-          title: "Account created!",
-          description: "Welcome to Validifier. Let's validate your first idea.",
-        });
+        toast({ title: "Account created!", description: "Welcome to Validifier. Let's validate your first idea." });
       }
     } catch (error: any) {
       toast({
@@ -88,15 +86,79 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+      if (error) throw error;
+      toast({ title: "Check your email", description: "We've sent you a password reset link." });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to send reset email.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({ variant: "destructive", title: "Passwords don't match", description: "Please make sure both passwords are the same." });
+      return;
+    }
+    if (password.length < 6) {
+      toast({ variant: "destructive", title: "Password too short", description: "Password must be at least 6 characters." });
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      toast({ title: "Password updated!", description: "You can now sign in with your new password." });
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update password.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getHeading = () => {
+    switch (view) {
+      case "login": return "Welcome Back";
+      case "signup": return "Get Started";
+      case "forgot": return "Reset Password";
+      case "reset": return "Set New Password";
+    }
+  };
+
+  const getSubheading = () => {
+    switch (view) {
+      case "login": return "Sign in to continue validating your ideas";
+      case "signup": return "Create your account to start validating";
+      case "forgot": return "Enter your email and we'll send you a reset link";
+      case "reset": return "Choose a new password for your account";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-4"
-          >
+          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Home
           </Button>
@@ -107,121 +169,199 @@ const Auth = () => {
             </span>
           </div>
           <div>
-            <h1 className="text-3xl font-bold">
-              {isLogin ? "Welcome Back" : "Get Started"}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              {isLogin
-                ? "Sign in to continue validating your ideas"
-                : "Create your account to start validating"}
-            </p>
+            <h1 className="text-3xl font-bold">{getHeading()}</h1>
+            <p className="text-muted-foreground mt-2">{getSubheading()}</p>
           </div>
         </div>
 
         <Card className="p-8 border-2 shadow-large">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {!isLogin && (
+          {/* Login / Signup form */}
+          {(view === "login" || view === "signup") && (
+            <>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {view === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    minLength={6}
+                  />
+                  {view === "signup" && (
+                    <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
+                  )}
+                </div>
+
+                {view === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="promoCode">Promo Code (Optional)</Label>
+                    <Input
+                      id="promoCode"
+                      type="text"
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      disabled={loading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Use code "REAL" to get 100 bonus credits!
+                    </p>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {view === "login" ? "Signing in..." : "Creating account..."}
+                    </>
+                  ) : view === "login" ? "Sign In" : "Create Account"}
+                </Button>
+              </form>
+
+              {view === "login" && (
+                <div className="mt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setView("forgot")}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    disabled={loading}
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => setView(view === "login" ? "signup" : "login")}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  disabled={loading}
+                >
+                  {view === "login" ? (
+                    <>Don't have an account? <span className="font-semibold text-primary">Sign up</span></>
+                  ) : (
+                    <>Already have an account? <span className="font-semibold text-primary">Sign in</span></>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Forgot password form */}
+          {view === "forgot" && (
+            <>
+              <form onSubmit={handleForgotPassword} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="resetEmail">Email</Label>
+                  <Input
+                    id="resetEmail"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : "Send Reset Link"}
+                </Button>
+              </form>
+
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => setView("login")}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Back to <span className="font-semibold text-primary">Sign in</span>
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Reset password form */}
+          {view === "reset" && (
+            <form onSubmit={handleResetPassword} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="newPassword">New Password</Label>
                 <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  id="newPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
+                  minLength={6}
                 />
+                <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
               </div>
-            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
-              {!isLogin && (
-                <p className="text-xs text-muted-foreground">
-                  Must be at least 6 characters
-                </p>
-              )}
-            </div>
-
-            {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="promoCode">Promo Code (Optional)</Label>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input
-                  id="promoCode"
-                  type="text"
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
                   disabled={loading}
+                  minLength={6}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Use code "REAL" to get 100 bonus credits!
-                </p>
               </div>
-            )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isLogin ? "Signing in..." : "Creating account..."}
-                </>
-              ) : isLogin ? (
-                "Sign In"
-              ) : (
-                "Create Account"
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              disabled={loading}
-            >
-              {isLogin ? (
-                <>
-                  Don't have an account?{" "}
-                  <span className="font-semibold text-primary">Sign up</span>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <span className="font-semibold text-primary">Sign in</span>
-                </>
-              )}
-            </button>
-          </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : "Update Password"}
+              </Button>
+            </form>
+          )}
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
