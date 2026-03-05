@@ -150,7 +150,7 @@ const Landing = () => {
           <div className="max-w-5xl mx-auto text-center space-y-10">
             {/* Headline */}
             <div className="space-y-6">
-              <h1 className="text-6xl md:text-8xl font-bold tracking-[-0.03em] text-white animate-fade-up">
+              <h1 className="text-6xl md:text-8xl font-extrabold tracking-tighter text-white animate-fade-up">
                 Validate Your Idea{" "}
                 <br className="hidden md:block" />
                 in{" "}
@@ -204,7 +204,7 @@ const Landing = () => {
                     <div className="h-2 w-20 rounded bg-white/5" />
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-[hsl(142,71%,45%)]">78</div>
+                    <div className="text-3xl font-extrabold font-mono tabular-nums text-[hsl(142,71%,45%)]">78</div>
                     <div className="text-[9px] text-white/30">Score</div>
                   </div>
                 </div>
@@ -259,7 +259,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           {/* Section heading */}
           <div className="text-center mb-16 animate-fade-up">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
               Why Founders Choose Validifier
             </h2>
             <div className="mx-auto w-24 h-1 rounded-full bg-gradient-to-r from-primary to-secondary" />
@@ -295,7 +295,7 @@ const Landing = () => {
           <div className="max-w-5xl mx-auto">
             {/* Section heading */}
             <div className="text-center mb-20 animate-fade-up">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
                 How Validifier Works
               </h2>
               <p className="text-lg text-muted-foreground">
@@ -359,7 +359,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="text-center space-y-4 mb-12">
-              <h2 className="text-4xl font-bold">Simple, Transparent Pricing</h2>
+              <h2 className="text-4xl font-extrabold tracking-tight">Simple, Transparent Pricing</h2>
               <p className="text-xl text-muted-foreground">
                 Start free, scale as you validate more ideas
               </p>
@@ -383,7 +383,7 @@ const Landing = () => {
                   <div>
                     <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
                     <div className="mb-4">
-                      <span className="text-4xl font-bold">{tier.price}</span>
+                      <span className="text-4xl font-extrabold font-mono tabular-nums">{tier.price}</span>
                       <span className="text-muted-foreground">/month</span>
                     </div>
                   </div>
@@ -424,7 +424,7 @@ const Landing = () => {
       <section className="py-20 bg-gradient-subtle">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-12">
+            <h2 className="text-4xl font-extrabold tracking-tight text-center mb-12">
               What Founders Are Saying
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
@@ -446,7 +446,7 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="py-20 bg-gradient-hero text-white">
         <div className="container mx-auto px-4 text-center space-y-8">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">
             Ready to Validate Your Idea?
           </h2>
           <p className="text-xl opacity-90 max-w-2xl mx-auto">
