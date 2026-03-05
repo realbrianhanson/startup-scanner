@@ -196,7 +196,7 @@ RESPONSE:`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           { role: 'user', content: systemPrompt }
         ],
@@ -243,7 +243,7 @@ RESPONSE:`;
       user_id: user.id,
       project_id,
       operation_type: 'chat',
-      model_used: 'google/gemini-2.5-flash',
+      model_used: 'google/gemini-3-flash-preview',
       tokens_used: aiData.usage?.total_tokens || 0,
       cost_cents: Math.ceil((aiData.usage?.total_tokens || 0) * 0.0001),
     });
