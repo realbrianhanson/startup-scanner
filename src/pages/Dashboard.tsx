@@ -209,10 +209,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle relative overflow-hidden animate-fade-in" style={{ opacity: 1 }}>
       {/* ── Background floating orbs ── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-primary/[0.04] blur-[120px]" />
-        <div className="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full bg-secondary/[0.04] blur-[100px]" />
-        <div className="absolute bottom-0 left-1/3 w-[350px] h-[350px] rounded-full bg-accent/[0.03] blur-[100px]" />
+      <div className="pointer-events-none fixed top-0 right-0 w-[500px] h-[500px] overflow-hidden -z-10">
+        <div className="absolute -top-20 -right-20 w-[350px] h-[350px] rounded-full bg-primary opacity-[0.04] dark:opacity-[0.08] blur-[120px] animate-float float-slower will-change-transform" />
+        <div className="absolute top-40 right-10 w-[200px] h-[200px] rounded-full bg-secondary opacity-[0.03] dark:opacity-[0.06] blur-[100px] animate-float float-slowest will-change-transform" style={{ animationDelay: "3s" }} />
       </div>
 
       {/* Top Navigation */}
