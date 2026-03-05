@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, ArrowLeft, Sparkles } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Sparkles, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/MarkdownContent';
 
@@ -77,6 +77,8 @@ export default function Chat() {
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [newMessageIds, setNewMessageIds] = useState<Set<string>>(new Set());
+  const [connectionLost, setConnectionLost] = useState(false);
+  const retryCountRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -86,27 +88,48 @@ export default function Chat() {
 
   useEffect(() => {
     if (!conversationId) return;
-    const channel = supabase
-      .channel('chat-messages')
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'chat_messages',
-        filter: `conversation_id=eq.${conversationId}`
-      }, (payload) => {
-        const newMessage = payload.new as Message;
-        if (newMessage.role === 'assistant') {
-          setNewMessageIds(prev => new Set(prev).add(newMessage.id));
-          setMessages(prev => [...prev, newMessage]);
-          setIsTyping(false);
-          // Clear animation class after animation completes
-          setTimeout(() => setNewMessageIds(prev => {
-            const next = new Set(prev);
-            next.delete(newMessage.id);
-            return next;
-          }), 600);
-        }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    let channel: any;
+
+    const subscribe = () => {
+      channel = supabase
+        .channel('chat-messages')
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'chat_messages',
+          filter: `conversation_id=eq.${conversationId}`
+        }, (payload) => {
+          const newMessage = payload.new as Message;
+          if (newMessage.role === 'assistant') {
+            setNewMessageIds(prev => new Set(prev).add(newMessage.id));
+            setMessages(prev => [...prev, newMessage]);
+            setIsTyping(false);
+            setTimeout(() => setNewMessageIds(prev => {
+              const next = new Set(prev);
+              next.delete(newMessage.id);
+              return next;
+            }), 600);
+          }
+        })
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            setConnectionLost(false);
+            retryCountRef.current = 0;
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            if (retryCountRef.current < 3) {
+              setConnectionLost(true);
+              retryCountRef.current++;
+              setTimeout(() => {
+                supabase.removeChannel(channel);
+                subscribe();
+              }, 2000 * retryCountRef.current);
+            } else {
+              setConnectionLost(true);
+            }
+          }
+        });
+    };
+
+    subscribe();
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [conversationId]);
 
   const scrollToBottom = () => {
@@ -244,6 +267,15 @@ export default function Chat() {
           <main className="flex-1 flex flex-col">
             {/* ── Messages ── */}
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
+              {/* Connection lost banner */}
+              {connectionLost && (
+                <div className="sticky top-0 z-10 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2 flex items-center justify-center gap-2 text-sm text-destructive animate-fade-down">
+                  <WifiOff className="h-4 w-4" />
+                  {retryCountRef.current >= 3
+                    ? "Connection failed. Please refresh the page."
+                    : "Connection lost. Reconnecting..."}
+                </div>
+              )}
 
               {/* ── Empty State ── */}
               {messages.length === 0 && (

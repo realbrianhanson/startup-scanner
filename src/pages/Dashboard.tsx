@@ -18,6 +18,7 @@ import {
   Rocket,
   MoreVertical,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -115,6 +116,7 @@ const Dashboard = () => {
   const [totalProjects, setTotalProjects] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
@@ -123,18 +125,22 @@ const Dashboard = () => {
     document.title = "Dashboard | Validifier";
   }, []);
 
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
       setUser(session.user);
 
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .single();
+
+      if (profileError) throw profileError;
 
       if (profileData) {
         setProfile(profileData);
@@ -150,16 +156,25 @@ const Dashboard = () => {
 
       setTotalProjects(count || 0);
 
-      const { data: projectsData } = await supabase
+      const { data: projectsData, error: projectsError } = await supabase
         .from("projects")
         .select("*")
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false })
         .limit(20);
 
+      if (projectsError) throw projectsError;
       if (projectsData) setProjects(projectsData);
+    } catch (error: any) {
+      console.error("Dashboard load error:", error);
+      setLoadError(true);
+      toast.error("Failed to load dashboard data");
+    } finally {
       setLoading(false);
-    };
+    }
+  };
+
+  useEffect(() => {
     loadData();
   }, []);
 
@@ -246,6 +261,26 @@ const Dashboard = () => {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h2 className="text-2xl font-bold">Failed to Load Dashboard</h2>
+          <p className="text-muted-foreground">
+            We couldn't load your data. Please check your connection and try again.
+          </p>
+          <Button onClick={loadData} className="px-8">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
         </div>
       </div>
     );

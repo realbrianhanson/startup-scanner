@@ -189,10 +189,18 @@ const CreateProject = () => {
     try {
       const { data, error } = await supabase.functions.invoke("analyze-website", { body: { url: websiteUrl } });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       setExtractedData(data);
       toast.success("Website data extracted successfully!");
     } catch (error: any) {
-      toast.error(error.message || "Failed to analyze website");
+      const msg = error.message || "";
+      if (msg.includes("429") || msg.includes("rate")) {
+        toast.error("Too many requests. Please wait a moment and try again.");
+      } else {
+        toast.error("Website analysis failed. The site might be blocking our scraper. Try the 'Describe Idea' tab instead.", {
+          duration: 6000,
+        });
+      }
     } finally {
       setAnalyzing(false);
     }
