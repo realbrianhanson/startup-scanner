@@ -167,7 +167,7 @@ const Dashboard = () => {
         ) : (
           <div className="space-y-2">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Projects</h2>
+              <h2 className="text-lg font-medium">Reports</h2>
               <CompareProjects projects={projects} />
             </div>
 
@@ -244,7 +244,7 @@ const Dashboard = () => {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogTitle>Delete Report</AlertDialogTitle>
             <AlertDialogDescription>
               Delete "{deleteTarget?.name}"? This removes the report and chat history permanently.
             </AlertDialogDescription>
