@@ -292,6 +292,22 @@ const Settings = () => {
                 <Button onClick={handleUpdateProfile}>
                   Save Changes
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await supabase
+                        .from("profiles")
+                        .update({ onboarding_completed: false } as any)
+                        .eq("id", user.id);
+                      toast.success("Tour reset! Visit the Dashboard to replay it.");
+                    } catch {
+                      toast.error("Failed to reset tour");
+                    }
+                  }}
+                >
+                  Replay Tour
+                </Button>
               </div>
             </Card>
 
