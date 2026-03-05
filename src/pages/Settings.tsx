@@ -73,7 +73,6 @@ const Settings = () => {
 
       setUsageLogs(logs || []);
     } catch (error) {
-      console.error("Error loading data:", error);
       toast.error("Failed to load settings");
     } finally {
       setLoading(false);
@@ -95,7 +94,6 @@ const Settings = () => {
       toast.success("Profile updated successfully");
       loadData();
     } catch (error) {
-      console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
     }
   };

@@ -133,7 +133,6 @@ export default function Chat() {
 
       setMessages((messagesData || []) as Message[]);
     } catch (error) {
-      console.error('Error loading chat:', error);
       toast.error('Failed to load chat. Please try again.');
     } finally {
       setIsLoading(false);
@@ -179,7 +178,6 @@ export default function Chat() {
         throw new Error(data.error);
       }
     } catch (error: any) {
-      console.error('Error sending message:', error);
       setIsTyping(false);
       
       if (error.message?.includes('credits')) {

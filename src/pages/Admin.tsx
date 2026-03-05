@@ -52,7 +52,6 @@ const Admin = () => {
       setIsAdmin(true);
       loadProfiles();
     } catch (error) {
-      console.error("Admin check failed:", error);
       navigate("/dashboard");
     } finally {
       setLoading(false);
@@ -69,7 +68,6 @@ const Admin = () => {
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
-      console.error("Failed to load profiles:", error);
       toast.error("Failed to load users");
     }
   };
@@ -107,7 +105,6 @@ const Admin = () => {
       setSelectedUserId("");
       loadProfiles();
     } catch (error) {
-      console.error("Failed to add credits:", error);
       toast.error("Failed to add credits");
     }
   };

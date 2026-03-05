@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const { conversation_id, user_message, project_id } = await req.json();
-    console.log('Chat request received:', { conversation_id, project_id });
+    
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -76,7 +76,7 @@ serve(async (req) => {
       .single();
 
     if (reportError) {
-      console.log('No report found, continuing without it');
+      
     }
 
     // Build conversation history for context
@@ -230,7 +230,7 @@ RESPONSE:`;
       cost_cents: Math.ceil((aiData.usage?.total_tokens || 0) * 0.0001),
     });
 
-    console.log('Chat response generated successfully');
+    
 
     return new Response(
       JSON.stringify({ 
