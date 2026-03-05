@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, BarChart3, X, ChevronDown, Star, Sparkles, Quote } from "lucide-react";
+import { Check, BarChart3, X, ChevronDown, Star, Sparkles, Quote, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const PLANS = [
   {
@@ -177,13 +179,84 @@ const FaqItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
   );
 };
 
+// Map plan names to Stripe price IDs — replace with real IDs from your Stripe dashboard
+const STRIPE_PRICE_IDS: Record<string, { monthly: string; annual: string }> = {
+  Starter: {
+    monthly: "price_starter_monthly_placeholder",
+    annual: "price_starter_annual_placeholder",
+  },
+  Growth: {
+    monthly: "price_growth_monthly_placeholder",
+    annual: "price_growth_annual_placeholder",
+  },
+  Pro: {
+    monthly: "price_pro_monthly_placeholder",
+    annual: "price_pro_annual_placeholder",
+  },
+};
+
 const Pricing = () => {
   const navigate = useNavigate();
   const [isAnnual, setIsAnnual] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (u) {
+        setUser(u);
+        const { data } = await supabase
+          .from("profiles")
+          .select("subscription_tier")
+          .eq("id", u.id)
+          .single();
+        if (data) setProfile(data);
+      }
+    };
+    loadUser();
+  }, []);
 
   const getPrice = (plan: typeof PLANS[0]) => {
     if (plan.monthlyPrice === 0) return "$0";
     return `$${isAnnual ? plan.annualPrice : plan.monthlyPrice}`;
+  };
+
+  const handleSubscribe = async (plan: typeof PLANS[0]) => {
+    if (plan.name === "Free") {
+      navigate("/auth");
+      return;
+    }
+
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    const priceIds = STRIPE_PRICE_IDS[plan.name];
+    if (!priceIds) return;
+
+    setLoadingPlan(plan.name);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: {
+          price_id: isAnnual ? priceIds.annual : priceIds.monthly,
+          plan_name: plan.name,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setLoadingPlan(null);
+    }
   };
 
   return (
@@ -336,17 +409,45 @@ const Pricing = () => {
                       ))}
                     </ul>
 
-                    <Button
-                      className={`w-full transition-all duration-300 ${
-                        isPopular
-                          ? "bg-gradient-to-r from-primary to-secondary hover:shadow-glow text-primary-foreground border-0"
-                          : ""
-                      }`}
-                      variant={isPopular ? "default" : "outline"}
-                      onClick={() => navigate("/auth")}
-                    >
-                      {plan.cta}
-                    </Button>
+                    {user && profile?.subscription_tier === plan.name.toLowerCase() ? (
+                      <Button className="w-full" variant="secondary" disabled>
+                        Current Plan
+                      </Button>
+                    ) : user && profile?.subscription_tier !== "free" && plan.name !== "Free" ? (
+                      <Button
+                        className={`w-full transition-all duration-300 ${
+                          isPopular
+                            ? "bg-gradient-to-r from-primary to-secondary hover:shadow-glow text-primary-foreground border-0"
+                            : ""
+                        }`}
+                        variant={isPopular ? "default" : "outline"}
+                        onClick={() => handleSubscribe(plan)}
+                        disabled={loadingPlan === plan.name}
+                      >
+                        {loadingPlan === plan.name ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Change Plan"
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        className={`w-full transition-all duration-300 ${
+                          isPopular
+                            ? "bg-gradient-to-r from-primary to-secondary hover:shadow-glow text-primary-foreground border-0"
+                            : ""
+                        }`}
+                        variant={isPopular ? "default" : "outline"}
+                        onClick={() => handleSubscribe(plan)}
+                        disabled={loadingPlan === plan.name}
+                      >
+                        {loadingPlan === plan.name ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          plan.cta
+                        )}
+                      </Button>
+                    )}
                   </Card>
                 </div>
               );
