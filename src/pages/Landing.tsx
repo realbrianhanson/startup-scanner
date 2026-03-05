@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Zap, Target, Users, Check, ArrowRight, BarChart3, Globe, Lightbulb } from "lucide-react";
+import { Zap, Target, Users, Check, ArrowRight, BarChart3, Globe, Lightbulb, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ScrollReveal } from "@/components/ScrollReveal";
@@ -92,12 +92,20 @@ const Landing = () => {
     {
       quote: "Validifier helped me avoid building a product nobody wanted. Saved me 6 months!",
       author: "Sarah Chen",
+      initials: "SC",
       role: "First-time Founder",
     },
     {
       quote: "The McKinsey-style analysis gave me confidence to pitch investors. Raised $500K seed.",
       author: "Marcus Rodriguez",
+      initials: "MR",
       role: "SaaS Entrepreneur",
+    },
+    {
+      quote: "The Porter's Five Forces analysis alone was worth it. My investors were impressed with the depth.",
+      author: "David Park",
+      initials: "DP",
+      role: "EdTech Founder",
     },
   ];
 
@@ -423,28 +431,57 @@ const Landing = () => {
       </ScrollReveal>
 
       {/* Testimonials */}
-      <ScrollReveal>
       <section className="py-20 bg-gradient-subtle">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl font-extrabold tracking-tight text-center mb-12">
-              What Founders Are Saying
-            </h2>
-            <div className="grid md:grid-cols-2 gap-8">
+          <div className="max-w-6xl mx-auto">
+            <ScrollReveal>
+              <h2 className="text-4xl font-extrabold tracking-tight text-center mb-12">
+                What Founders Are Saying
+              </h2>
+            </ScrollReveal>
+            <div className="grid md:grid-cols-3 gap-6">
               {testimonials.map((testimonial, index) => (
-                <Card key={index} className="p-8 space-y-4 border-2">
-                  <p className="text-lg italic">"{testimonial.quote}"</p>
-                  <div>
-                    <p className="font-semibold">{testimonial.author}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </Card>
+                <ScrollReveal key={index} delay={index * 150}>
+                  <Card className="p-7 space-y-4 border border-border relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-large group h-full">
+                    {/* Gradient left border */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-secondary rounded-l-lg" />
+
+                    {/* Decorative quote mark */}
+                    <span className="absolute top-3 left-4 text-6xl font-serif text-primary/10 leading-none select-none">"</span>
+
+                    {/* Stars */}
+                    <div className="flex gap-0.5 pt-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-warning text-warning" />
+                      ))}
+                    </div>
+
+                    <p className="text-sm leading-relaxed text-foreground relative z-10">"{testimonial.quote}"</p>
+
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
+                        {testimonial.initials}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm text-foreground">{testimonial.author}</p>
+                        <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </div>
+                  </Card>
+                </ScrollReveal>
               ))}
             </div>
+
+            <ScrollReveal delay={500}>
+              <p className="text-center mt-8">
+                <a href="#pricing" className="text-sm text-primary font-medium hover:underline transition-colors">
+                  Read more success stories →
+                </a>
+              </p>
+            </ScrollReveal>
           </div>
         </div>
       </section>
-      </ScrollReveal>
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-hero text-white">
