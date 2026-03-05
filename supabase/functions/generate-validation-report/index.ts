@@ -212,86 +212,154 @@ serve(async (req) => {
 
     let currentStatus = { ...report.generation_status };
 
+    // ============================================================
+    // TIMEOUT SAFETY NET
+    // Supabase edge functions have a hard timeout. We track elapsed
+    // time and gracefully stop generating sections when approaching
+    // the limit, then always finalize what we have.
+    // ============================================================
+    const startTime = Date.now();
+    const MAX_RUNTIME_MS = 240_000; // 240s — leave 60s buffer before hard timeout
+
+    function isRunningLow(): boolean {
+      return (Date.now() - startTime) > MAX_RUNTIME_MS;
+    }
+
     // Generate sections sequentially with context chaining
     const ctx: Record<string, any> = {};
     const industryCtx = getIndustryContext(project.industry);
 
-    // Use quality-appropriate models for each section
-    const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY, industryCtx, sectionPremiumModel);
-    ctx.executiveSummary = executiveSummary;
-    currentStatus = await updateSectionStatus("executive_summary", executiveSummary, currentStatus);
+    // Define all sections in generation order
+    const sectionGenerators: Array<{
+      key: string;
+      gen: () => Promise<any>;
+      ctxKey?: string; // key to store in ctx for downstream sections
+    }> = [
+      {
+        key: "executive_summary",
+        ctxKey: "executiveSummary",
+        gen: () => generateExecutiveSummary(project, LOVABLE_API_KEY, industryCtx, sectionPremiumModel),
+      },
+      {
+        key: "market_analysis",
+        ctxKey: "marketAnalysis",
+        gen: () => generateMarketAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel),
+      },
+      {
+        key: "customer_personas",
+        ctxKey: "customerPersonas",
+        gen: () => generateCustomerPersonas(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel),
+      },
+      {
+        key: "competitive_landscape",
+        ctxKey: "competitiveLandscape",
+        gen: () => generateCompetitiveLandscape(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel),
+      },
+      {
+        key: "strategic_frameworks",
+        ctxKey: "strategicFrameworks",
+        gen: () => generateStrategicFrameworks(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel),
+      },
+      {
+        key: "porter_five_forces",
+        ctxKey: "porterFiveForces",
+        gen: () => generatePorterFiveForces(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel),
+      },
+      {
+        key: "pestel_analysis",
+        ctxKey: "pestelAnalysis",
+        gen: () => generatePestelAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel),
+      },
+      {
+        key: "catwoe_analysis",
+        ctxKey: "catwoeAnalysis",
+        gen: () => generateCatwoeAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel),
+      },
+      {
+        key: "path_to_mvp",
+        ctxKey: "pathToMvp",
+        gen: () => generatePathToMvp(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel),
+      },
+      {
+        key: "go_to_market_strategy",
+        ctxKey: "goToMarketStrategy",
+        gen: () => generateGoToMarketStrategy(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel),
+      },
+      {
+        key: "usp_analysis",
+        ctxKey: "uspAnalysis",
+        gen: () => generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel),
+      },
+      {
+        key: "game_changing_idea",
+        ctxKey: "gameChangingIdea",
+        gen: () => generateGameChangingIdea(project, LOVABLE_API_KEY, ctx, sectionPremiumModel),
+      },
+      {
+        key: "financial_basics",
+        ctxKey: "financialBasics",
+        gen: () => generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel),
+      },
+      {
+        key: "risk_matrix",
+        ctxKey: "riskMatrix",
+        gen: () => generateRiskMatrix(project, LOVABLE_API_KEY, ctx, sectionPremiumModel),
+      },
+      {
+        key: "action_plan",
+        ctxKey: "actionPlan",
+        gen: () => generateActionPlan(project, LOVABLE_API_KEY, ctx, sectionPremiumModel),
+      },
+    ];
 
-    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
-    ctx.marketAnalysis = marketAnalysis;
-    currentStatus = await updateSectionStatus("market_analysis", marketAnalysis, currentStatus);
+    let sectionsCompleted = 0;
+    let timedOut = false;
 
-    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
-    ctx.customerPersonas = customerPersonas;
-    currentStatus = await updateSectionStatus("customer_personas", customerPersonas, currentStatus);
+    for (const section of sectionGenerators) {
+      if (isRunningLow()) {
+        console.log(`⏱️ Timeout approaching after ${sectionsCompleted} sections (${Math.round((Date.now() - startTime) / 1000)}s elapsed) — skipping remaining sections`);
+        timedOut = true;
+        break;
+      }
 
-    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
-    ctx.competitiveLandscape = competitiveLandscape;
-    currentStatus = await updateSectionStatus("competitive_landscape", competitiveLandscape, currentStatus);
+      try {
+        const data = await section.gen();
+        if (section.ctxKey) {
+          ctx[section.ctxKey] = data;
+        }
+        currentStatus = await updateSectionStatus(section.key, data, currentStatus);
+        sectionsCompleted++;
+        console.log(`✅ Section ${section.key} complete (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+      } catch (err) {
+        console.error(`❌ Section ${section.key} failed:`, err);
+        // Mark as failed but continue to next section
+        currentStatus = { ...currentStatus, [section.key]: "failed" };
+        await supabase
+          .from("reports")
+          .update({ generation_status: currentStatus })
+          .eq("id", report.id);
+      }
+    }
 
-    // Structured framework sections
-    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
-    currentStatus = await updateSectionStatus("strategic_frameworks", strategicFrameworks, currentStatus);
+    // ============================================================
+    // FINALIZATION — Always runs, even if some sections were skipped
+    // ============================================================
+    console.log(`📊 Finalizing report: ${sectionsCompleted}/${sectionGenerators.length} sections completed${timedOut ? ' (timed out)' : ''}`);
 
-    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
-    currentStatus = await updateSectionStatus("porter_five_forces", porterFiveForces, currentStatus);
-
-    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
-    currentStatus = await updateSectionStatus("pestel_analysis", pestelAnalysis, currentStatus);
-
-    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
-    currentStatus = await updateSectionStatus("catwoe_analysis", catwoeAnalysis, currentStatus);
-
-    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
-    currentStatus = await updateSectionStatus("path_to_mvp", pathToMvp, currentStatus);
-
-    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
-    currentStatus = await updateSectionStatus("go_to_market_strategy", goToMarketStrategy, currentStatus);
-
-    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
-    currentStatus = await updateSectionStatus("usp_analysis", uspAnalysis, currentStatus);
-
-    const gameChangingIdea = await generateGameChangingIdea(project, LOVABLE_API_KEY, {
-      executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
-      strategicFrameworks, porterFiveForces, goToMarketStrategy
-    }, sectionPremiumModel);
-    currentStatus = await updateSectionStatus("game_changing_idea", gameChangingIdea, currentStatus);
-
-    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
-    currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
-
-    const riskMatrix = await generateRiskMatrix(project, LOVABLE_API_KEY, {
-      executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
-      strategicFrameworks, porterFiveForces, pestelAnalysis, catwoeAnalysis,
-      pathToMvp, goToMarketStrategy, uspAnalysis, gameChangingIdea, financialBasics
-    }, sectionPremiumModel);
-    currentStatus = await updateSectionStatus("risk_matrix", riskMatrix, currentStatus);
-
-    const actionPlan = await generateActionPlan(project, LOVABLE_API_KEY, {
-      executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
-      strategicFrameworks, porterFiveForces, pestelAnalysis, catwoeAnalysis,
-      pathToMvp, goToMarketStrategy, uspAnalysis, gameChangingIdea, financialBasics, riskMatrix
-    }, sectionPremiumModel);
-    currentStatus = await updateSectionStatus("action_plan", actionPlan, currentStatus);
-
-    // Calculate validation score
+    // Calculate validation score from whatever sections we have
     const validationScore = calculateValidationScore({
-      executiveSummary,
-      marketAnalysis,
-      customerPersonas,
-      competitiveLandscape,
-      strategicFrameworks,
-      porterFiveForces,
-      pestelAnalysis,
-      catwoeAnalysis,
-      pathToMvp,
-      goToMarketStrategy,
-      uspAnalysis,
-      financialBasics,
+      executiveSummary: ctx.executiveSummary,
+      marketAnalysis: ctx.marketAnalysis,
+      customerPersonas: ctx.customerPersonas,
+      competitiveLandscape: ctx.competitiveLandscape,
+      strategicFrameworks: ctx.strategicFrameworks,
+      porterFiveForces: ctx.porterFiveForces,
+      pestelAnalysis: ctx.pestelAnalysis,
+      catwoeAnalysis: ctx.catwoeAnalysis,
+      pathToMvp: ctx.pathToMvp,
+      goToMarketStrategy: ctx.goToMarketStrategy,
+      uspAnalysis: ctx.uspAnalysis,
+      financialBasics: ctx.financialBasics,
     });
 
     // Final update: add validation_score to report_data
@@ -350,7 +418,7 @@ serve(async (req) => {
         const notifPrefs = profile.notification_preferences as Record<string, boolean> | null;
         if (!notifPrefs || notifPrefs.report_completion !== false) {
           const topInsights: string[] = [];
-          if (executiveSummary?.strengths) topInsights.push(...executiveSummary.strengths.slice(0, 3));
+          if (ctx.executiveSummary?.strengths) topInsights.push(...ctx.executiveSummary.strengths.slice(0, 3));
 
           const sendEmailUrl = `${SUPABASE_URL}/functions/v1/send-email`;
           await fetch(sendEmailUrl, {
@@ -404,7 +472,14 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, report_id: report.id, validation_score: validationScore }),
+      JSON.stringify({ 
+        success: true, 
+        report_id: report.id, 
+        validation_score: validationScore,
+        sections_completed: sectionsCompleted,
+        total_sections: sectionGenerators.length,
+        timed_out: timedOut,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
