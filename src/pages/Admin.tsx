@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp, Star, MessageSquare } from "lucide-react";
+import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp, Star, MessageSquare, Settings, CalendarCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface Profile {
   id: string;
@@ -43,6 +44,13 @@ const Admin = () => {
   // Feedback state
   const [feedbackList, setFeedbackList] = useState<any[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  // CTA config state
+  const [ctaCalendlyUrl, setCtaCalendlyUrl] = useState("");
+  const [ctaHeadline, setCtaHeadline] = useState("");
+  const [ctaEnabled, setCtaEnabled] = useState(true);
+  const [ctaLoading, setCtaLoading] = useState(false);
+  const [ctaSaving, setCtaSaving] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -204,6 +212,42 @@ const Admin = () => {
     }
   };
 
+  const loadCtaConfig = async () => {
+    setCtaLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("site_config" as any)
+        .select("key, value")
+        .in("key", ["calendly_url", "cta_headline", "cta_enabled"]);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data as any[])?.forEach((r: { key: string; value: string }) => { map[r.key] = r.value; });
+      setCtaCalendlyUrl(map.calendly_url || "");
+      setCtaHeadline(map.cta_headline || "");
+      setCtaEnabled(map.cta_enabled !== "false");
+    } catch { toast.error("Failed to load CTA config"); }
+    finally { setCtaLoading(false); }
+  };
+
+  const saveCtaConfig = async () => {
+    setCtaSaving(true);
+    try {
+      const updates = [
+        { key: "calendly_url", value: ctaCalendlyUrl, updated_at: new Date().toISOString() },
+        { key: "cta_headline", value: ctaHeadline, updated_at: new Date().toISOString() },
+        { key: "cta_enabled", value: ctaEnabled ? "true" : "false", updated_at: new Date().toISOString() },
+      ];
+      for (const u of updates) {
+        const { error } = await supabase.from("site_config" as any).update({ value: u.value, updated_at: u.updated_at } as any).eq("key", u.key);
+        if (error) throw error;
+      }
+      // Clear cached config
+      sessionStorage.removeItem("site_config_cache");
+      toast.success("CTA settings saved!");
+    } catch { toast.error("Failed to save CTA settings"); }
+    finally { setCtaSaving(false); }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -252,6 +296,10 @@ const Admin = () => {
             <TabsTrigger value="feedback" onClick={loadFeedback}>
               <Star className="h-4 w-4 mr-2" />
               Feedback
+            </TabsTrigger>
+            <TabsTrigger value="cta" onClick={loadCtaConfig}>
+              <CalendarCheck className="h-4 w-4 mr-2" />
+              CTA Settings
             </TabsTrigger>
           </TabsList>
 
@@ -483,6 +531,57 @@ const Admin = () => {
                       </div>
                     ))}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CTA Settings Tab */}
+          <TabsContent value="cta" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarCheck className="h-5 w-5" />
+                  CTA Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure the Calendly call-to-action across the app
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {ctaLoading ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Loading settings...</p>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Enable Calendly CTAs</Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">Toggle all CTAs on/off across the app</p>
+                      </div>
+                      <Switch checked={ctaEnabled} onCheckedChange={setCtaEnabled} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="calendly-url">Calendly URL</Label>
+                      <Input
+                        id="calendly-url"
+                        value={ctaCalendlyUrl}
+                        onChange={(e) => setCtaCalendlyUrl(e.target.value)}
+                        placeholder="https://calendly.com/your-link"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cta-headline">End-of-Report CTA Headline</Label>
+                      <Input
+                        id="cta-headline"
+                        value={ctaHeadline}
+                        onChange={(e) => setCtaHeadline(e.target.value)}
+                        placeholder="Ready to Turn This Report Into Reality?"
+                      />
+                    </div>
+                    <Button onClick={saveCtaConfig} disabled={ctaSaving}>
+                      {ctaSaving ? "Saving..." : "Save Settings"}
+                    </Button>
+                  </>
                 )}
               </CardContent>
             </Card>

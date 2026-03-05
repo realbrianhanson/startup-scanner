@@ -2,62 +2,50 @@ import { useState, useEffect } from "react";
 import { CalendarCheck, ArrowRight, X, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const CALENDLY_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
-
-declare global {
-  interface Window {
-    Calendly?: {
-      initPopupWidget: (opts: { url: string }) => void;
-    };
-  }
-}
-
-function openCalendly(utm: string) {
-  const url = `${CALENDLY_URL}?utm_source=validifier&utm_medium=report&utm_campaign=${utm}`;
-  if (window.Calendly) {
-    window.Calendly.initPopupWidget({ url });
-  } else {
-    window.open(url, "_blank");
-  }
-}
+import { useCalendly } from "@/hooks/useCalendly";
 
 /* ─── LOCATION 1: Inline CTA after Game-Changing Idea ─── */
-export const InlineReportCTA = () => (
-  <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-primary to-secondary p-[1px]">
-    <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 md:p-8">
-      <div className="flex flex-col md:flex-row items-center gap-6">
-        <div className="flex-1 space-y-3 text-center md:text-left">
-          <h3 className="text-xl md:text-2xl font-bold text-primary-foreground">
-            Love this idea? Let's make it happen.
-          </h3>
-          <p className="text-primary-foreground/80 text-sm md:text-base max-w-lg">
-            Book a free 15-minute strategy call. We'll review your validation report together and map out your next steps.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <Button
-              size="lg"
-              onClick={() => openCalendly("inline_cta")}
-              className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg animate-[pulse_3s_ease-in-out_infinite] hover:animate-none"
-            >
-              Book Your Free Call
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <p className="text-[11px] text-primary-foreground/60">
-              No obligation. No pitch. Just actionable advice.
+export const InlineReportCTA = () => {
+  const { ctaEnabled, openCalendly } = useCalendly();
+  if (!ctaEnabled) return null;
+
+  return (
+    <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-primary to-secondary p-[1px]">
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 md:p-8">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="flex-1 space-y-3 text-center md:text-left">
+            <h3 className="text-xl md:text-2xl font-bold text-primary-foreground">
+              Love this idea? Let's make it happen.
+            </h3>
+            <p className="text-primary-foreground/80 text-sm md:text-base max-w-lg">
+              Book a free 15-minute strategy call. We'll review your validation report together and map out your next steps.
             </p>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <Button
+                size="lg"
+                onClick={() => openCalendly("report", "inline_cta")}
+                className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg animate-[pulse_3s_ease-in-out_infinite] hover:animate-none"
+              >
+                Book Your Free Call
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <p className="text-[11px] text-primary-foreground/60">
+                No obligation. No pitch. Just actionable advice.
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="hidden md:flex items-center justify-center w-24 h-24 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shrink-0">
-          <CalendarCheck className="h-12 w-12 text-primary-foreground/80" />
+          <div className="hidden md:flex items-center justify-center w-24 h-24 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shrink-0">
+            <CalendarCheck className="h-12 w-12 text-primary-foreground/80" />
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ─── LOCATION 2: Sticky Bottom Bar ─── */
 export const StickyReportCTA = () => {
+  const { ctaEnabled, openCalendly } = useCalendly();
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -81,7 +69,7 @@ export const StickyReportCTA = () => {
     sessionStorage.setItem("report-cta-dismissed", "1");
   };
 
-  if (dismissed) return null;
+  if (dismissed || !ctaEnabled) return null;
 
   return (
     <div
@@ -99,7 +87,7 @@ export const StickyReportCTA = () => {
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              onClick={() => openCalendly("sticky_bar")}
+              onClick={() => openCalendly("report", "sticky_bar")}
               className="font-semibold"
             >
               <CalendarCheck className="mr-1.5 h-3.5 w-3.5" />
@@ -121,6 +109,9 @@ export const StickyReportCTA = () => {
 
 /* ─── LOCATION 3: End-of-Report CTA ─── */
 export const EndOfReportCTA = () => {
+  const { ctaEnabled, ctaHeadline, openCalendly } = useCalendly();
+  if (!ctaEnabled) return null;
+
   const valuePoints = [
     "Walk through your validation results with an expert",
     "Get personalized advice on your biggest challenges",
@@ -136,7 +127,7 @@ export const EndOfReportCTA = () => {
         </div>
 
         <h3 className="text-2xl md:text-3xl font-bold">
-          Ready to Turn This Report Into Reality?
+          {ctaHeadline}
         </h3>
 
         <div className="flex flex-col items-center gap-3 max-w-md mx-auto">
@@ -150,7 +141,7 @@ export const EndOfReportCTA = () => {
 
         <Button
           size="lg"
-          onClick={() => openCalendly("end_of_report")}
+          onClick={() => openCalendly("report", "end_of_report")}
           className="text-base px-8 font-semibold shadow-lg"
         >
           <CalendarCheck className="mr-2 h-5 w-5" />
@@ -158,7 +149,6 @@ export const EndOfReportCTA = () => {
         </Button>
 
         <div className="flex flex-col items-center gap-3 pt-2">
-          {/* Avatar group for social proof */}
           <div className="flex items-center -space-x-2">
             {[
               "bg-primary/70",

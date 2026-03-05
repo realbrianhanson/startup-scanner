@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import { useNavigate } from "react-router-dom";
+import { useCalendly } from "@/hooks/useCalendly";
 import { CompareProjects } from "@/components/CompareProjects";
 import { INSPIRATION_IDEAS } from "@/lib/inspirationIdeas";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,25 +113,6 @@ const RocketIllustration = () => (
   </svg>
 );
 
-const CALENDLY_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
-
-declare global {
-  interface Window {
-    Calendly?: {
-      initPopupWidget: (opts: { url: string }) => void;
-    };
-  }
-}
-
-function openDashboardCalendly(utm_campaign: string) {
-  const url = `${CALENDLY_URL}?utm_source=validifier&utm_medium=dashboard&utm_campaign=${utm_campaign}`;
-  if (window.Calendly) {
-    window.Calendly.initPopupWidget({ url });
-  } else {
-    window.open(url, "_blank");
-  }
-}
-
 function isDashboardCtaDismissed(): boolean {
   const dismissed = localStorage.getItem("dashboard_cta_dismissed");
   if (!dismissed) return false;
@@ -150,6 +132,7 @@ const Dashboard = () => {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [ctaDismissed, setCtaDismissed] = useState(isDashboardCtaDismissed);
+  const { ctaEnabled, openCalendly: openDashboardCalendly } = useCalendly();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -452,7 +435,7 @@ const Dashboard = () => {
           </div>
 
           {/* ── Calendly Strategy Call CTA ── */}
-          {!ctaDismissed && projects.some(p => p.status === "complete") && (() => {
+          {!ctaDismissed && ctaEnabled && projects.some(p => p.status === "complete") && (() => {
             const lowScoreProject = projects.find(p => p.status === "complete" && p.validation_score !== null && p.validation_score < 50);
             return (
               <Card className="relative p-4 border border-primary/20 bg-gradient-to-r from-primary/[0.04] to-secondary/[0.04] animate-fade-up delay-300">
@@ -479,7 +462,7 @@ const Dashboard = () => {
                     variant="outline"
                     size="sm"
                     className="shrink-0"
-                    onClick={() => openDashboardCalendly(lowScoreProject ? "low_score_cta" : "dashboard_cta")}
+                    onClick={() => openDashboardCalendly("dashboard", lowScoreProject ? "low_score_cta" : "dashboard_cta")}
                   >
                     Book Now
                   </Button>

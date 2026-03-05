@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, ArrowLeft, Sparkles, WifiOff, ThumbsUp, ThumbsDown, CalendarCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/MarkdownContent';
+import { useCalendly } from '@/hooks/useCalendly';
 
 interface Message {
   id: string;
@@ -35,25 +36,7 @@ const FOLLOW_UP_SETS = [
   ["How do I validate this?", "What metrics should I track?", "Who should I hire first?"],
 ];
 
-const CALENDLY_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
 const CALL_TRIGGER_WORDS = ["help", "confused", "next steps", "how do i", "stuck", "overwhelmed", "hire", "budget", "funding", "lost", "don't know", "not sure", "advice"];
-
-declare global {
-  interface Window {
-    Calendly?: {
-      initPopupWidget: (opts: { url: string }) => void;
-    };
-  }
-}
-
-function openCalendly() {
-  const url = `${CALENDLY_URL}?utm_source=validifier&utm_medium=chat&utm_campaign=cora_chat`;
-  if (window.Calendly) {
-    window.Calendly.initPopupWidget({ url });
-  } else {
-    window.open(url, "_blank");
-  }
-}
 
 /* ── Cora Avatar ── */
 const CoraAvatar = ({ size = 28 }: { size?: number }) => (
@@ -89,6 +72,7 @@ const TypingIndicator = () => (
 export default function Chat() {
   const { id: projectId } = useParams();
   const navigate = useNavigate();
+  const { ctaEnabled, openCalendly } = useCalendly();
   const [project, setProject] = useState<Project | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -254,7 +238,7 @@ export default function Chat() {
 
   // Determine if the Calendly CTA should show after the last assistant message
   const shouldShowCalendlyCTA = (msg: Message) => {
-    if (calendlyShown || !isLastAssistantMessage(msg)) return false;
+    if (calendlyShown || !ctaEnabled || !isLastAssistantMessage(msg)) return false;
     const userMessages = messages.filter(m => m.role === 'user');
     // Show after 5+ user messages
     if (userMessages.length >= 5) return true;
@@ -440,7 +424,7 @@ export default function Chat() {
                         {/* Calendly CTA chip */}
                         {shouldShowCalendlyCTA(message) && (
                           <button
-                            onClick={() => { openCalendly(); setCalendlyShown(true); }}
+                            onClick={() => { openCalendly("chat", "cora_chat"); setCalendlyShown(true); }}
                             className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/30 text-foreground hover:from-primary/20 hover:to-secondary/20 transition-all duration-200"
                           >
                             <span className="flex items-center gap-1.5">

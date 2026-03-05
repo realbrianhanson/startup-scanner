@@ -78,25 +78,7 @@ import { ActionPlanSection } from "@/components/report/ActionPlanSection";
 import { InlineReportCTA, StickyReportCTA, EndOfReportCTA } from "@/components/report/ReportCTAs";
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
-
-const CALENDLY_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
-
-declare global {
-  interface Window {
-    Calendly?: {
-      initPopupWidget: (opts: { url: string }) => void;
-    };
-  }
-}
-
-function openCompletionCalendly() {
-  const url = `${CALENDLY_URL}?utm_source=validifier&utm_medium=report&utm_campaign=completion_cta`;
-  if (window.Calendly) {
-    window.Calendly.initPopupWidget({ url });
-  } else {
-    window.open(url, "_blank");
-  }
-}
+import { useCalendly } from "@/hooks/useCalendly";
 
 function getScoreMessage(score: number) {
   if (score >= 70) return "Great potential! Want to discuss how to capitalize on your strengths?";
@@ -118,6 +100,7 @@ const ViewReport = () => {
   const [showCompletionCTA, setShowCompletionCTA] = useState(false);
   const [celebrationPhase, setCelebrationPhase] = useState(false);
   const wasGeneratingRef = useRef(false);
+  const { openCalendly: openCompletionCalendly } = useCalendly();
 
   const handleDeleteProject = async () => {
     try {
@@ -588,7 +571,7 @@ const ViewReport = () => {
             <Button
               size="lg"
               className="w-full animate-pulse-glow"
-              onClick={() => { openCompletionCalendly(); setShowCompletionCTA(false); }}
+              onClick={() => { openCompletionCalendly("report", "completion_cta"); setShowCompletionCTA(false); }}
             >
               <CalendarCheck className="mr-2 h-5 w-5" />
               Book a Free Strategy Call
