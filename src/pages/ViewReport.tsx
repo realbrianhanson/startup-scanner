@@ -391,14 +391,6 @@ const ViewReport = () => {
               />
             )}
 
-            {/* Completion celebration (brief) */}
-            {!isGenerating && project?.status === "complete" && progress === 100 && !report?.report_data?.executive_summary && (
-              <GenerationExperience
-                generationStatus={report?.generation_status as Record<string, string> | null}
-                isComplete={true}
-                validationScore={validationScore}
-              />
-            )}
 
             {/* Executive Summary (always visible when available) */}
             <ReportSectionErrorBoundary sectionName="Executive Summary">
