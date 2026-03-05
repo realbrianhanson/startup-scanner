@@ -1,10 +1,18 @@
 import { Flag, Calendar, Wrench, Users, DollarSign, Zap, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { safeArray } from "@/lib/reportHelpers";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
 interface Props {
   reportData: any;
 }
+
+const WEEK_COLORS = [
+  "bg-primary text-primary-foreground",
+  "bg-secondary text-secondary-foreground",
+  "bg-muted text-muted-foreground",
+  "bg-accent text-accent-foreground",
+];
 
 export const ActionPlanSection = ({ reportData }: Props) => {
   if (!reportData.action_plan) return null;
@@ -24,9 +32,11 @@ export const ActionPlanSection = ({ reportData }: Props) => {
         <h2 className="font-serif text-2xl tracking-tight mb-2">Your 30-Day Action Plan</h2>
         <p className="text-sm text-muted-foreground mb-8">A concrete roadmap based on your full analysis</p>
 
-        {/* Quick Wins */}
+        {/* Quick Wins — prominent card */}
         {safeArray(data.quick_wins).length > 0 && (
-          <div className="mb-8 border-l-2 border-l-emerald-500 pl-5 py-2">
+          <div className="mb-8 rounded-lg p-5 bg-card border border-emerald-500/20"
+            style={{ borderImage: "linear-gradient(to right, hsl(var(--primary)), hsl(142.1 76.2% 36.3%)) 1", borderWidth: "1px", borderStyle: "solid" }}
+          >
             <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-emerald-500 mb-3 flex items-center gap-2">
               <Zap className="h-4 w-4" />
               Quick Wins — Start Here
@@ -45,7 +55,7 @@ export const ActionPlanSection = ({ reportData }: Props) => {
         {/* Weekly Timeline — vertical line on the left */}
         <div className="relative">
           {/* Continuous vertical line */}
-          <div className="absolute left-[5px] top-2 bottom-2 w-px bg-border" />
+          <div className="absolute left-[5px] top-2 bottom-2 w-0.5 bg-primary/30 rounded-full" />
 
           <div className="space-y-8">
             {weeks.map((week, idx) => (
@@ -54,15 +64,19 @@ export const ActionPlanSection = ({ reportData }: Props) => {
                 <div className="absolute left-0 top-1 w-[11px] h-[11px] rounded-full bg-primary border-2 border-background" />
 
                 {/* Week header */}
-                <div className="mb-4">
-                  <span className="font-mono text-xs text-primary font-semibold uppercase tracking-wider">Week {idx + 1}</span>
+                <div className="mb-4 flex items-center gap-2">
+                  <Badge className={`text-[10px] ${WEEK_COLORS[Math.min(idx, WEEK_COLORS.length - 1)]}`}>
+                    Week {idx + 1}
+                  </Badge>
                   <h3 className="font-sans text-lg font-semibold">{week.data.theme}</h3>
                 </div>
 
                 {/* Actions */}
                 <div className="space-y-3">
                   {safeArray(week.data.actions).map((action: any, i: number) => (
-                    <div key={i} className="flex gap-4 py-2 border-b border-border/30 last:border-0">
+                    <div key={i} className="flex gap-4 py-2 border-b border-border/30 last:border-0 relative">
+                      {/* Small circle on timeline */}
+                      <div className="absolute -left-[23px] top-3.5 w-[5px] h-[5px] rounded-full bg-primary/50" />
                       <span className="font-mono text-xs text-muted-foreground w-16 shrink-0 mt-0.5">{action.day}</span>
                       <div className="flex-1">
                         <p className="text-sm font-medium">{action.action}</p>
@@ -84,7 +98,7 @@ export const ActionPlanSection = ({ reportData }: Props) => {
         {/* Critical Milestones */}
         {safeArray(data.critical_milestones).length > 0 && (
           <>
-            <div className="border-t border-border/50 mt-8 pt-6" />
+            <div className="border-t border-border/30 mt-8 pt-6" />
             <div>
               <h3 className="font-sans text-lg font-semibold mb-4 flex items-center gap-2">
                 <Flag className="h-4 w-4 text-primary" />
@@ -113,13 +127,13 @@ export const ActionPlanSection = ({ reportData }: Props) => {
         {/* Resources Needed */}
         {data.resources_needed && (
           <>
-            <div className="border-t border-border/50 mt-6 pt-6" />
+            <div className="border-t border-border/30 mt-6 pt-6" />
             <div>
-              <h3 className="font-sans text-lg font-semibold mb-4">Resources Needed</h3>
+              <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-4">Resources Needed</h3>
               <div className="grid md:grid-cols-3 gap-6">
                 {data.resources_needed.budget_estimate && (
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                       <DollarSign className="h-3 w-3" /> Budget
                     </p>
                     <p className="text-sm font-medium">{data.resources_needed.budget_estimate}</p>
@@ -127,7 +141,7 @@ export const ActionPlanSection = ({ reportData }: Props) => {
                 )}
                 {safeArray(data.resources_needed.tools).length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                       <Wrench className="h-3 w-3" /> Tools
                     </p>
                     <ul className="space-y-1">
@@ -139,7 +153,7 @@ export const ActionPlanSection = ({ reportData }: Props) => {
                 )}
                 {data.resources_needed.people && (
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                       <Users className="h-3 w-3" /> People
                     </p>
                     <p className="text-sm">{data.resources_needed.people}</p>

@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, Target, Wallet, BarChart3, Landmark, ArrowUpRight } from "lucide-react";
+import { DollarSign, TrendingUp, Target, Wallet, BarChart3, Landmark, ArrowUpRight, ArrowUp } from "lucide-react";
 import { ReportSectionCard } from "./ReportSectionCard";
 import {
   Table,
@@ -13,15 +13,28 @@ interface Props {
   reportData: any;
 }
 
+const parseNumericValue = (val: any): number | null => {
+  if (typeof val === "number") return val;
+  if (typeof val !== "string") return null;
+  const cleaned = val.replace(/[^0-9.\-]/g, "");
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? null : parsed;
+};
+
+const isNegative = (val: any): boolean => {
+  const num = parseNumericValue(val);
+  return num !== null && num < 0;
+};
+
 const ScenarioCard = ({ label, data, highlight }: { label: string; data: any; highlight?: boolean }) => {
   const isStructured = typeof data === "object" && data?.total;
   const total = isStructured ? data.total : data;
   const breakdown = isStructured ? data.breakdown || [] : [];
 
   return (
-    <div className={`py-4 ${highlight ? "border-l-2 border-l-primary pl-4" : ""}`}>
+    <div className={`py-4 ${highlight ? "border-l-2 border-l-primary pl-4 bg-primary/[0.03] rounded-r-lg pr-4" : ""}`}>
       <div className="flex items-baseline justify-between mb-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
         <p className="font-mono text-lg font-semibold">{total}</p>
       </div>
       {breakdown.length > 0 && (
@@ -33,6 +46,23 @@ const ScenarioCard = ({ label, data, highlight }: { label: string; data: any; hi
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+};
+
+const LtvCacDisplay = ({ ratio }: { ratio: any }) => {
+  const numRatio = parseNumericValue(ratio);
+  const isHealthy = numRatio !== null && numRatio >= 3;
+
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">LTV:CAC</p>
+      <p className={`font-mono text-2xl font-bold ${isHealthy ? "text-emerald-500" : "text-amber-500"}`}>
+        {ratio || "—"}
+      </p>
+      {numRatio !== null && !isHealthy && (
+        <p className="text-xs text-amber-500 mt-0.5">Target: 3:1 minimum</p>
       )}
     </div>
   );
@@ -53,7 +83,7 @@ export const FinancialBasicsSection = ({ reportData }: Props) => {
     <ReportSectionCard title="Financial Basics">
       {/* Startup Cost Scenarios */}
       <div>
-        <h3 className="font-sans text-lg font-semibold mb-3">Startup Cost Scenarios</h3>
+        <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-3">Startup Cost Scenarios</h3>
         <div className="grid md:grid-cols-3 gap-0 divide-x divide-border/50">
           <ScenarioCard label="Conservative" data={fin.startup_costs?.conservative} />
           <ScenarioCard label="Moderate" data={fin.startup_costs?.moderate} highlight />
@@ -61,11 +91,11 @@ export const FinancialBasicsSection = ({ reportData }: Props) => {
         </div>
       </div>
 
-      <div className="border-t border-border/50" />
+      <div className="border-t border-border/30" />
 
       {/* Revenue Model */}
       <div>
-        <h3 className="font-sans text-lg font-semibold mb-3">Revenue Model</h3>
+        <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-3">Revenue Model</h3>
         {isStructuredRevenue ? (
           <div className="space-y-4">
             <p className="text-sm"><span className="font-medium">Model:</span> {revenueModel.primary_model}</p>
@@ -98,25 +128,25 @@ export const FinancialBasicsSection = ({ reportData }: Props) => {
         )}
       </div>
 
-      <div className="border-t border-border/50" />
+      <div className="border-t border-border/30" />
 
       {/* Unit Economics */}
       {unitEcon && (
         <>
           <div>
-            <h3 className="font-sans text-lg font-semibold mb-3">Unit Economics</h3>
+            <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-3">Unit Economics</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               {[
                 { label: "Revenue / Customer", value: unitEcon.average_revenue_per_customer },
                 { label: "CAC", value: unitEcon.estimated_cac },
                 { label: "LTV", value: unitEcon.estimated_ltv },
-                { label: "LTV:CAC", value: unitEcon.ltv_to_cac_ratio },
               ].map((m) => (
                 <div key={m.label}>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{m.label}</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{m.label}</p>
                   <p className="font-mono text-lg font-semibold">{m.value || "—"}</p>
                 </div>
               ))}
+              <LtvCacDisplay ratio={unitEcon.ltv_to_cac_ratio} />
             </div>
 
             {unitEcon.cac_breakdown?.length > 0 && (
@@ -144,64 +174,74 @@ export const FinancialBasicsSection = ({ reportData }: Props) => {
               <div className="grid md:grid-cols-2 gap-4 mt-4">
                 {unitEcon.payback_period && (
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Payback Period</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Payback Period</p>
                     <p className="text-sm font-medium">{unitEcon.payback_period}</p>
                   </div>
                 )}
                 {unitEcon.viability_assessment && (
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Viability Assessment</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Viability Assessment</p>
                     <p className="text-sm">{unitEcon.viability_assessment}</p>
                   </div>
                 )}
               </div>
             )}
           </div>
-          <div className="border-t border-border/50" />
+          <div className="border-t border-border/30" />
         </>
       )}
 
-      {/* 3-Year Projections — simple 3-column */}
+      {/* 3-Year Projections */}
       <div>
-        <h3 className="font-sans text-lg font-semibold mb-3">3-Year Projections</h3>
+        <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-3">3-Year Projections</h3>
         {isStructuredProjections ? (
           <div className="grid md:grid-cols-3 gap-0 divide-x divide-border/50">
             {[
-              { label: "Year 1", data: projections.year1 },
-              { label: "Year 2", data: projections.year2 },
-              { label: "Year 3", data: projections.year3 },
-            ].map((yr) => (
-              <div key={yr.label} className="py-3 px-4 first:pl-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">{yr.label}</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Revenue</span>
-                    <span className="font-mono font-semibold text-primary">{yr.data?.revenue}</span>
+              { label: "Year 1", data: projections.year1, prev: null },
+              { label: "Year 2", data: projections.year2, prev: projections.year1 },
+              { label: "Year 3", data: projections.year3, prev: projections.year2 },
+            ].map((yr) => {
+              const prevRevenue = parseNumericValue(yr.prev?.revenue);
+              const currRevenue = parseNumericValue(yr.data?.revenue);
+              const showGrowth = prevRevenue !== null && currRevenue !== null && currRevenue > prevRevenue;
+              const netNegative = isNegative(yr.data?.net);
+
+              return (
+                <div key={yr.label} className="py-3 px-4 first:pl-0">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">{yr.label}</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-muted-foreground">Revenue</span>
+                      <span className="font-mono font-semibold text-primary flex items-center gap-1">
+                        {yr.data?.revenue}
+                        {showGrowth && <ArrowUp className="h-3 w-3 text-emerald-500" />}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Customers</span>
+                      <span className="font-mono">{yr.data?.customers}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Expenses</span>
+                      <span className="font-mono">{yr.data?.expenses}</span>
+                    </div>
+                    <div className="border-t border-border/30 pt-2 flex justify-between text-sm">
+                      <span className="font-medium">Net</span>
+                      <span className={`font-mono font-semibold ${netNegative ? "text-red-500" : ""}`}>{yr.data?.net}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Customers</span>
-                    <span className="font-mono">{yr.data?.customers}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Expenses</span>
-                    <span className="font-mono">{yr.data?.expenses}</span>
-                  </div>
-                  <div className="border-t border-border/30 pt-2 flex justify-between text-sm">
-                    <span className="font-medium">Net</span>
-                    <span className="font-mono font-semibold">{yr.data?.net}</span>
-                  </div>
+                  {yr.data?.assumptions && (
+                    <p className="text-[11px] text-muted-foreground italic mt-3">{yr.data.assumptions}</p>
+                  )}
                 </div>
-                {yr.data?.assumptions && (
-                  <p className="text-[11px] text-muted-foreground italic mt-3">{yr.data.assumptions}</p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-4">
             {["year1", "year2", "year3"].map((key, i) => (
               <div key={key}>
-                <p className="text-xs text-muted-foreground mb-1">Year {i + 1}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Year {i + 1}</p>
                 <p className="font-mono text-lg font-semibold">{projections?.[key] || "TBD"}</p>
               </div>
             ))}
@@ -209,7 +249,7 @@ export const FinancialBasicsSection = ({ reportData }: Props) => {
         )}
       </div>
 
-      <div className="border-t border-border/50" />
+      <div className="border-t border-border/30" />
 
       {/* Funding & Break-Even */}
       <div className="grid md:grid-cols-2 gap-6">

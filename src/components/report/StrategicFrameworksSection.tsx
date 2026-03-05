@@ -5,10 +5,10 @@ interface Props {
 }
 
 const QUADRANTS = [
-  { key: "strengths", label: "Strengths", bg: "bg-emerald-500/[0.06]" },
-  { key: "weaknesses", label: "Weaknesses", bg: "bg-red-500/[0.06]" },
-  { key: "opportunities", label: "Opportunities", bg: "bg-blue-500/[0.06]" },
-  { key: "threats", label: "Threats", bg: "bg-amber-500/[0.06]" },
+  { key: "strengths", label: "Strengths", bg: "bg-emerald-500/[0.08]", dot: "bg-emerald-500" },
+  { key: "weaknesses", label: "Weaknesses", bg: "bg-red-500/[0.08]", dot: "bg-red-500" },
+  { key: "opportunities", label: "Opportunities", bg: "bg-blue-500/[0.08]", dot: "bg-blue-500" },
+  { key: "threats", label: "Threats", bg: "bg-amber-500/[0.08]", dot: "bg-amber-500" },
 ] as const;
 
 export const StrategicFrameworksSection = ({ reportData }: Props) => {
@@ -16,14 +16,15 @@ export const StrategicFrameworksSection = ({ reportData }: Props) => {
 
   return (
     <ReportSectionCard id="strategic-frameworks" title="SWOT Analysis">
-      <div className="grid grid-cols-2 gap-0">
+      <div className="grid grid-cols-2 gap-1">
         {QUADRANTS.map((q) => (
-          <div key={q.key} className={`${q.bg} p-5`}>
+          <div key={q.key} className={`${q.bg} p-5 rounded-lg`}>
             <h4 className="font-sans text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">{q.label}</h4>
             <ul className="space-y-2">
               {reportData.strategic_frameworks.swot?.[q.key]?.map((item: string, i: number) => (
-                <li key={i} className="text-sm leading-relaxed">
-                  {item}
+                <li key={i} className="text-sm leading-relaxed flex items-start gap-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${q.dot} mt-1.5 shrink-0`} />
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -33,9 +34,9 @@ export const StrategicFrameworksSection = ({ reportData }: Props) => {
 
       {reportData.strategic_frameworks.gtm_strategy?.length > 0 && (
         <>
-          <div className="border-t border-border/50" />
+          <div className="border-t border-border/30" />
           <div>
-            <h3 className="font-sans text-lg font-semibold mb-3">Go-to-Market Strategy</h3>
+            <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-3">Go-to-Market Strategy</h3>
             <ul className="space-y-2">
               {reportData.strategic_frameworks.gtm_strategy.map((strategy: string, i: number) => (
                 <li key={i} className="text-sm flex items-start">
