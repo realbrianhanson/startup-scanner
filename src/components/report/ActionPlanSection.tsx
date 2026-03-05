@@ -179,25 +179,24 @@ export const ActionPlanSection = ({ reportData }: Props) => {
 
               <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {milestones.map((ms: any, i: number) => {
-                  const milestoneText = typeof ms === 'string' ? ms : (ms.milestone || ms.name || ms.title || ms.description || ms.text || '');
-                  const targetDate = typeof ms === 'object' ? (ms.target_date || ms.date || ms.timeline || ms.deadline || '') : '';
-                  const successMetric = typeof ms === 'object' ? (ms.success_metric || ms.metric || ms.kpi || '') : '';
+                  const isObj = ms !== null && typeof ms === 'object';
+                  const milestoneText = isObj ? (ms.milestone || ms.name || ms.title || ms.description || ms.text || JSON.stringify(ms)) : String(ms || '');
+                  const targetDate = isObj ? String(ms.target_date || ms.date || ms.timeline || ms.deadline || '') : '';
+                  const successMetric = isObj ? String(ms.success_metric || ms.metric || ms.kpi || '') : '';
                   
                   return (
-                    <div key={i} className="relative bg-card rounded-lg border border-border/50 p-4 text-center flex flex-col items-center gap-2">
+                    <div key={i} className="relative bg-card rounded-lg border border-border/50 p-5 text-center flex flex-col items-center justify-center gap-2">
                       {/* Dot on the line */}
                       <div className="hidden md:block absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-background z-10" />
-                      {milestoneText && (
-                        <p className="text-sm font-semibold text-foreground mt-1">{milestoneText}</p>
+                      <p className="text-sm font-semibold text-foreground">{milestoneText}</p>
+                      {targetDate.length > 0 && (
+                        <p className="text-xs text-primary flex items-center gap-1">
+                          <Calendar className="h-3 w-3 inline-block" />
+                          {targetDate}
+                        </p>
                       )}
-                      {targetDate && (
-                        <div className="inline-flex items-center gap-1 text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5">
-                          <Calendar className="h-3 w-3" />
-                          <span>{targetDate}</span>
-                        </div>
-                      )}
-                      {successMetric && (
-                        <p className="text-xs text-muted-foreground">{successMetric}</p>
+                      {successMetric.length > 0 && (
+                        <p className="text-xs text-muted-foreground leading-relaxed">{successMetric}</p>
                       )}
                     </div>
                   );
