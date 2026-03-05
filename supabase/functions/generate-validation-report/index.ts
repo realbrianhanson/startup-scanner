@@ -100,13 +100,27 @@ serve(async (req) => {
     const updateSectionStatus = async (sectionName: string, sectionData: any, currentStatus: any) => {
       console.log(`Section ${sectionName} completed`);
       const newStatus = { ...currentStatus, [sectionName]: "complete" };
+
+      // Fetch current report_data to merge incrementally
+      const { data: currentReport } = await supabase
+        .from("reports")
+        .select("report_data")
+        .eq("id", report.id)
+        .single();
+
+      const updatedReportData = {
+        ...(currentReport?.report_data as Record<string, any> || {}),
+        [sectionName]: sectionData,
+      };
+
       const { error } = await supabase
         .from("reports")
         .update({
-          generation_status: newStatus
+          report_data: updatedReportData,
+          generation_status: newStatus,
         })
         .eq("id", report.id);
-      
+
       if (error) {
         console.error(`Error updating ${sectionName}:`, error);
       }
@@ -180,38 +194,19 @@ serve(async (req) => {
       financialBasics,
     });
 
-    // Final update with all data and validation score
+    // Final update: add validation_score to report_data
+    const { data: finalReport } = await supabase
+      .from("reports")
+      .select("report_data")
+      .eq("id", report.id)
+      .single();
+
     await supabase
       .from("reports")
       .update({
         report_data: {
-          executive_summary: executiveSummary,
-          market_analysis: marketAnalysis,
-          customer_personas: customerPersonas,
-          competitive_landscape: competitiveLandscape,
-          strategic_frameworks: strategicFrameworks,
-          porter_five_forces: porterFiveForces,
-          pestel_analysis: pestelAnalysis,
-          catwoe_analysis: catwoeAnalysis,
-          path_to_mvp: pathToMvp,
-          go_to_market_strategy: goToMarketStrategy,
-          usp_analysis: uspAnalysis,
-          financial_basics: financialBasics,
+          ...(finalReport?.report_data as Record<string, any> || {}),
           validation_score: validationScore,
-        },
-        generation_status: {
-          executive_summary: "complete",
-          market_analysis: "complete",
-          customer_personas: "complete",
-          competitive_landscape: "complete",
-          strategic_frameworks: "complete",
-          porter_five_forces: "complete",
-          pestel_analysis: "complete",
-          catwoe_analysis: "complete",
-          path_to_mvp: "complete",
-          go_to_market_strategy: "complete",
-          usp_analysis: "complete",
-          financial_basics: "complete",
         },
       })
       .eq("id", report.id);
