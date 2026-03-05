@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { ValidationScoreDisplay } from "@/components/report/ValidationScoreDisplay";
+import { ReportAtAGlance } from "@/components/report/ReportAtAGlance";
 import { GenerationExperience } from "@/components/report/GenerationExperience";
 import { ExecutiveSummarySection } from "@/components/report/ExecutiveSummarySection";
 import { MarketAnalysisSection } from "@/components/report/MarketAnalysisSection";
@@ -397,6 +398,11 @@ const ViewReport = () => {
               />
             )}
 
+
+            {/* Report at a Glance — hero dashboard */}
+            {project?.status === "complete" && Object.keys(reportData).length > 0 && (
+              <ReportAtAGlance reportData={reportData} />
+            )}
 
             {/* Executive Summary (always visible when available) */}
             <ReportSectionErrorBoundary sectionName="Executive Summary">
