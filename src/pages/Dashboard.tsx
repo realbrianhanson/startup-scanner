@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNav } from "@/components/MobileNav";
+import { ValidationScoreRing } from "@/components/report/ValidationScoreRing";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -333,19 +334,8 @@ const Dashboard = () => {
                         </div>
                       </div>
                       {project.validation_score && (
-                        <div className="text-right ml-4">
-                          <div
-                            className={`text-4xl font-bold ${
-                              project.validation_score >= 70
-                                ? "text-success"
-                                : project.validation_score >= 40
-                                ? "text-warning"
-                                : "text-destructive"
-                            }`}
-                          >
-                            {project.validation_score}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">Score</p>
+                        <div className="ml-4 shrink-0">
+                          <ValidationScoreRing score={project.validation_score} size="sm" showBadge={false} />
                         </div>
                       )}
                     </div>

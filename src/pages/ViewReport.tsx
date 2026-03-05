@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { ValidationScoreRing } from "@/components/report/ValidationScoreRing";
 import { ExecutiveSummarySection } from "@/components/report/ExecutiveSummarySection";
 import { MarketAnalysisSection } from "@/components/report/MarketAnalysisSection";
 import { CustomerPersonasSection } from "@/components/report/CustomerPersonasSection";
@@ -135,8 +136,8 @@ const ViewReport = () => {
     } catch { toast.error("Failed to update sharing settings"); }
   };
 
-  const getScoreColor = (score: number) => score >= 70 ? "text-success" : score >= 40 ? "text-warning" : "text-destructive";
-  const getScoreStatus = (score: number) => score >= 70 ? "Strong Potential" : score >= 40 ? "Moderate Potential" : "Needs Work";
+
+
 
   if (loading) {
     return (
@@ -208,12 +209,7 @@ const ViewReport = () => {
                   </p>
                 </div>
                 {project?.status === "complete" && (
-                  <div className="text-right space-y-2">
-                    <div className={`text-6xl font-bold ${getScoreColor(validationScore)}`}>{validationScore}</div>
-                    <Badge variant={validationScore >= 70 ? "default" : validationScore >= 40 ? "secondary" : "destructive"}>
-                      {getScoreStatus(validationScore)}
-                    </Badge>
-                  </div>
+                  <ValidationScoreRing score={validationScore} size="lg" />
                 )}
               </div>
             </div>
