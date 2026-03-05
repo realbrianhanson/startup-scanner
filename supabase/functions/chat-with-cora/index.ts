@@ -85,28 +85,50 @@ serve(async (req) => {
       .join('\n\n');
 
     // Build the prompt
-    const reportContext = report?.report_data 
+    const rd = report?.report_data as Record<string, any> | null;
+    const reportContext = rd
       ? `VALIDATION REPORT DATA:
 Project: ${project.name}
 Industry: ${project.industry}
 Validation Score: ${project.validation_score || 'Pending'}
 
 Executive Summary:
-- Recommendation: ${report.report_data.executiveSummary?.recommendation || 'N/A'}
-- Strengths: ${report.report_data.executiveSummary?.strengths?.join(', ') || 'N/A'}
-- Concerns: ${report.report_data.executiveSummary?.concerns?.join(', ') || 'N/A'}
+- Recommendation: ${rd.executive_summary?.recommendation || 'N/A'}
+- Strengths: ${rd.executive_summary?.strengths?.join(', ') || 'N/A'}
+- Concerns: ${rd.executive_summary?.concerns?.join(', ') || 'N/A'}
 
 Market Analysis:
-${JSON.stringify(report.report_data.marketAnalysis || {}, null, 2)}
+${JSON.stringify(rd.market_analysis || {}, null, 2)}
 
 Competitive Landscape:
-${JSON.stringify(report.report_data.competitiveLandscape || {}, null, 2)}
+${JSON.stringify(rd.competitive_landscape || {}, null, 2)}
 
-Strategic Frameworks:
-${JSON.stringify(report.report_data.strategicFrameworks || {}, null, 2)}
+Strategic Frameworks (SWOT):
+${JSON.stringify(rd.strategic_frameworks || {}, null, 2)}
+
+Porter's Five Forces:
+${JSON.stringify(rd.porter_five_forces || {}, null, 2)}
+
+PESTEL Analysis:
+${JSON.stringify(rd.pestel_analysis || {}, null, 2)}
+
+CATWOE Analysis:
+${JSON.stringify(rd.catwoe_analysis || {}, null, 2)}
+
+Customer Personas:
+${JSON.stringify(rd.customer_personas || {}, null, 2)}
+
+Unique Selling Proposition (USP):
+${JSON.stringify(rd.usp_analysis || {}, null, 2)}
+
+Path to MVP:
+${JSON.stringify(rd.path_to_mvp || {}, null, 2)}
+
+Go-to-Market Strategy:
+${JSON.stringify(rd.go_to_market_strategy || {}, null, 2)}
 
 Financial Basics:
-${JSON.stringify(report.report_data.financialBasics || {}, null, 2)}
+${JSON.stringify(rd.financial_basics || {}, null, 2)}
 `
       : `PROJECT INFORMATION:
 Project: ${project.name}
