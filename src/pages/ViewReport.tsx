@@ -1986,13 +1986,20 @@ const ViewReport = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={async () => {
-                      toast.info("Generating PDF... This may take 10 seconds");
+                      toast.info("Generating print preview...");
                       try {
                         const { data, error } = await supabase.functions.invoke('generate-pdf', {
                           body: { project_id: id }
                         });
                         if (error) throw error;
-                        toast.success("PDF generated! Check your downloads");
+
+                        const printWindow = window.open('', '_blank');
+                        if (printWindow) {
+                          printWindow.document.write(data.html);
+                          printWindow.document.close();
+                          printWindow.onload = () => printWindow.print();
+                        }
+                        toast.success("Print preview opened in new tab");
                       } catch (error) {
                         console.error('PDF generation error:', error);
                         toast.error("Failed to generate PDF");
@@ -2000,7 +2007,7 @@ const ViewReport = () => {
                     }}
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Download PDF
+                    Print / Save PDF
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
