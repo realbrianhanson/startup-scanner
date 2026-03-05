@@ -1432,25 +1432,55 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 }
 
 function calculateValidationScore(sections: any): number {
-  // Simple scoring algorithm - can be enhanced
-  const executiveScore = sections.executiveSummary?.score || 50;
-  
-  // Adjust based on other factors
-  let finalScore = executiveScore;
-  
-  // Market analysis impact
-  const growthRate = sections.marketAnalysis?.growth_rate;
-  if (growthRate && typeof growthRate === 'string' && growthRate.toLowerCase().includes("high")) {
-    finalScore += 5;
-  }
-  
-  // Competitive advantages
+  let score = 0;
+
+  // Factor 1: AI's initial assessment (weight: 30%)
+  const aiScore = sections.executiveSummary?.score || 50;
+  score += aiScore * 0.3;
+
+  // Factor 2: Market attractiveness (weight: 20%)
+  let marketScore = 50;
+  const growth = (sections.marketAnalysis?.growth_rate || '').toLowerCase();
+  if (growth.includes('high') || growth.match(/\d{2,}%/)) marketScore = 75;
+  if (growth.includes('declining') || growth.includes('shrinking')) marketScore = 20;
+  const maturity = (sections.marketAnalysis?.market_maturity || '').toLowerCase();
+  if (maturity.includes('early') || maturity.includes('growing')) marketScore += 10;
+  if (maturity.includes('declining')) marketScore -= 20;
+  score += Math.min(Math.max(marketScore, 0), 100) * 0.2;
+
+  // Factor 3: Competitive defensibility (weight: 15%)
+  let compScore = 50;
   const advantages = sections.competitiveLandscape?.competitive_advantages?.length || 0;
-  finalScore += Math.min(advantages * 2, 10);
-  
-  // Strategic clarity
-  const gtmStrategies = sections.strategicFrameworks?.gtm_strategy?.length || 0;
-  finalScore += Math.min(gtmStrategies * 2, 10);
-  
-  return Math.min(Math.max(Math.round(finalScore), 0), 100);
+  const competitors = sections.competitiveLandscape?.direct_competitors?.length || 0;
+  compScore += advantages * 8;
+  compScore -= competitors * 3;
+  score += Math.min(Math.max(compScore, 0), 100) * 0.15;
+
+  // Factor 4: Customer clarity (weight: 15%)
+  let customerScore = 50;
+  const personas = sections.customerPersonas?.length || 0;
+  if (personas >= 3) customerScore = 70;
+  const painPoints = sections.customerPersonas?.[0]?.pain_points?.length || 0;
+  if (painPoints >= 3) customerScore += 10;
+  score += Math.min(customerScore, 100) * 0.15;
+
+  // Factor 5: Financial viability (weight: 10%)
+  let finScore = 50;
+  const startupCost = sections.financialBasics?.startup_costs?.conservative || '';
+  if (startupCost.match(/\$\d{1,2}K/) || startupCost.toLowerCase().includes('under')) finScore = 70;
+  score += Math.min(finScore, 100) * 0.1;
+
+  // Factor 6: Strategic clarity (weight: 10%)
+  let stratScore = 50;
+  const swot = sections.strategicFrameworks?.swot;
+  if (swot) {
+    const strengthCount = swot.strengths?.length || 0;
+    const weaknessCount = swot.weaknesses?.length || 0;
+    if (strengthCount > weaknessCount) stratScore = 65;
+    if (strengthCount > weaknessCount + 2) stratScore = 80;
+  }
+  score += Math.min(stratScore, 100) * 0.1;
+
+  const finalScore = Math.round(score);
+  return Math.min(Math.max(finalScore, 5), 98); // Never 0 or 100 — both are unrealistic
 }
