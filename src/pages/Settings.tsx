@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,22 +19,8 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { 
-  BarChart3, 
-  User, 
-  CreditCard, 
-  Bell, 
-  TrendingUp,
-  ArrowLeft,
-  ExternalLink,
-  Loader2,
-  AlertTriangle,
-  Gift,
-  Copy,
-  Users,
-} from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { MobileNav } from "@/components/MobileNav";
+import { Loader2, ExternalLink, Copy, Users } from "lucide-react";
+import { AppNav } from "@/components/AppNav";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -57,52 +42,29 @@ const Settings = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    document.title = "Settings | Validifier";
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { document.title = "Settings | Validifier"; }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
       const { data: { user: userData } } = await supabase.auth.getUser();
       if (!userData) return;
-
       setUser(userData);
 
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userData.id)
-        .single();
-
+      const { data: profileData } = await supabase.from("profiles").select("*").eq("id", userData.id).single();
       if (profileData) {
         setProfile(profileData);
         setFullName(profileData.full_name || "");
         setEmail(profileData.email);
-        if (profileData.notification_preferences) {
-          setNotifPrefs(profileData.notification_preferences as typeof notifPrefs);
-        }
+        if (profileData.notification_preferences) setNotifPrefs(profileData.notification_preferences as typeof notifPrefs);
       }
 
-      const { data: logs } = await supabase
-        .from("ai_usage_logs")
-        .select("*")
-        .eq("user_id", userData.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
-
+      const { data: logs } = await supabase.from("ai_usage_logs").select("*").eq("user_id", userData.id).order("created_at", { ascending: false }).limit(50);
       setUsageLogs(logs || []);
 
-      // Load referral count
-      const { count } = await supabase
-        .from("referrals" as any)
-        .select("id", { count: "exact", head: true })
-        .eq("referrer_id", userData.id);
+      const { count } = await supabase.from("referrals" as any).select("id", { count: "exact", head: true }).eq("referrer_id", userData.id);
       setReferralCount(count || 0);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load settings");
     } finally {
       setLoading(false);
@@ -113,17 +75,11 @@ const Settings = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({ full_name: fullName })
-        .eq("id", user.id);
-
+      const { error } = await supabase.from("profiles").update({ full_name: fullName }).eq("id", user.id);
       if (error) throw error;
-
-      toast.success("Profile updated successfully");
+      toast.success("Profile updated");
       loadData();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update profile");
     }
   };
@@ -133,15 +89,12 @@ const Settings = () => {
     setNotifPrefs(updated);
     setSavingPrefs(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ notification_preferences: updated } as any)
-        .eq("id", user.id);
+      const { error } = await supabase.from("profiles").update({ notification_preferences: updated } as any).eq("id", user.id);
       if (error) throw error;
       toast.success("Preferences saved");
     } catch {
-      setNotifPrefs(notifPrefs); // revert
-      toast.error("Failed to save preferences");
+      setNotifPrefs(notifPrefs);
+      toast.error("Failed to save");
     } finally {
       setSavingPrefs(false);
     }
@@ -152,15 +105,12 @@ const Settings = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
-
       const { data, error } = await supabase.functions.invoke("delete-account", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-
       if (error) throw error;
-
       await supabase.auth.signOut();
-      toast.success("Your account has been deleted. We're sorry to see you go.");
+      toast.success("Account deleted.");
       navigate("/");
     } catch (error: any) {
       toast.error(error.message || "Failed to delete account");
@@ -171,52 +121,15 @@ const Settings = () => {
     }
   };
 
-  const creditsUsedPercentage = profile
-    ? (profile.ai_credits_used / profile.ai_credits_monthly) * 100 
-    : 0;
-
-  const getCreditsColor = () => {
-    if (creditsUsedPercentage < 50) return "text-success";
-    if (creditsUsedPercentage < 75) return "text-warning";
-    return "text-destructive";
-  };
+  const creditsUsedPct = profile ? (profile.ai_credits_used / profile.ai_credits_monthly) * 100 : 0;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <nav className="border-b bg-background sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Skeleton className="h-9 w-9 rounded" />
-              <div className="flex items-center space-x-2">
-                <Skeleton className="h-6 w-6 rounded" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-            </div>
-            <Skeleton className="h-9 w-9 rounded" />
-          </div>
-        </nav>
-        <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
-          {/* Tabs skeleton */}
-          <Skeleton className="h-10 w-full rounded-md" />
-          {/* Content skeleton */}
-          <Card className="p-6 space-y-6">
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-52" />
-              <Skeleton className="h-5 w-64" />
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-              <Skeleton className="h-10 w-28" />
-            </div>
-          </Card>
+        <div className="sticky top-0 z-50 bg-card border-b border-border h-14" />
+        <div className="container mx-auto px-4 py-8 max-w-3xl space-y-6">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-40 w-full" />
         </div>
       </div>
     );
@@ -224,444 +137,175 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="glass-nav sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <MobileNav user={user} profile={profile} />
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="hidden md:flex">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div
-              className="flex items-center space-x-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
-              onClick={() => navigate("/dashboard")}
-            >
-              <BarChart3 className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold gradient-text">Settings</span>
-            </div>
-          </div>
-          <ThemeToggle />
-        </div>
-      </nav>
+      <AppNav user={user} profile={profile} />
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <h1 className="font-serif text-3xl tracking-tight mb-8">Settings</h1>
+
         <Tabs defaultValue="account" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="account">
-              <User className="h-4 w-4 mr-2" />
-              Account
-            </TabsTrigger>
-            <TabsTrigger value="subscription">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Subscription
-            </TabsTrigger>
-            <TabsTrigger value="usage">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Usage
-            </TabsTrigger>
-            <TabsTrigger value="notifications">
-              <Bell className="h-4 w-4 mr-2" />
-              Notifications
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-muted">
+            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="subscription">Plan</TabsTrigger>
+            <TabsTrigger value="usage">Usage</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
-          {/* Account Tab */}
-          <TabsContent value="account" className="space-y-6">
-            <Card className="p-6 space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">Account Information</h3>
-                <p className="text-muted-foreground">
-                  Update your personal information
-                </p>
-              </div>
-
+          {/* Account */}
+          <TabsContent value="account" className="space-y-8">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Profile</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="John Doe"
-                  />
+                  <Label className="text-sm text-muted-foreground">Full Name</Label>
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-11 bg-transparent border-border" />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    value={email}
-                    disabled
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Contact support to change your email
-                  </p>
+                  <Label className="text-sm text-muted-foreground">Email</Label>
+                  <Input value={email} disabled className="h-11 bg-muted border-border" />
                 </div>
+                <Button onClick={handleUpdateProfile} size="sm">Save</Button>
+              </div>
+            </div>
 
-                <Button onClick={handleUpdateProfile}>
-                  Save Changes
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    try {
-                      await supabase
-                        .from("profiles")
-                        .update({ onboarding_completed: false } as any)
-                        .eq("id", user.id);
-                      toast.success("Tour reset! Visit the Dashboard to replay it.");
-                    } catch {
-                      toast.error("Failed to reset tour");
-                    }
-                  }}
-                >
-                  Replay Tour
+            <div className="h-px bg-border" />
+
+            {/* Referral */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Refer & Earn</h3>
+              <p className="text-sm text-muted-foreground">Earn 20 bonus credits for each friend who signs up.</p>
+              <div className="flex gap-2">
+                <Input readOnly value={`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`} className="bg-muted text-sm font-mono" />
+                <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`); toast.success("Copied!"); }}>
+                  <Copy className="h-4 w-4" />
                 </Button>
               </div>
-            </Card>
-
-            {/* Refer & Earn */}
-            <Card className="p-6 space-y-4 border-primary/20">
-              <div className="flex items-center gap-2">
-                <Gift className="h-5 w-5 text-primary" />
-                <h3 className="text-xl font-bold">Refer & Earn</h3>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>{referralCount} referral{referralCount !== 1 ? "s" : ""}</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Earn <span className="font-semibold text-primary">20 bonus credits</span> for each friend who signs up!
-              </p>
+            </div>
 
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Your referral link</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      readOnly
-                      value={`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`}
-                      className="bg-muted text-sm font-mono"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`);
-                        toast.success("Referral link copied!");
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <Users className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">You've referred <span className="text-primary font-bold">{referralCount}</span> {referralCount === 1 ? 'user' : 'users'}</p>
-                    {referralCount > 0 && (
-                      <p className="text-xs text-muted-foreground">That's {referralCount * 20} bonus credits earned!</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <div className="h-px bg-border" />
 
             {/* Danger Zone */}
-            <Card className="p-6 space-y-4 border-destructive/50">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                <h3 className="text-xl font-bold text-destructive">Danger Zone</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all associated data. This action cannot be undone.
-              </p>
-              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-                Delete Account
-              </Button>
-            </Card>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-destructive">Danger Zone</h3>
+              <p className="text-sm text-muted-foreground">Permanently delete your account and all data.</p>
+              <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>Delete Account</Button>
+            </div>
 
-            {/* Delete Account Dialog */}
-            <AlertDialog open={showDeleteDialog} onOpenChange={(open) => {
-              setShowDeleteDialog(open);
-              if (!open) setDeleteConfirmText("");
-            }}>
+            <AlertDialog open={showDeleteDialog} onOpenChange={(open) => { setShowDeleteDialog(open); if (!open) setDeleteConfirmText(""); }}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-destructive">Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription className="space-y-3">
-                    <span className="block">
-                      This will permanently delete your account, all projects, reports, chat history, and usage data. This action cannot be undone.
-                    </span>
-                    <span className="block font-medium text-foreground">
-                      Type <span className="font-mono font-bold">DELETE</span> to confirm:
-                    </span>
+                  <AlertDialogTitle className="text-destructive">Delete Account</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently deletes your account, projects, and data. Type <span className="font-mono font-bold">DELETE</span> to confirm.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <Input
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="Type DELETE to confirm"
-                  className="font-mono"
-                />
+                <Input value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="Type DELETE" className="font-mono" />
                 <AlertDialogFooter>
                   <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-                  <Button
-                    variant="destructive"
-                    disabled={deleteConfirmText !== "DELETE" || deleting}
-                    onClick={handleDeleteAccount}
-                  >
-                    {deleting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Deleting...
-                      </>
-                    ) : (
-                      "Delete My Account"
-                    )}
+                  <Button variant="destructive" disabled={deleteConfirmText !== "DELETE" || deleting} onClick={handleDeleteAccount}>
+                    {deleting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Deleting...</> : "Delete"}
                   </Button>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </TabsContent>
 
-          {/* Subscription Tab */}
+          {/* Subscription */}
           <TabsContent value="subscription" className="space-y-6">
-            <Card className="p-6 space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">Current Plan</h3>
-                <p className="text-muted-foreground">
-                  Manage your subscription and billing
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Current Plan</h3>
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                 <div>
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h4 className="text-xl font-semibold capitalize">
-                      {profile?.subscription_tier}
-                    </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg font-medium capitalize">{profile?.subscription_tier}</span>
                     <Badge variant="secondary">Active</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {profile?.ai_credits_monthly} AI credits per month
-                  </p>
+                  <p className="text-sm text-muted-foreground">{profile?.ai_credits_monthly} credits/month</p>
                 </div>
-                <Button onClick={() => navigate("/pricing")}>
-                  {profile?.subscription_tier === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                <Button size="sm" onClick={() => navigate("/pricing")}>
+                  {profile?.subscription_tier === 'free' ? 'Upgrade' : 'Change Plan'}
                 </Button>
               </div>
+            </div>
 
-              {profile?.subscription_tier !== 'free' && (
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-lg space-y-2">
-                    <h4 className="font-semibold">Billing Management</h4>
-                    <p className="text-sm text-muted-foreground">
-                      View invoices, update payment method, or cancel your subscription through the billing portal.
-                    </p>
-                    <div className="flex gap-3 pt-2">
-                      <Button
-                        onClick={async () => {
-                          try {
-                            const { data, error } = await supabase.functions.invoke("create-portal-session");
-                            if (error) throw error;
-                            if (data?.url) window.location.href = data.url;
-                          } catch (err: any) {
-                            toast.error(err.message || "Failed to open billing portal");
-                          }
-                        }}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Manage Subscription
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            const { data, error } = await supabase.functions.invoke("create-portal-session");
-                            if (error) throw error;
-                            if (data?.url) window.location.href = data.url;
-                          } catch (err: any) {
-                            toast.error(err.message || "Failed to open billing portal");
-                          }
-                        }}
-                      >
-                        Cancel Subscription
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {profile?.subscription_tier === 'free' && (
-                <div className="p-4 bg-gradient-hero text-white rounded-lg">
-                  <h4 className="font-semibold mb-2">Upgrade to unlock more</h4>
-                  <ul className="text-sm space-y-1 mb-4">
-                    <li>• More AI credits</li>
-                    <li>• Advanced frameworks</li>
-                    <li>• Priority support</li>
-                  </ul>
-                  <Button variant="secondary" onClick={() => navigate("/pricing")}>
-                    View Plans
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          {/* Usage Tab */}
-          <TabsContent value="usage" className="space-y-6">
-            <Card className="p-6 space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">AI Credits Usage</h3>
-                <p className="text-muted-foreground">
-                  Track your AI credit consumption
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Credits Used</span>
-                    <span className={`text-2xl font-bold ${getCreditsColor()}`}>
-                      {profile?.ai_credits_used} / {profile?.ai_credits_monthly}
-                    </span>
-                  </div>
-                  <Progress value={creditsUsedPercentage} />
-                  <p className="text-xs text-muted-foreground">
-                    Resets on the 1st of each month
-                  </p>
-                </div>
-
-                {creditsUsedPercentage > 75 && (
-                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <p className="text-sm font-medium text-destructive mb-2">
-                      You're running low on credits!
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Upgrade your plan to get more credits and continue validating ideas.
-                    </p>
-                    <Button size="sm" variant="destructive" onClick={() => navigate("/pricing")}>
-                      Upgrade Now
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3">Recent Activity</h4>
-                <div className="space-y-2">
-                  {usageLogs.length > 0 ? (
-                    usageLogs.slice(0, 10).map((log) => (
-                      <div
-                        key={log.id}
-                        className="flex justify-between items-center p-3 border rounded-lg text-sm"
-                      >
-                        <div>
-                          <span className="font-medium capitalize">
-                            {log.operation_type.replace('_', ' ')}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(log.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span className="text-muted-foreground">
-                          -{log.tokens_used || 1} credits
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No usage history yet
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            <Card className="p-6 space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">Notification Preferences</h3>
-                <p className="text-muted-foreground">
-                  Manage how you receive updates
-                </p>
-              </div>
-
-              {/* Master email toggle */}
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
-                <div>
-                  <Label htmlFor="email-notifications" className="font-medium cursor-pointer">Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email notifications for important events
-                  </p>
-                </div>
-                <Switch
-                  id="email-notifications"
-                  checked={profile?.email_notifications_enabled !== false}
-                  disabled={savingPrefs}
-                  onCheckedChange={async (v) => {
-                    setSavingPrefs(true);
+            {profile?.subscription_tier !== 'free' && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-medium">Billing</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
                     try {
-                      const { error } = await supabase
-                        .from("profiles")
-                        .update({ email_notifications_enabled: v } as any)
-                        .eq("id", user.id);
+                      const { data, error } = await supabase.functions.invoke("create-portal-session");
                       if (error) throw error;
-                      setProfile((prev: any) => ({ ...prev, email_notifications_enabled: v }));
-                      toast.success(v ? "Email notifications enabled" : "Email notifications disabled");
+                      if (data?.url) window.location.href = data.url;
                     } catch {
-                      toast.error("Failed to update preference");
-                    } finally {
-                      setSavingPrefs(false);
+                      toast.error("Failed to open billing portal");
                     }
                   }}
-                />
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />Manage Billing
+                </Button>
               </div>
+            )}
+          </TabsContent>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <Label htmlFor="report-completion" className="font-medium cursor-pointer">Report Completion</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when validation reports are ready
-                    </p>
-                  </div>
-                  <Switch id="report-completion" checked={notifPrefs.report_completion} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("report_completion", v)} />
+          {/* Usage */}
+          <TabsContent value="usage" className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Credit Usage</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Credits used</span>
+                  <span className="font-mono">{profile?.ai_credits_used}/{profile?.ai_credits_monthly}</span>
                 </div>
+                <Progress value={creditsUsedPct} className="h-2" />
+              </div>
+            </div>
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <Label htmlFor="credit-alerts" className="font-medium cursor-pointer">Credit Alerts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Alert when you've used 75% of monthly credits
-                    </p>
-                  </div>
-                  <Switch id="credit-alerts" checked={notifPrefs.credit_alerts} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("credit_alerts", v)} />
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <Label htmlFor="weekly-digest" className="font-medium cursor-pointer">Weekly Digest</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Weekly summary of your validation activity
-                    </p>
-                  </div>
-                  <Switch id="weekly-digest" checked={notifPrefs.weekly_digest} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("weekly_digest", v)} />
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <Label htmlFor="product-updates" className="font-medium cursor-pointer">Product Updates</Label>
-                    <p className="text-sm text-muted-foreground">
-                      News about new features and improvements
-                    </p>
-                  </div>
-                  <Switch id="product-updates" checked={notifPrefs.product_updates} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("product_updates", v)} />
+            {usageLogs.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-medium">Recent Activity</h3>
+                <div className="space-y-1">
+                  {usageLogs.slice(0, 10).map((log) => (
+                    <div key={log.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-sm">
+                      <span className="text-muted-foreground">{log.operation_type}</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {new Date(log.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </Card>
+            )}
+          </TabsContent>
+
+          {/* Notifications */}
+          <TabsContent value="notifications" className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Notifications</h3>
+              {[
+                { key: "report_completion" as const, label: "Report completion", desc: "Get notified when your report is ready" },
+                { key: "credit_alerts" as const, label: "Credit alerts", desc: "When you're running low on credits" },
+                { key: "weekly_digest" as const, label: "Weekly digest", desc: "Summary of your activity" },
+                { key: "product_updates" as const, label: "Product updates", desc: "New features and improvements" },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                  <Switch
+                    checked={notifPrefs[item.key]}
+                    onCheckedChange={(val) => handleToggleNotif(item.key, val)}
+                    disabled={savingPrefs}
+                  />
+                </div>
+              ))}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
