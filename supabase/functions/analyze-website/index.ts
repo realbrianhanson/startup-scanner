@@ -90,7 +90,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
           {
             role: "system",
@@ -117,7 +117,7 @@ serve(async (req) => {
     await supabase.from("ai_usage_logs").insert({
       user_id: user.id,
       operation_type: "website_analysis",
-      model_used: "google/gemini-2.5-flash",
+      model_used: "google/gemini-3-flash-preview",
       tokens_used: aiData.usage?.total_tokens || 0,
       cost_cents: Math.ceil((aiData.usage?.total_tokens || 0) * 0.0001),
     });
