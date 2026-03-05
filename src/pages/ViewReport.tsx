@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -40,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { ValidationScoreRing } from "@/components/report/ValidationScoreRing";
+import { GenerationExperience } from "@/components/report/GenerationExperience";
 import { ExecutiveSummarySection } from "@/components/report/ExecutiveSummarySection";
 import { MarketAnalysisSection } from "@/components/report/MarketAnalysisSection";
 import { CustomerPersonasSection } from "@/components/report/CustomerPersonasSection";
@@ -217,23 +217,22 @@ const ViewReport = () => {
               </div>
             </div>
 
-            {/* Generation Progress */}
+            {/* Generation Experience */}
             {isGenerating && (
-              <Card className="p-6 border-2 border-primary">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      <h3 className="font-semibold">Generating Validation Report...</h3>
-                    </div>
-                    <span className="text-sm text-muted-foreground">{Math.round(progress)}%</span>
-                  </div>
-                  <Progress value={progress} className="w-full" />
-                  <p className="text-sm text-muted-foreground">
-                    Our AI is analyzing your business idea using McKinsey-style frameworks. This typically takes 60-90 seconds.
-                  </p>
-                </div>
-              </Card>
+              <GenerationExperience
+                generationStatus={report?.generation_status as Record<string, string> | null}
+                isComplete={false}
+                validationScore={validationScore}
+              />
+            )}
+
+            {/* Completion celebration (brief) */}
+            {!isGenerating && project?.status === "complete" && progress === 100 && !report?.report_data?.executive_summary && (
+              <GenerationExperience
+                generationStatus={report?.generation_status as Record<string, string> | null}
+                isComplete={true}
+                validationScore={validationScore}
+              />
             )}
 
             {/* Executive Summary (always visible when available) */}
