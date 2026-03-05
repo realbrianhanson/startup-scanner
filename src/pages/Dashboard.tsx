@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import OnboardingOverlay from "@/components/OnboardingOverlay";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,7 @@ const Dashboard = () => {
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -133,7 +135,12 @@ const Dashboard = () => {
         .eq("id", session.user.id)
         .single();
 
-      if (profileData) setProfile(profileData);
+      if (profileData) {
+        setProfile(profileData);
+        if (!(profileData as any).onboarding_completed) {
+          setShowOnboarding(true);
+        }
+      }
 
       const { count } = await supabase
         .from("projects")
@@ -245,6 +252,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle relative overflow-hidden animate-fade-in" style={{ opacity: 1 }}>
+      {showOnboarding && user && profile && (
+        <OnboardingOverlay
+          userName={user.user_metadata?.full_name || "there"}
+          credits={profile.ai_credits_monthly - profile.ai_credits_used}
+          userId={user.id}
+          onComplete={() => setShowOnboarding(false)}
+        />
+      )}
       {/* ── Background floating orbs ── */}
       <div className="pointer-events-none fixed top-0 right-0 w-[500px] h-[500px] overflow-hidden -z-10">
         <div className="absolute -top-20 -right-20 w-[350px] h-[350px] rounded-full bg-primary opacity-[0.04] dark:opacity-[0.08] blur-[120px] animate-float float-slower will-change-transform" />
