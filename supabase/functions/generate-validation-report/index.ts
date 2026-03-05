@@ -180,42 +180,43 @@ serve(async (req) => {
 
     // Generate sections sequentially with context chaining
     const ctx: Record<string, any> = {};
+    const industryCtx = getIndustryContext(project.industry);
 
-    const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY);
+    const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY, industryCtx);
     ctx.executiveSummary = executiveSummary;
     currentStatus = await updateSectionStatus("executive_summary", executiveSummary, currentStatus);
 
-    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
+    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     ctx.marketAnalysis = marketAnalysis;
     currentStatus = await updateSectionStatus("market_analysis", marketAnalysis, currentStatus);
 
-    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY, buildContext(ctx));
+    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     ctx.customerPersonas = customerPersonas;
     currentStatus = await updateSectionStatus("customer_personas", customerPersonas, currentStatus);
 
-    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY, buildContext(ctx));
+    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     ctx.competitiveLandscape = competitiveLandscape;
     currentStatus = await updateSectionStatus("competitive_landscape", competitiveLandscape, currentStatus);
 
-    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY, buildContext(ctx));
+    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("strategic_frameworks", strategicFrameworks, currentStatus);
 
-    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY, buildContext(ctx));
+    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("porter_five_forces", porterFiveForces, currentStatus);
 
-    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
+    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("pestel_analysis", pestelAnalysis, currentStatus);
 
-    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
+    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("catwoe_analysis", catwoeAnalysis, currentStatus);
 
-    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY, buildContext(ctx));
+    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("path_to_mvp", pathToMvp, currentStatus);
 
-    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY, buildContext(ctx));
+    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("go_to_market_strategy", goToMarketStrategy, currentStatus);
 
-    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
+    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("usp_analysis", uspAnalysis, currentStatus);
 
     const gameChangingIdea = await generateGameChangingIdea(project, LOVABLE_API_KEY, {
@@ -224,7 +225,7 @@ serve(async (req) => {
     });
     currentStatus = await updateSectionStatus("game_changing_idea", gameChangingIdea, currentStatus);
 
-    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx));
+    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx));
     currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
 
     const riskMatrix = await generateRiskMatrix(project, LOVABLE_API_KEY, {
@@ -460,8 +461,29 @@ function balanceBrackets(jsonStr: string): string {
   return result;
 }
 
-function buildContext(previousSections: Record<string, any>): string {
+function getIndustryContext(industry: string): string {
+  const contexts: Record<string, string> = {
+    "B2B SaaS": `Industry context: B2B SaaS businesses should target net revenue retention above 110%, aim for CAC payback under 18 months, and achieve LTV:CAC ratios above 3:1. Key success factors include product-led growth, low churn, and land-and-expand strategies. The median B2B SaaS startup takes 7-10 years to reach $100M ARR. Current trends include AI-augmented features, usage-based pricing, and vertical SaaS specialization.`,
+    "E-commerce": `Industry context: E-commerce businesses should target gross margins above 40%, aim for repeat purchase rates above 30%, and achieve customer acquisition costs under $30 for direct-to-consumer. Key success factors include supply chain efficiency, brand differentiation, and retention marketing. Average e-commerce conversion rates are 2-3%. Current trends include social commerce, sustainability positioning, and personalization at scale.`,
+    "Local Services": `Industry context: Local service businesses should target 60%+ gross margins, build for recurring revenue through maintenance contracts, and focus on referral-driven growth. Key success factors include online reputation (Google Reviews above 4.5 stars), geographic density, and reliable workforce management. Current trends include online booking, on-demand service models, and subscription-based service packages.`,
+    "Healthcare": `Industry context: Healthcare businesses face long sales cycles (6-18 months), require compliance with HIPAA and other regulations, and need clinical validation for adoption. Key success factors include regulatory navigation, provider partnerships, and evidence-based outcomes. Current trends include telehealth normalization, AI-assisted diagnostics, and remote patient monitoring. Expect 2-3x longer time to revenue than other verticals.`,
+    "Fintech": `Industry context: Fintech businesses face heavy regulation (state money transmitter licenses, PCI compliance, SEC/FINRA oversight), require significant trust-building, and often need banking partners. Key success factors include regulatory compliance, security infrastructure, and partnership ecosystems. Current trends include embedded finance, open banking APIs, and AI-powered underwriting. CAC tends to be high ($100-500) but LTV can be substantial.`,
+    "Education": `Industry context: EdTech businesses face long sales cycles in B2B (school districts buy annually), high seasonality, and need to demonstrate measurable learning outcomes. Key success factors include curriculum alignment, teacher adoption, and engagement metrics. Current trends include AI tutoring, micro-credentials, and cohort-based learning. Freemium models dominate consumer; per-seat licensing dominates institutional.`,
+    "Food & Beverage": `Industry context: F&B businesses typically operate on thin margins (3-9% net), require significant working capital for inventory, and face high competition. Key success factors include location strategy, unit economics per order, and brand loyalty programs. Current trends include ghost kitchens, subscription meal services, and health-conscious positioning. Expect high failure rates (60% in first year) without strong unit economics.`,
+    "Real Estate": `Industry context: Real estate businesses face cyclical markets, high capital requirements, and complex regulatory environments. Key success factors include market timing, deal flow, and relationship networks. Current trends include proptech platforms, fractional ownership, and AI-powered valuations. Transaction-based models require volume; property management provides recurring revenue.`,
+    "Media & Entertainment": `Industry context: Media businesses face attention economy dynamics, require content differentiation, and need scalable distribution. Key success factors include audience retention, content creation costs vs. revenue, and platform strategy. Current trends include creator economy, short-form video, and AI-generated content. Advertising models need massive scale; subscription models need high-value content.`,
+    "Manufacturing": `Industry context: Manufacturing businesses require significant upfront capital, face supply chain complexity, and operate on volume-dependent margins. Key success factors include production efficiency, quality control, and supplier relationships. Current trends include additive manufacturing, IoT-enabled smart factories, and reshoring. Margins improve dramatically with scale.`,
+  };
+
+  return contexts[industry] || `Industry context: Analyze this business on its own merits. Focus on the specific market dynamics described in the business description rather than industry generalizations. Research the specific industry benchmarks, typical margins, success metrics, and current trends relevant to this space.`;
+}
+
+function buildContext(previousSections: Record<string, any>, industryCtx?: string): string {
   const parts: string[] = [];
+
+  if (industryCtx) {
+    parts.push(industryCtx);
+  }
 
   if (previousSections.executiveSummary) {
     parts.push(`PREVIOUS ANALYSIS - Executive Summary: Score ${previousSections.executiveSummary.score}/100. Key strengths: ${previousSections.executiveSummary.strengths?.slice(0, 3).join(', ')}. Key concerns: ${previousSections.executiveSummary.concerns?.slice(0, 3).join(', ')}.`);
@@ -538,11 +560,12 @@ async function callAI(prompt: string, apiKey: string, maxTokens?: number): Promi
   return cleanJsonFromMarkdown(content);
 }
 
-async function generateExecutiveSummary(project: any, apiKey: string) {
+async function generateExecutiveSummary(project: any, apiKey: string, industryContext: string = '') {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
 ${project.website_url ? `Website: ${project.website_url}` : ''}
+${industryContext}
 
 Create a rigorous executive summary as if you were a senior partner at McKinsey presenting to a client who is about to invest their life savings into this idea. Be honest — their financial future depends on your accuracy.
 
