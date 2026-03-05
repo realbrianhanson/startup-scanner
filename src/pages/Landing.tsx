@@ -250,63 +250,95 @@ const Landing = () => {
       </section>
 
       {/* Value Props */}
-      <section id="features" className="py-20 bg-background">
+      <section id="features" className="py-24 md:py-32 bg-background relative overflow-hidden">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8">
+          {/* Section heading */}
+          <div className="text-center mb-16 animate-fade-up">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+              Why Founders Choose Validifier
+            </h2>
+            <div className="mx-auto w-24 h-1 rounded-full bg-gradient-to-r from-primary to-secondary" />
+          </div>
+
+          {/* Bento grid */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {valueProps.map((prop, index) => (
-              <Card
+              <div
                 key={index}
-                className="p-8 text-center space-y-4 hover:shadow-medium transition-all border-2 hover:border-primary/20"
+                className={`group relative animate-fade-up delay-${(index + 1) * 200} ${index === 0 ? "md:col-span-2 md:row-span-1" : ""}`}
               >
-                <div className="mx-auto w-16 h-16 bg-gradient-hero rounded-2xl flex items-center justify-center shadow-glow">
-                  <prop.icon className="h-8 w-8 text-white" />
+                {/* Gradient border glow */}
+                <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[1px]" />
+                <div className={`relative h-full rounded-2xl border border-border/50 bg-card p-8 ${index === 0 ? "md:p-10" : ""} space-y-4 transition-all duration-300 group-hover:border-primary/20 group-hover:shadow-large`}>
+                  <div className="w-14 h-14 rounded-xl glass flex items-center justify-center border border-primary/20 group-hover:animate-float transition-transform duration-300">
+                    <prop.icon className="h-7 w-7 text-primary" />
+                  </div>
+                  <h3 className={`font-bold ${index === 0 ? "text-2xl md:text-3xl" : "text-2xl"}`}>{prop.title}</h3>
+                  <p className={`text-muted-foreground ${index === 0 ? "text-base md:text-lg max-w-lg" : ""}`}>{prop.description}</p>
                 </div>
-                <h3 className="text-2xl font-bold">{prop.title}</h3>
-                <p className="text-muted-foreground">{prop.description}</p>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-gradient-subtle">
+      <section id="how-it-works" className="py-24 md:py-32 bg-gradient-subtle relative overflow-hidden">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center space-y-12">
-            <div>
-              <h2 className="text-4xl font-bold mb-4">How Validifier Works</h2>
-              <p className="text-xl text-muted-foreground">
+          <div className="max-w-5xl mx-auto">
+            {/* Section heading */}
+            <div className="text-center mb-20 animate-fade-up">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                How Validifier Works
+              </h2>
+              <p className="text-lg text-muted-foreground">
                 Professional-grade business validation in three simple steps
               </p>
+              <div className="mx-auto mt-4 w-24 h-1 rounded-full bg-gradient-to-r from-primary to-secondary" />
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 text-left">
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center font-bold text-xl">
-                  1
-                </div>
-                <h3 className="text-xl font-bold">Describe Your Idea</h3>
-                <p className="text-muted-foreground">
-                  Tell us about your business concept, target market, and goals
-                </p>
+            {/* Timeline */}
+            <div className="relative">
+              {/* Connecting line — desktop */}
+              <div className="hidden md:block absolute top-[44px] left-[16.66%] right-[16.66%] h-[2px]">
+                <div className="w-full h-full bg-gradient-to-r from-primary via-secondary to-accent rounded-full animate-shimmer bg-[length:200%_100%]" />
               </div>
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-secondary text-secondary-foreground rounded-xl flex items-center justify-center font-bold text-xl">
-                  2
-                </div>
-                <h3 className="text-xl font-bold">AI Analysis</h3>
-                <p className="text-muted-foreground">
-                  Our AI analyzes market fit using proven strategic frameworks
-                </p>
-              </div>
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-accent text-accent-foreground rounded-xl flex items-center justify-center font-bold text-xl">
-                  3
-                </div>
-                <h3 className="text-xl font-bold">Get Your Report</h3>
-                <p className="text-muted-foreground">
-                  Receive actionable insights and validation score in 60 seconds
-                </p>
+
+              <div className="grid md:grid-cols-3 gap-12 md:gap-8">
+                {[
+                  { num: "1", title: "Describe Your Idea", desc: "Tell us about your business concept, target market, and goals", color: "from-primary to-primary" },
+                  { num: "2", title: "AI Analysis", desc: "Our AI analyzes market fit using proven strategic frameworks", color: "from-secondary to-secondary" },
+                  { num: "3", title: "Get Your Report", desc: "Receive actionable insights and validation score in 60 seconds", color: "from-accent to-accent" },
+                ].map((step, index) => (
+                  <div key={index} className={`relative animate-fade-up delay-${(index + 1) * 200}`}>
+                    {/* Mobile connecting line */}
+                    {index < 2 && (
+                      <div className="md:hidden absolute left-[22px] top-[56px] w-[2px] h-[calc(100%+48px-56px)] bg-gradient-to-b from-primary/30 to-secondary/30" />
+                    )}
+
+                    <div className="group text-center md:text-center space-y-4 transition-transform duration-300 hover:-translate-y-1">
+                      {/* Step number */}
+                      <div className="relative mx-auto w-[56px] h-[56px] md:mx-auto flex items-center justify-center">
+                        <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${step.color} opacity-20 group-hover:opacity-40 transition-opacity duration-300`} />
+                        <div className="relative w-[52px] h-[52px] rounded-full border-2 border-primary/30 bg-card flex items-center justify-center group-hover:border-primary/60 transition-colors duration-300">
+                          <span className="text-2xl font-bold bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">
+                            {step.num}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Desktop chevron */}
+                      {index < 2 && (
+                        <div className="hidden md:block absolute top-[34px] -right-4 text-muted-foreground/30">
+                          <ArrowRight className="h-5 w-5" />
+                        </div>
+                      )}
+
+                      <h3 className="text-xl font-bold">{step.title}</h3>
+                      <p className="text-muted-foreground text-sm max-w-xs mx-auto">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
