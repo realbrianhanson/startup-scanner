@@ -216,7 +216,7 @@ const Pricing = () => {
 
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tighter">
               Simple, <span className="gradient-text">Transparent</span> Pricing
             </h1>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto">
@@ -301,7 +301,7 @@ const Pricing = () => {
                         <p className="text-sm text-muted-foreground mt-0.5">{plan.subtitle}</p>
                       )}
                       <div className="mt-5 mb-1">
-                        <span className="text-4xl font-bold text-foreground" style={{ fontFeatureSettings: "'tnum'" }}>
+                        <span className="text-4xl font-extrabold font-mono tabular-nums text-foreground">
                           <AnimatedPrice price={getPrice(plan)} isAnnual={isAnnual} />
                         </span>
                         {plan.monthlyPrice > 0 && (
@@ -359,7 +359,7 @@ const Pricing = () => {
       {/* Feature Comparison Table */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-2">Compare All Features</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight text-center mb-2">Compare All Features</h2>
           <p className="text-muted-foreground text-center mb-10 max-w-lg mx-auto">See exactly what's included in each plan</p>
 
           <div className="max-w-5xl mx-auto overflow-x-auto rounded-xl border border-border bg-card shadow-soft">
@@ -435,7 +435,7 @@ const Pricing = () => {
       <section className="py-16 bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-2">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight text-center mb-2">Frequently Asked Questions</h2>
             <p className="text-muted-foreground text-center mb-10">Everything you need to know about our plans</p>
 
             <div className="space-y-3">
@@ -456,7 +456,7 @@ const Pricing = () => {
           <div className="absolute bottom-10 right-10 w-60 h-60 rounded-full bg-primary-foreground/10 blur-[80px]" />
         </div>
         <div className="container mx-auto px-4 text-center space-y-6 relative z-10">
-          <h2 className="text-4xl font-bold text-primary-foreground">
+          <h2 className="text-4xl font-extrabold tracking-tight text-primary-foreground">
             Ready to Validate Your Next Big Idea?
           </h2>
           <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto">

@@ -78,7 +78,7 @@ All colors MUST be HSL.
     --secondary-glow: 265 91% 77%;
 
     --muted: 217 33% 18%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 215 20% 68%;
 
     --accent: 265 71% 57%;
     --accent-foreground: 0 0% 100%;
@@ -113,6 +113,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground leading-relaxed;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 }
