@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, ArrowLeft, Sparkles, WifiOff } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Sparkles, WifiOff, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/MarkdownContent';
 
@@ -78,6 +78,7 @@ export default function Chat() {
   const [isTyping, setIsTyping] = useState(false);
   const [newMessageIds, setNewMessageIds] = useState<Set<string>>(new Set());
   const [connectionLost, setConnectionLost] = useState(false);
+  const [messageFeedback, setMessageFeedback] = useState<Record<string, boolean | null>>({});
   const retryCountRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -230,6 +231,29 @@ export default function Chat() {
     return assistantMessages.length > 0 && assistantMessages[assistantMessages.length - 1].id === msg.id;
   };
 
+  // Show thumbs on every 5th assistant message
+  const shouldShowThumbs = (msg: Message) => {
+    if (msg.role !== 'assistant') return false;
+    const assistantMessages = messages.filter(m => m.role === 'assistant');
+    const idx = assistantMessages.findIndex(m => m.id === msg.id);
+    return (idx + 1) % 5 === 0;
+  };
+
+  const handleMessageFeedback = async (messageId: string, isPositive: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setMessageFeedback(prev => ({ ...prev, [messageId]: isPositive }));
+      await supabase.from('chat_message_feedback' as any).upsert({
+        message_id: messageId,
+        user_id: user.id,
+        is_positive: isPositive,
+      } as any, { onConflict: 'message_id,user_id' });
+    } catch {
+      // silent fail
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -345,6 +369,24 @@ export default function Chat() {
                           content={message.content}
                           className="text-foreground/90 leading-relaxed [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ol]:my-2 [&_li]:text-foreground/90"
                         />
+                        {/* Thumbs up/down on every 5th assistant message */}
+                        {shouldShowThumbs(message) && (
+                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/30">
+                            <span className="text-[10px] text-muted-foreground mr-1">Helpful?</span>
+                            <button
+                              onClick={() => handleMessageFeedback(message.id, true)}
+                              className={`p-1 rounded transition-colors ${messageFeedback[message.id] === true ? 'text-primary bg-primary/10' : 'text-muted-foreground/40 hover:text-primary'}`}
+                            >
+                              <ThumbsUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleMessageFeedback(message.id, false)}
+                              className={`p-1 rounded transition-colors ${messageFeedback[message.id] === false ? 'text-destructive bg-destructive/10' : 'text-muted-foreground/40 hover:text-destructive'}`}
+                            >
+                              <ThumbsDown className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
