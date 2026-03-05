@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,9 @@ import {
   FileText,
   Twitter,
   ClipboardCheck,
+  CalendarCheck,
+  Sparkles,
+  Trophy,
 } from "lucide-react";
 import {
   formatExecutiveSummaryText,
@@ -50,6 +53,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 
 import { ValidationScoreRing } from "@/components/report/ValidationScoreRing";
 import { GenerationExperience } from "@/components/report/GenerationExperience";
@@ -72,6 +79,31 @@ import { InlineReportCTA, StickyReportCTA, EndOfReportCTA } from "@/components/r
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
 
+const CALENDLY_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
+
+declare global {
+  interface Window {
+    Calendly?: {
+      initPopupWidget: (opts: { url: string }) => void;
+    };
+  }
+}
+
+function openCompletionCalendly() {
+  const url = `${CALENDLY_URL}?utm_source=validifier&utm_medium=report&utm_campaign=completion_cta`;
+  if (window.Calendly) {
+    window.Calendly.initPopupWidget({ url });
+  } else {
+    window.open(url, "_blank");
+  }
+}
+
+function getScoreMessage(score: number) {
+  if (score >= 70) return "Great potential! Want to discuss how to capitalize on your strengths?";
+  if (score >= 40) return "Solid foundation with room to improve. Want expert guidance on your next steps?";
+  return "Every great business started somewhere. Want help pivoting this into something stronger?";
+}
+
 const ViewReport = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -83,6 +115,9 @@ const ViewReport = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCompletionCTA, setShowCompletionCTA] = useState(false);
+  const [celebrationPhase, setCelebrationPhase] = useState(false);
+  const wasGeneratingRef = useRef(false);
 
   const handleDeleteProject = async () => {
     try {
@@ -175,6 +210,25 @@ const ViewReport = () => {
       toast.success(newValue ? "Report is now publicly shareable!" : "Report is now private.");
     } catch { toast.error("Failed to update sharing settings"); }
   };
+
+  // Track generating→complete transition for first-time completion CTA
+  useEffect(() => {
+    const currentlyGenerating = project?.status === "analyzing" || generating;
+    if (currentlyGenerating) {
+      wasGeneratingRef.current = true;
+    } else if (wasGeneratingRef.current && project?.status === "complete") {
+      wasGeneratingRef.current = false;
+      const ctaKey = `cta_shown_${id}`;
+      if (!sessionStorage.getItem(ctaKey)) {
+        sessionStorage.setItem(ctaKey, "true");
+        setCelebrationPhase(true);
+        setTimeout(() => {
+          setCelebrationPhase(false);
+          setShowCompletionCTA(true);
+        }, 1500);
+      }
+    }
+  }, [generating, project?.status, id]);
 
 
 
@@ -504,6 +558,50 @@ const ViewReport = () => {
 
       {/* Sticky bottom CTA bar — only when report is complete */}
       {project?.status === "complete" && <StickyReportCTA />}
+
+      {/* Celebration overlay */}
+      {celebrationPhase && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in">
+          <div className="text-center space-y-4 animate-scale-in">
+            <Trophy className="h-16 w-16 text-primary mx-auto animate-bounce" />
+            <p className="text-4xl font-bold">Your idea scored {validationScore}/100!</p>
+            <Sparkles className="h-6 w-6 text-secondary mx-auto" />
+          </div>
+        </div>
+      )}
+
+      {/* Completion CTA modal */}
+      <Dialog open={showCompletionCTA} onOpenChange={setShowCompletionCTA}>
+        <DialogContent className="sm:max-w-md text-center space-y-6">
+          <div className="space-y-2">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Trophy className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-3xl font-bold">
+              {validationScore}/100
+            </p>
+            <p className="text-muted-foreground">
+              {getScoreMessage(validationScore)}
+            </p>
+          </div>
+          <div className="space-y-3">
+            <Button
+              size="lg"
+              className="w-full animate-pulse-glow"
+              onClick={() => { openCompletionCalendly(); setShowCompletionCTA(false); }}
+            >
+              <CalendarCheck className="mr-2 h-5 w-5" />
+              Book a Free Strategy Call
+            </Button>
+            <button
+              onClick={() => setShowCompletionCTA(false)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View Full Report →
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
