@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, ArrowLeft, Sparkles, WifiOff, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Sparkles, WifiOff, ThumbsUp, ThumbsDown, CalendarCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/MarkdownContent';
 
@@ -34,6 +34,26 @@ const FOLLOW_UP_SETS = [
   ["Can you elaborate?", "What are the risks?", "Give me an action plan"],
   ["How do I validate this?", "What metrics should I track?", "Who should I hire first?"],
 ];
+
+const CALENDLY_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
+const CALL_TRIGGER_WORDS = ["help", "confused", "next steps", "how do i", "stuck", "overwhelmed", "hire", "budget", "funding", "lost", "don't know", "not sure", "advice"];
+
+declare global {
+  interface Window {
+    Calendly?: {
+      initPopupWidget: (opts: { url: string }) => void;
+    };
+  }
+}
+
+function openCalendly() {
+  const url = `${CALENDLY_URL}?utm_source=validifier&utm_medium=chat&utm_campaign=cora_chat`;
+  if (window.Calendly) {
+    window.Calendly.initPopupWidget({ url });
+  } else {
+    window.open(url, "_blank");
+  }
+}
 
 /* ── Cora Avatar ── */
 const CoraAvatar = ({ size = 28 }: { size?: number }) => (
@@ -79,6 +99,7 @@ export default function Chat() {
   const [newMessageIds, setNewMessageIds] = useState<Set<string>>(new Set());
   const [connectionLost, setConnectionLost] = useState(false);
   const [messageFeedback, setMessageFeedback] = useState<Record<string, boolean | null>>({});
+  const [calendlyShown, setCalendlyShown] = useState(false);
   const retryCountRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -229,6 +250,17 @@ export default function Chat() {
   const isLastAssistantMessage = (msg: Message) => {
     const assistantMessages = messages.filter(m => m.role === 'assistant');
     return assistantMessages.length > 0 && assistantMessages[assistantMessages.length - 1].id === msg.id;
+  };
+
+  // Determine if the Calendly CTA should show after the last assistant message
+  const shouldShowCalendlyCTA = (msg: Message) => {
+    if (calendlyShown || !isLastAssistantMessage(msg)) return false;
+    const userMessages = messages.filter(m => m.role === 'user');
+    // Show after 5+ user messages
+    if (userMessages.length >= 5) return true;
+    // Or if any user message contains trigger words
+    const lastUserMsg = userMessages[userMessages.length - 1]?.content?.toLowerCase() || '';
+    return CALL_TRIGGER_WORDS.some(word => lastUserMsg.includes(word));
   };
 
   // Show thumbs on every 5th assistant message
@@ -404,6 +436,19 @@ export default function Chat() {
                             {suggestion}
                           </button>
                         ))}
+
+                        {/* Calendly CTA chip */}
+                        {shouldShowCalendlyCTA(message) && (
+                          <button
+                            onClick={() => { openCalendly(); setCalendlyShown(true); }}
+                            className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/30 text-foreground hover:from-primary/20 hover:to-secondary/20 transition-all duration-200"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <CalendarCheck className="h-3 w-3" />
+                              Want to talk this through? Book a free call
+                            </span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
