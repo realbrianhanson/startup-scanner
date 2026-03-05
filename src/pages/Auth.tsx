@@ -60,6 +60,7 @@ const FloatingInput = ({
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const isReset = searchParams.get("reset") === "true";
+  const refCode = searchParams.get("ref") || "";
 
   const [view, setView] = useState<AuthView>(isReset ? "reset" : "login");
   const [email, setEmail] = useState("");
@@ -69,6 +70,11 @@ const Auth = () => {
   const [promoCode, setPromoCode] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // If ref code present, default to signup view
+  useEffect(() => {
+    if (refCode && !isReset) setView("signup");
+  }, [refCode, isReset]);
 
   useEffect(() => {
     document.title = "Sign In | Validifier";
@@ -120,12 +126,18 @@ const Auth = () => {
             data: {
               full_name: fullName,
               promo_code: promoCode.trim().toUpperCase(),
+              referral_code: refCode.trim().toUpperCase(),
             },
           },
         });
         if (error) throw error;
-        trackEvent('sign_up', { method: 'email', has_promo: !!promoCode.trim() });
-        toast.success("Account created! Welcome to Validifier.");
+        trackEvent('sign_up', { method: 'email', has_promo: !!promoCode.trim(), has_referral: !!refCode });
+        
+        if (refCode) {
+          toast.success("You were referred by a friend — welcome! 🎉");
+        } else {
+          toast.success("Account created! Welcome to Validifier.");
+        }
 
         // Send welcome email (fire-and-forget)
         if (data?.user) {
