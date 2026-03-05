@@ -30,6 +30,13 @@ const Settings = () => {
   const [usageLogs, setUsageLogs] = useState<any[]>([]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [notifPrefs, setNotifPrefs] = useState({
+    report_completion: true,
+    credit_alerts: true,
+    weekly_digest: false,
+    product_updates: false,
+  });
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -52,6 +59,9 @@ const Settings = () => {
         setProfile(profileData);
         setFullName(profileData.full_name || "");
         setEmail(profileData.email);
+        if (profileData.notification_preferences) {
+          setNotifPrefs(profileData.notification_preferences as typeof notifPrefs);
+        }
       }
 
       const { data: logs } = await supabase
@@ -90,7 +100,26 @@ const Settings = () => {
     }
   };
 
-  const creditsUsedPercentage = profile 
+  const handleToggleNotif = async (key: keyof typeof notifPrefs, value: boolean) => {
+    const updated = { ...notifPrefs, [key]: value };
+    setNotifPrefs(updated);
+    setSavingPrefs(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ notification_preferences: updated } as any)
+        .eq("id", user.id);
+      if (error) throw error;
+      toast.success("Preferences saved");
+    } catch {
+      setNotifPrefs(notifPrefs); // revert
+      toast.error("Failed to save preferences");
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
+  const creditsUsedPercentage = profile
     ? (profile.ai_credits_used / profile.ai_credits_monthly) * 100 
     : 0;
 
@@ -333,7 +362,7 @@ const Settings = () => {
                       Get notified when validation reports are ready
                     </p>
                   </div>
-                  <Switch id="report-completion" defaultChecked />
+                  <Switch id="report-completion" checked={notifPrefs.report_completion} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("report_completion", v)} />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -343,7 +372,7 @@ const Settings = () => {
                       Alert when you've used 75% of monthly credits
                     </p>
                   </div>
-                  <Switch id="credit-alerts" defaultChecked />
+                  <Switch id="credit-alerts" checked={notifPrefs.credit_alerts} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("credit_alerts", v)} />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -353,7 +382,7 @@ const Settings = () => {
                       Weekly summary of your validation activity
                     </p>
                   </div>
-                  <Switch id="weekly-digest" />
+                  <Switch id="weekly-digest" checked={notifPrefs.weekly_digest} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("weekly_digest", v)} />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -363,7 +392,7 @@ const Settings = () => {
                       News about new features and improvements
                     </p>
                   </div>
-                  <Switch id="product-updates" />
+                  <Switch id="product-updates" checked={notifPrefs.product_updates} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("product_updates", v)} />
                 </div>
               </div>
             </Card>
