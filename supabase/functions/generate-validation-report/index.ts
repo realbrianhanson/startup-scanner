@@ -69,7 +69,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Generating report for project:", project.name);
+    
 
     // Check user credits
     const { data: profile } = await supabase
@@ -115,7 +115,7 @@ serve(async (req) => {
       throw new Error("Failed to create report");
     }
 
-    console.log("Report entry created, starting AI generation...");
+    
 
     // Update project status
     await supabase
@@ -125,7 +125,7 @@ serve(async (req) => {
 
     // Helper function to update status after each section
     const updateSectionStatus = async (sectionName: string, sectionData: any, currentStatus: any) => {
-      console.log(`Section ${sectionName} completed`);
+      
       const newStatus = { ...currentStatus, [sectionName]: "complete" };
 
       // Fetch current report_data to merge incrementally
@@ -157,51 +157,39 @@ serve(async (req) => {
     let currentStatus = { ...report.generation_status };
 
     // Generate sections sequentially to show progress
-    console.log("Generating executive summary...");
     const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("executive_summary", executiveSummary, currentStatus);
 
-    console.log("Generating market analysis...");
     const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("market_analysis", marketAnalysis, currentStatus);
 
-    console.log("Generating customer personas...");
     const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("customer_personas", customerPersonas, currentStatus);
 
-    console.log("Generating competitive landscape...");
     const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("competitive_landscape", competitiveLandscape, currentStatus);
 
-    console.log("Generating strategic frameworks...");
     const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("strategic_frameworks", strategicFrameworks, currentStatus);
 
-    console.log("Generating Porter's Five Forces...");
     const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("porter_five_forces", porterFiveForces, currentStatus);
 
-    console.log("Generating PESTEL analysis...");
     const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("pestel_analysis", pestelAnalysis, currentStatus);
 
-    console.log("Generating CATWOE analysis...");
     const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("catwoe_analysis", catwoeAnalysis, currentStatus);
 
-    console.log("Generating path to MVP...");
     const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("path_to_mvp", pathToMvp, currentStatus);
 
-    console.log("Generating go-to-market strategy...");
     const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("go_to_market_strategy", goToMarketStrategy, currentStatus);
 
-    console.log("Generating USP analysis...");
     const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("usp_analysis", uspAnalysis, currentStatus);
 
-    console.log("Generating financial basics...");
     const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY);
     currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
 
@@ -265,7 +253,7 @@ serve(async (req) => {
       cost_cents: 50,
     });
 
-    console.log("Report generation complete");
+    
 
     return new Response(
       JSON.stringify({ success: true, report_id: report.id, validation_score: validationScore }),
@@ -397,7 +385,7 @@ async function callAI(prompt: string, apiKey: string, maxTokens?: number): Promi
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("AI call failed:", errorText);
+    
     throw new Error("AI generation failed");
   }
 
@@ -549,7 +537,6 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.`;
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     const parsed = JSON.parse(cleanedResult);
-    console.log("Porter's Five Forces generated successfully");
     return parsed;
   } catch (error) {
     console.error("Porter's Five Forces parse error:", error, "Raw result:", result?.substring(0, 500));
@@ -558,7 +545,6 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.`;
     if (extractedJson) {
       try {
         const parsed = JSON.parse(extractedJson);
-        console.log("Porter's Five Forces recovered via validation");
         return parsed;
       } catch (e) {
         console.error("Recovery also failed");
@@ -633,7 +619,6 @@ CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text.`;
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     const parsed = JSON.parse(cleanedResult);
-    console.log("Customer personas generated successfully:", Array.isArray(parsed) ? parsed.length : 1, "personas");
     return Array.isArray(parsed) ? parsed : [parsed];
   } catch (error) {
     console.error("Customer personas initial parse error, trying to fix JSON...");
@@ -642,11 +627,9 @@ CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text.`;
     // Try to fix the JSON
     const fixedJson = validateAndFixJson(result, ['priority', 'name', 'pain_points', 'objections']);
     if (fixedJson && Array.isArray(fixedJson)) {
-      console.log("Customer personas recovered via JSON fix:", fixedJson.length, "personas");
       return fixedJson;
     }
     if (fixedJson && typeof fixedJson === 'object') {
-      console.log("Customer personas recovered as single object");
       return [fixedJson];
     }
     
@@ -655,7 +638,6 @@ CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text.`;
       const arrayMatch = result?.match(/\[[\s\S]*\]/);
       if (arrayMatch) {
         const extracted = JSON.parse(arrayMatch[0]);
-        console.log("Customer personas extracted via regex:", Array.isArray(extracted) ? extracted.length : 1, "personas");
         return Array.isArray(extracted) ? extracted : [extracted];
       }
     } catch (e) {
@@ -766,7 +748,6 @@ CRITICAL: Return ONLY valid JSON with these exact 6 keys. Each value must be a p
     const requiredKeys = ['political', 'economic', 'social', 'technological', 'environmental', 'legal'];
     const hasAllKeys = requiredKeys.every(key => parsed[key] && typeof parsed[key] === 'string' && parsed[key].length > 20);
     if (hasAllKeys) {
-      console.log("PESTEL analysis generated successfully");
       return parsed;
     }
     console.error("PESTEL missing keys, raw result:", result.substring(0, 500));
@@ -783,7 +764,6 @@ CRITICAL: Return ONLY valid JSON with these exact 6 keys. Each value must be a p
       const legalMatch = result.match(/"legal"\s*:\s*"([^"]+)"/);
       
       if (politicalMatch && economicMatch && socialMatch) {
-        console.log("PESTEL extracted via regex fallback");
         return {
           political: politicalMatch[1] || "Political factors impact this business through regulatory oversight and policy changes.",
           economic: economicMatch[1] || "Economic conditions affect consumer spending and operational costs.",
@@ -1015,7 +995,6 @@ Keep descriptions brief (1-2 sentences max). Return valid JSON only.`;
   const result = await callAI(prompt, apiKey, 3000);
   try {
     const parsed = JSON.parse(result);
-    console.log("Go-to-market strategy generated successfully");
     return parsed;
   } catch (error) {
     console.error("Go to market parse error:", error, "Raw result:", result.substring(0, 1000));

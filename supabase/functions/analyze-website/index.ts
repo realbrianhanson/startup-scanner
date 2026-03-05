@@ -32,7 +32,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    console.log("Scraping website:", url);
+    
 
     // Scrape website using Firecrawl
     const firecrawl = new FirecrawlApp({ apiKey: FIRECRAWL_API_KEY });
@@ -45,7 +45,7 @@ serve(async (req) => {
       throw new Error("Failed to scrape website");
     }
 
-    console.log("Website scraped successfully, analyzing with AI...");
+    
 
     // Use AI to extract key business information
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -78,7 +78,7 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     const analysis = aiData.choices[0]?.message?.content || "Analysis not available";
 
-    console.log("Analysis complete");
+    
 
     return new Response(
       JSON.stringify({

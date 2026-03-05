@@ -72,7 +72,6 @@ const CreateProject = () => {
       setExtractedData(data);
       toast.success("Website data extracted successfully!");
     } catch (error: any) {
-      console.error("Error analyzing website:", error);
       toast.error(error.message || "Failed to analyze website");
     } finally {
       setAnalyzing(false);
@@ -128,7 +127,6 @@ const CreateProject = () => {
       toast.success("Project created! Starting validation analysis...");
       navigate(`/projects/${project.id}/report`);
     } catch (error: any) {
-      console.error("Error creating project:", error);
       toast.error(error.message || "Failed to create project");
     } finally {
       setLoading(false);
