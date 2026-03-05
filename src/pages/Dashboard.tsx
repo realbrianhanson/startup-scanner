@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import { useNavigate } from "react-router-dom";
+import { CompareProjects } from "@/components/CompareProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -441,11 +442,14 @@ const Dashboard = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Recent Projects</h2>
-                {totalProjects > 5 && !showAll && (
-                  <p className="text-sm text-muted-foreground">
-                    Showing 5 of {totalProjects}
-                  </p>
-                )}
+                <div className="flex items-center gap-3">
+                  <CompareProjects projects={projects} />
+                  {totalProjects > 5 && !showAll && (
+                    <p className="text-sm text-muted-foreground">
+                      Showing 5 of {totalProjects}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="grid gap-4">
                 {(showAll ? projects : projects.slice(0, 5)).map((project, idx) => (
