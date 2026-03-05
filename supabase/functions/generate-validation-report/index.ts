@@ -485,6 +485,33 @@ function balanceBrackets(jsonStr: string): string {
   return result;
 }
 
+function safeParseJSON(text: string, sectionName: string): any {
+  // Step 1: Direct parse (should work most of the time with response_mime_type)
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error(`[${sectionName}] Direct parse failed, trying cleanup...`);
+  }
+
+  // Step 2: Clean markdown artifacts (fallback for edge cases)
+  try {
+    const cleaned = cleanJsonFromMarkdown(text);
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.error(`[${sectionName}] Cleaned parse failed, trying bracket balancing...`);
+  }
+
+  // Step 3: Balance brackets (last resort)
+  try {
+    const cleaned = cleanJsonFromMarkdown(text);
+    const balanced = balanceBrackets(cleaned);
+    return JSON.parse(balanced);
+  } catch (e) {
+    console.error(`[${sectionName}] All parse attempts failed. Raw (first 300 chars):`, text.substring(0, 300));
+    return null;
+  }
+}
+
 function getIndustryContext(industry: string): string {
   const contexts: Record<string, string> = {
     "B2B SaaS": `Industry context: B2B SaaS businesses should target net revenue retention above 110%, aim for CAC payback under 18 months, and achieve LTV:CAC ratios above 3:1. Key success factors include product-led growth, low churn, and land-and-expand strategies. The median B2B SaaS startup takes 7-10 years to reach $100M ARR. Current trends include AI-augmented features, usage-based pricing, and vertical SaaS specialization.`,
@@ -565,6 +592,11 @@ async function callAI(prompt: string, apiKey: string, maxTokens?: number, model?
     body.max_tokens = maxTokens;
   }
 
+  // Force JSON output mode for Gemini models — dramatically improves reliability
+  if (selectedModel.includes('gemini')) {
+    body.response_mime_type = "application/json";
+  }
+
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -589,7 +621,7 @@ async function callAI(prompt: string, apiKey: string, maxTokens?: number, model?
 
   const data = await response.json();
   const content = data.choices[0]?.message?.content || "";
-  return cleanJsonFromMarkdown(content);
+  return content;
 }
 
 async function generateExecutiveSummary(project: any, apiKey: string, industryContext: string = '', model?: string) {
@@ -628,14 +660,14 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
   "recommendation": "3-4 paragraphs of strategic advice with specific action items",
   "contrarian_insight": "One non-obvious observation about this business that most people would miss",
   "seven_day_action": "The single most important thing to do in the next 7 days"
-}`;
+}
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 4000, model);
-  try {
-    return JSON.parse(result);
-  } catch {
-    return { score: 65, strengths: ["Extracted from AI"], concerns: ["Parse error"], recommendation: "Review", reasoning: result };
-  }
+  const parsed = safeParseJSON(result, "executive_summary");
+  if (parsed) return parsed;
+  return { score: 65, strengths: ["Analysis failed — please regenerate"], concerns: ["Parse error"], recommendation: "Please regenerate this report", reasoning: result?.substring(0, 200) };
 }
 
 async function generateMarketAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -672,11 +704,13 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
   "timing_assessment": "3-4 sentences on whether NOW is the right time, referencing specific market signals",
   "market_risks": ["Specific risk 1 that could shrink this market", "Specific risk 2"],
   "adjacent_opportunities": "One adjacent market or pivot opportunity the founder should keep in mind"
-}`;
+}
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 4000, model);
-  try {
-    const parsed = JSON.parse(result);
+  const parsed = safeParseJSON(result, "market_analysis");
+  if (parsed) {
     // Ensure trends is an array of strings
     if (parsed.trends && Array.isArray(parsed.trends)) {
       parsed.trends = parsed.trends.map((t: any) => 
@@ -690,21 +724,15 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
       );
     }
     return parsed;
-  } catch (error) {
-    console.error("Market analysis parse error:", error, "Raw:", result.substring(0, 500));
-    return { 
-      tam: "Market size analysis pending", 
-      sam: "Serviceable market pending", 
-      som: "Obtainable market pending", 
-      growth_rate: "Growth analysis pending", 
-      market_maturity: "Analysis pending",
-      trends: ["Market trend analysis in progress"], 
-      barriers: [{ barrier: "Entry barrier analysis in progress", difficulty: "Medium", how_to_overcome: "TBD" }], 
-      timing_assessment: "Market timing assessment in progress",
-      market_risks: ["Risk analysis pending"],
-      adjacent_opportunities: "Adjacent opportunity analysis pending"
-    };
   }
+  return { 
+    tam: "Market size analysis pending", sam: "Serviceable market pending", som: "Obtainable market pending", 
+    growth_rate: "Growth analysis pending", market_maturity: "Analysis pending",
+    trends: ["Market trend analysis in progress"], 
+    barriers: [{ barrier: "Entry barrier analysis in progress", difficulty: "Medium", how_to_overcome: "TBD" }], 
+    timing_assessment: "Market timing assessment in progress",
+    market_risks: ["Risk analysis pending"], adjacent_opportunities: "Adjacent opportunity analysis pending"
+  };
 }
 
 async function generateCompetitiveLandscape(project: any, apiKey: string, context: string = '', model?: string) {
@@ -753,37 +781,34 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
     "positioning_against": "Specifically, how to position AGAINST the strongest competitor"
   },
   "competitive_moat_strategy": "The #1 thing to build early that will create a lasting competitive moat (2-3 sentences)"
-}`;
+}
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 4000, model);
-  try {
-    const parsed = JSON.parse(result);
-    // Normalize direct_competitors for backward compat
+  const parsed = safeParseJSON(result, "competitive_landscape");
+  if (parsed) {
     if (parsed.direct_competitors && Array.isArray(parsed.direct_competitors)) {
       parsed.direct_competitors = parsed.direct_competitors.map((c: any) =>
         typeof c === 'string' ? { name: c, description: '' } : c
       );
     }
-    // Normalize indirect_competitors
     if (parsed.indirect_competitors && Array.isArray(parsed.indirect_competitors)) {
       parsed.indirect_competitors = parsed.indirect_competitors.map((c: any) =>
         typeof c === 'string' ? { name: c, description: c, why_customers_choose_them: '' } : c
       );
     }
-    // Normalize competitive_advantages
     if (parsed.competitive_advantages && Array.isArray(parsed.competitive_advantages)) {
       parsed.competitive_advantages = parsed.competitive_advantages.map((a: any) =>
         typeof a === 'string' ? { advantage: a, why_defensible: '', duration: '' } : a
       );
     }
-    // Normalize positioning
     if (typeof parsed.positioning === 'string') {
       parsed.positioning = { recommended_position: parsed.positioning, tagline_suggestion: '', positioning_against: '' };
     }
     return parsed;
-  } catch {
-    return { direct_competitors: [], indirect_competitors: [], competitive_advantages: [{ advantage: "Analysis pending", why_defensible: "", duration: "" }], positioning: { recommended_position: result, tagline_suggestion: "", positioning_against: "" } };
   }
+  return { direct_competitors: [], indirect_competitors: [], competitive_advantages: [{ advantage: "Analysis pending", why_defensible: "", duration: "" }], positioning: { recommended_position: "Analysis pending", tagline_suggestion: "", positioning_against: "" } };
 }
 
 async function generateStrategicFrameworks(project: any, apiKey: string, context: string = '', model?: string) {
@@ -800,17 +825,14 @@ CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #, n
 
 Format as JSON with keys: 
 - swot {strengths, weaknesses, opportunities, threats} (all arrays of plain strings)
-- gtm_strategy (array of plain strings - no bold formatting)`;
+- gtm_strategy (array of plain strings - no bold formatting)
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 3000, model);
-  try {
-    return JSON.parse(result);
-  } catch {
-    return { 
-      swot: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
-      gtm_strategy: [result]
-    };
-  }
+  const parsed = safeParseJSON(result, "strategic_frameworks");
+  if (parsed) return parsed;
+  return { swot: { strengths: [], weaknesses: [], opportunities: [], threats: [] }, gtm_strategy: ["Analysis pending"] };
 }
 
 async function generatePorterFiveForces(project: any, apiKey: string, context: string = '', model?: string) {
@@ -830,33 +852,20 @@ Return JSON:
 
 Business: ${project.description?.substring(0, 500)}
 
-IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.`;
+IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 3000, model);
-  try {
-    const cleanedResult = cleanJsonFromMarkdown(result);
-    const parsed = JSON.parse(cleanedResult);
-    return parsed;
-  } catch (error) {
-    console.error("Porter's Five Forces parse error:", error, "Raw result:", result?.substring(0, 500));
-    // Try to extract with regex as last resort
-    const extractedJson = validateAndFixJson(result, ['supplier_power', 'buyer_power', 'competitive_rivalry', 'threat_of_substitution', 'threat_of_new_entry']);
-    if (extractedJson) {
-      try {
-        const parsed = JSON.parse(extractedJson);
-        return parsed;
-      } catch (e) {
-        console.error("Recovery also failed");
-      }
-    }
-    return { 
-      supplier_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
-      buyer_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
-      competitive_rivalry: { rating: "High", analysis: "Unable to generate analysis. Please try regenerating the report." },
-      threat_of_substitution: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
-      threat_of_new_entry: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." }
-    };
-  }
+  const parsed = safeParseJSON(result, "porter_five_forces");
+  if (parsed) return parsed;
+  return { 
+    supplier_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
+    buyer_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
+    competitive_rivalry: { rating: "High", analysis: "Unable to generate analysis. Please try regenerating the report." },
+    threat_of_substitution: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
+    threat_of_new_entry: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." }
+  };
 }
 
 async function generateCustomerPersonas(project: any, apiKey: string, context: string = '', model?: string) {
@@ -913,59 +922,25 @@ Return JSON array with this structure:
   }
 ]
 
-CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text.`;
+CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text. Start your response with [ and end with ].`;
 
   const result = await callAI(prompt, apiKey, 6000, model);
-  try {
-    const cleanedResult = cleanJsonFromMarkdown(result);
-    const parsed = JSON.parse(cleanedResult);
-    return Array.isArray(parsed) ? parsed : [parsed];
-  } catch (error) {
-    console.error("Customer personas initial parse error, trying to fix JSON...");
-    console.error("Raw result preview:", result?.substring(0, 500));
-    
-    // Try to fix the JSON
-    const fixedJson = validateAndFixJson(result, ['priority', 'name', 'pain_points', 'objections']);
-    if (fixedJson && Array.isArray(fixedJson)) {
-      return fixedJson;
-    }
-    if (fixedJson && typeof fixedJson === 'object') {
-      return [fixedJson];
-    }
-    
-    // Try one more extraction method - find array in the result
-    try {
-      const arrayMatch = result?.match(/\[[\s\S]*\]/);
-      if (arrayMatch) {
-        const extracted = JSON.parse(arrayMatch[0]);
-        return Array.isArray(extracted) ? extracted : [extracted];
-      }
-    } catch (e) {
-      console.error("Regex extraction also failed");
-    }
-    
-    console.error("Customer personas parse error:", error);
-    return [
-      {
-        priority: "1st",
-        priority_reason: "Analysis failed - please regenerate report",
-        name: "Target Customer",
-        age: "25-45",
-        job: "Professional in target industry",
-        income: "Varies by market",
-        location: "Primary market areas",
-        values: ["Value proposition alignment", "Problem resolution", "Efficiency"],
-        personality: ["Decision-maker", "Solution-oriented"],
-        pain_points: [{ pain: "Core problem your product solves", impact: "Significant time/money loss" }],
-        current_solution: "Existing alternatives that fall short",
-        dream_outcome: "The ideal state your product enables",
-        objections: [{ objection: "Common concern", root_cause: "Underlying uncertainty" }],
-        closing_angles: [{ angle: "Address with proof and guarantees", addresses: "Main objections" }],
-        proof_needed: "Case studies, testimonials, demos",
-        urgency_trigger: "Limited time offer or growing pain point"
-      }
-    ];
-  }
+  const parsed = safeParseJSON(result, "customer_personas");
+  if (parsed) return Array.isArray(parsed) ? parsed : [parsed];
+  return [{
+    priority: "1st", priority_reason: "Analysis failed - please regenerate report",
+    name: "Target Customer", age: "25-45", job: "Professional in target industry",
+    income: "Varies by market", location: "Primary market areas",
+    values: ["Value proposition alignment", "Problem resolution", "Efficiency"],
+    personality: ["Decision-maker", "Solution-oriented"],
+    pain_points: [{ pain: "Core problem your product solves", impact: "Significant time/money loss" }],
+    current_solution: "Existing alternatives that fall short",
+    dream_outcome: "The ideal state your product enables",
+    objections: [{ objection: "Common concern", root_cause: "Underlying uncertainty" }],
+    closing_angles: [{ angle: "Address with proof and guarantees", addresses: "Main objections" }],
+    proof_needed: "Case studies, testimonials, demos",
+    urgency_trigger: "Limited time offer or growing pain point"
+  }];
 }
 
 async function generateFinancialBasics(project: any, apiKey: string, context: string = '', model?: string) {
@@ -982,7 +957,7 @@ REQUIREMENTS:
 - CAC must reference specific acquisition channels with per-channel estimates
 - Unit economics must make sense (LTV must exceed CAC by at least 3x for a viable business)
 
-CRITICAL: Return ONLY valid JSON. No markdown, no comments.
+CRITICAL: Return ONLY valid JSON. No markdown, no comments. Start your response with { and end with }.
 
 {
   "startup_costs": {
@@ -1044,39 +1019,29 @@ CRITICAL: Return ONLY valid JSON. No markdown, no comments.
   },
   "funding_recommendation": "Whether the founder should bootstrap, seek angel funding, or VC funding — and why (2-3 sentences)",
   "break_even_estimate": "When the business is projected to become profitable and what needs to happen to get there"
-}`;
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 5000, model);
-  try {
-    const parsed = JSON.parse(result);
-
-    // Backwards compat: if startup_costs entries are plain strings, wrap them
+  const parsed = safeParseJSON(result, "financial_basics");
+  if (parsed) {
+    // Backwards compat normalizations
     for (const tier of ['conservative', 'moderate', 'aggressive']) {
       if (typeof parsed.startup_costs?.[tier] === 'string') {
         parsed.startup_costs[tier] = { total: parsed.startup_costs[tier], breakdown: [] };
       }
     }
-
-    // If revenue_model came back as a string, wrap it
     if (typeof parsed.revenue_model === 'string') {
       parsed.revenue_model = { primary_model: 'See details', pricing_recommendation: parsed.revenue_model, revenue_streams: [] };
     }
-
     return parsed;
-  } catch {
-    return {
-      startup_costs: {
-        conservative: { total: "$10K", breakdown: [] },
-        moderate: { total: "$25K", breakdown: [] },
-        aggressive: { total: "$50K", breakdown: [] }
-      },
-      revenue_model: { primary_model: "Analysis pending", pricing_recommendation: "", revenue_streams: [] },
-      unit_economics: null,
-      projections: { year1: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year2: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year3: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" } },
-      funding_recommendation: "Analysis pending",
-      break_even_estimate: "Analysis pending"
-    };
   }
+  return {
+    startup_costs: { conservative: { total: "$10K", breakdown: [] }, moderate: { total: "$25K", breakdown: [] }, aggressive: { total: "$50K", breakdown: [] } },
+    revenue_model: { primary_model: "Analysis pending", pricing_recommendation: "", revenue_streams: [] },
+    unit_economics: null,
+    projections: { year1: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year2: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year3: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" } },
+    funding_recommendation: "Analysis pending", break_even_estimate: "Analysis pending"
+  };
 }
 
 async function generateRiskMatrix(project: any, apiKey: string, allSections: Record<string, any>, model?: string) {
@@ -1090,7 +1055,7 @@ ${condensed}
 
 Create a comprehensive risk matrix that consolidates ALL risks identified across the market analysis, competitive landscape, PESTEL analysis, and strategic frameworks. For each risk, provide a specific mitigation strategy.
 
-CRITICAL: Return ONLY valid JSON. No markdown, no comments.
+CRITICAL: Return ONLY valid JSON. No markdown, no comments. Start your response with { and end with }.
 
 {
   "critical_risks": [
@@ -1111,20 +1076,14 @@ CRITICAL: Return ONLY valid JSON. No markdown, no comments.
   "biggest_unknown": "The single biggest uncertainty that the founder should resolve ASAP through research or experimentation"
 }
 
-Include 2-4 risks in each category (critical, moderate, low). Be specific to THIS business.`;
+Include 2-4 risks in each category (critical, moderate, low). Be specific to THIS business.
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 4000, model);
-  try {
-    return JSON.parse(result);
-  } catch {
-    return {
-      critical_risks: [],
-      moderate_risks: [],
-      low_risks: [],
-      overall_risk_assessment: "Risk analysis pending",
-      biggest_unknown: "Analysis pending"
-    };
-  }
+  const parsed = safeParseJSON(result, "risk_matrix");
+  if (parsed) return parsed;
+  return { critical_risks: [], moderate_risks: [], low_risks: [], overall_risk_assessment: "Risk analysis pending", biggest_unknown: "Analysis pending" };
 }
 
 async function generatePestelAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1144,53 +1103,25 @@ CRITICAL: Return ONLY valid JSON with these exact 6 keys. Each value must be a p
   "technological": "Your analysis of technological factors here",
   "environmental": "Your analysis of environmental factors here",
   "legal": "Your analysis of legal factors here"
-}`;
+}
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 3000, model);
-  try {
-    const parsed = JSON.parse(result);
-    // Validate that we have all required keys with content
+  const parsed = safeParseJSON(result, "pestel_analysis");
+  if (parsed) {
     const requiredKeys = ['political', 'economic', 'social', 'technological', 'environmental', 'legal'];
     const hasAllKeys = requiredKeys.every(key => parsed[key] && typeof parsed[key] === 'string' && parsed[key].length > 20);
-    if (hasAllKeys) {
-      return parsed;
-    }
-    console.error("PESTEL missing keys, raw result:", result.substring(0, 500));
-    throw new Error("Missing PESTEL keys");
-  } catch (error) {
-    console.error("PESTEL parse error:", error, "Raw result:", result.substring(0, 500));
-    // Try to extract with regex as fallback
-    try {
-      const politicalMatch = result.match(/"political"\s*:\s*"([^"]+)"/);
-      const economicMatch = result.match(/"economic"\s*:\s*"([^"]+)"/);
-      const socialMatch = result.match(/"social"\s*:\s*"([^"]+)"/);
-      const technologicalMatch = result.match(/"technological"\s*:\s*"([^"]+)"/);
-      const environmentalMatch = result.match(/"environmental"\s*:\s*"([^"]+)"/);
-      const legalMatch = result.match(/"legal"\s*:\s*"([^"]+)"/);
-      
-      if (politicalMatch && economicMatch && socialMatch) {
-        return {
-          political: politicalMatch[1] || "Political factors impact this business through regulatory oversight and policy changes.",
-          economic: economicMatch[1] || "Economic conditions affect consumer spending and operational costs.",
-          social: socialMatch[1] || "Social trends influence customer preferences and market demand.",
-          technological: technologicalMatch?.[1] || "Technology advancements create opportunities for innovation and efficiency.",
-          environmental: environmentalMatch?.[1] || "Environmental considerations affect sustainability practices and regulations.",
-          legal: legalMatch?.[1] || "Legal requirements govern compliance, contracts, and business operations."
-        };
-      }
-    } catch (regexError) {
-      console.error("PESTEL regex extraction failed:", regexError);
-    }
-    
-    return { 
-      political: "Political factors impact this business through regulatory oversight and government policy changes that may affect operations and market access.",
-      economic: "Economic conditions including inflation, interest rates, and consumer purchasing power directly influence market demand and operational costs.",
-      social: "Social and demographic trends shape customer preferences, workforce availability, and market opportunities for this business.",
-      technological: "Technological advancements create opportunities for innovation, automation, and competitive differentiation in this industry.",
-      environmental: "Environmental considerations including sustainability requirements and climate-related regulations increasingly affect business operations.",
-      legal: "Legal frameworks governing employment, consumer protection, and industry-specific regulations establish compliance requirements."
-    };
+    if (hasAllKeys) return parsed;
   }
+  return { 
+    political: "Political factors impact this business through regulatory oversight and government policy changes that may affect operations and market access.",
+    economic: "Economic conditions including inflation, interest rates, and consumer purchasing power directly influence market demand and operational costs.",
+    social: "Social and demographic trends shape customer preferences, workforce availability, and market opportunities for this business.",
+    technological: "Technological advancements create opportunities for innovation, automation, and competitive differentiation in this industry.",
+    environmental: "Environmental considerations including sustainability requirements and climate-related regulations increasingly affect business operations.",
+    legal: "Legal frameworks governing employment, consumer protection, and industry-specific regulations establish compliance requirements."
+  };
 }
 
 async function generateCatwoeAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1218,21 +1149,21 @@ Format as JSON with keys:
 - transformation { description (string), inputs (array), outputs (array) }
 - world_view { description (string), assumptions (array) }
 - owners { description (string), stakeholders (array) }
-- environmental_constraints { description (string), constraints (array) }`;
+- environmental_constraints { description (string), constraints (array) }
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 3000, model);
-  try {
-    return JSON.parse(result);
-  } catch {
-    return { 
-      customers: { description: "Analysis pending", key_points: ["TBD"] },
-      actors: { description: "Analysis pending", key_points: ["TBD"] },
-      transformation: { description: "Analysis pending", inputs: ["TBD"], outputs: ["TBD"] },
-      world_view: { description: "Analysis pending", assumptions: ["TBD"] },
-      owners: { description: "Analysis pending", stakeholders: ["TBD"] },
-      environmental_constraints: { description: "Analysis pending", constraints: ["TBD"] }
-    };
-  }
+  const parsed = safeParseJSON(result, "catwoe_analysis");
+  if (parsed) return parsed;
+  return { 
+    customers: { description: "Analysis pending", key_points: ["TBD"] },
+    actors: { description: "Analysis pending", key_points: ["TBD"] },
+    transformation: { description: "Analysis pending", inputs: ["TBD"], outputs: ["TBD"] },
+    world_view: { description: "Analysis pending", assumptions: ["TBD"] },
+    owners: { description: "Analysis pending", stakeholders: ["TBD"] },
+    environmental_constraints: { description: "Analysis pending", constraints: ["TBD"] }
+  };
 }
 
 async function generatePathToMvp(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1260,44 +1191,22 @@ Format as JSON with keys:
 - resource_requirements { team (array), tools (array), estimated_budget (string), timeline (string) }
 - launch_strategy { target_audience (string), channels (array), approach (string), timeline (string) }
 - success_metrics (array of { metric, target, measurement })
-- iteration_plan { feedback_channels (array), review_frequency (string), improvement_process (string) }`;
+- iteration_plan { feedback_channels (array), review_frequency (string), improvement_process (string) }
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 3000, model);
-  try {
-    const cleanedResult = cleanJsonFromMarkdown(result);
-    return JSON.parse(cleanedResult);
-  } catch (error) {
-    console.error("Path to MVP parse error:", error, "Raw result:", result);
-    return {
-      mvp_definition: { description: "Analysis pending", core_value: "TBD" },
-      core_features: [
-        { feature: "Feature analysis pending", priority: "High", effort: "TBD", value: "TBD" }
-      ],
-      development_phases: [
-        { phase: "Phase 1", duration: "TBD", deliverables: ["TBD"], milestones: ["TBD"] }
-      ],
-      resource_requirements: {
-        team: ["TBD"],
-        tools: ["TBD"],
-        estimated_budget: "TBD",
-        timeline: "TBD"
-      },
-      launch_strategy: {
-        target_audience: "TBD",
-        channels: ["TBD"],
-        approach: "TBD",
-        timeline: "TBD"
-      },
-      success_metrics: [
-        { metric: "TBD", target: "TBD", measurement: "TBD" }
-      ],
-      iteration_plan: {
-        feedback_channels: ["TBD"],
-        review_frequency: "TBD",
-        improvement_process: "TBD"
-      }
-    };
-  }
+  const parsed = safeParseJSON(result, "path_to_mvp");
+  if (parsed) return parsed;
+  return {
+    mvp_definition: { description: "Analysis pending", core_value: "TBD" },
+    core_features: [{ feature: "Feature analysis pending", priority: "High", effort: "TBD", value: "TBD" }],
+    development_phases: [{ phase: "Phase 1", duration: "TBD", deliverables: ["TBD"], milestones: ["TBD"] }],
+    resource_requirements: { team: ["TBD"], tools: ["TBD"], estimated_budget: "TBD", timeline: "TBD" },
+    launch_strategy: { target_audience: "TBD", channels: ["TBD"], approach: "TBD", timeline: "TBD" },
+    success_metrics: [{ metric: "TBD", target: "TBD", measurement: "TBD" }],
+    iteration_plan: { feedback_channels: ["TBD"], review_frequency: "TBD", improvement_process: "TBD" }
+  };
 }
 
 async function generateUSPAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1363,25 +1272,23 @@ Return ONLY a JSON object (no markdown) in this exact structure:
     "key_messages": ["message1", "message2", "message3"],
     "tone": "how to communicate it"
   }
-}`;
+}
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 3000, model);
-  try {
-    const cleanedResult = cleanJsonFromMarkdown(result);
-    return JSON.parse(cleanedResult);
-  } catch (error) {
-    console.error("USP analysis parse error:", error, "Raw result:", result);
-    return {
-      current_positioning: { summary: "Analysis pending", strengths: ["TBD"], gaps: ["TBD"] },
-      recommended_usp: "Analysis pending",
-      key_differentiators: [{ differentiator: "TBD", description: "TBD", impact: "TBD" }],
-      competitive_advantages: [{ advantage: "TBD", description: "TBD", quantifiable_benefit: "TBD" }],
-      value_proposition: { what: "TBD", how: "TBD", why: "TBD" },
-      target_alignment: { primary_audience: "TBD", emotional_triggers: ["TBD"], rational_benefits: ["TBD"] },
-      proof_points: [{ claim: "TBD", evidence: "TBD", credibility: "TBD" }],
-      communication_guidelines: { elevator_pitch: "TBD", tagline_options: ["TBD"], key_messages: ["TBD"], tone: "TBD" }
-    };
-  }
+  const parsed = safeParseJSON(result, "usp_analysis");
+  if (parsed) return parsed;
+  return {
+    current_positioning: { summary: "Analysis pending", strengths: ["TBD"], gaps: ["TBD"] },
+    recommended_usp: "Analysis pending",
+    key_differentiators: [{ differentiator: "TBD", description: "TBD", impact: "TBD" }],
+    competitive_advantages: [{ advantage: "TBD", description: "TBD", quantifiable_benefit: "TBD" }],
+    value_proposition: { what: "TBD", how: "TBD", why: "TBD" },
+    target_alignment: { primary_audience: "TBD", emotional_triggers: ["TBD"], rational_benefits: ["TBD"] },
+    proof_points: [{ claim: "TBD", evidence: "TBD", credibility: "TBD" }],
+    communication_guidelines: { elevator_pitch: "TBD", tagline_options: ["TBD"], key_messages: ["TBD"], tone: "TBD" }
+  };
 }
 
 async function generateGoToMarketStrategy(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1397,15 +1304,13 @@ REQUIREMENTS:
 - Launch phases must have specific timelines and measurable goals
 - Include at least one unconventional growth tactic that competitors aren't using
 
-CRITICAL: Return ONLY valid JSON. No markdown, no comments.
+CRITICAL: Return ONLY valid JSON. No markdown, no comments. Start your response with { and end with }.
 
 {
   "target_segments": [
     {
       "segment": "Specific segment name",
-      "description": "Who exactly these people are",
-      "size": "Estimated number of people/businesses in this segment",
-      "where_to_find_them": "Specific platforms, communities, events, publications where they gather",
+...
       "messaging_angle": "The specific message that would resonate with this segment"
     }
   ],
@@ -1455,21 +1360,18 @@ CRITICAL: Return ONLY valid JSON. No markdown, no comments.
 Include 2-3 target segments, 3-4 marketing channels, 2-3 pricing tiers, 3-4 launch phases, and 4-5 key metrics.`;
 
   const result = await callAI(prompt, apiKey, 4000, model);
-  try {
-    return JSON.parse(result);
-  } catch (error) {
-    console.error("Go to market parse error:", error, "Raw result:", result.substring(0, 1000));
-    return {
-      target_segments: [{ segment: "Primary Segment", description: "Analysis pending", size: "TBD", where_to_find_them: "TBD", messaging_angle: "TBD" }],
-      value_proposition: { primary: "Analysis pending", for_segment_1: "", for_segment_2: "" },
-      marketing_channels: [{ channel: "Digital Marketing", strategy: "Analysis pending", budget_allocation: "TBD", expected_roi: "TBD", timeline_to_results: "TBD" }],
-      pricing_strategy: { model: "TBD", tiers: [], competitive_position: "Analysis pending", psychological_reasoning: "" },
-      launch_phases: [{ phase: "Pre-Launch", duration: "4 weeks", activities: ["Market research"], goals: ["Build awareness"], budget: "TBD" }],
-      unconventional_tactic: { tactic: "Analysis pending", why_it_works: "", how_to_execute: "", example: "" },
-      key_metrics: [{ metric: "CAC", target: "TBD", measurement: "Monthly", tool: "Analytics" }],
-      first_10_customers: "Analysis pending"
-    };
-  }
+  const parsed = safeParseJSON(result, "go_to_market_strategy");
+  if (parsed) return parsed;
+  return {
+    target_segments: [{ segment: "Primary Segment", description: "Analysis pending", size: "TBD", where_to_find_them: "TBD", messaging_angle: "TBD" }],
+    value_proposition: { primary: "Analysis pending", for_segment_1: "", for_segment_2: "" },
+    marketing_channels: [{ channel: "Digital Marketing", strategy: "Analysis pending", budget_allocation: "TBD", expected_roi: "TBD", timeline_to_results: "TBD" }],
+    pricing_strategy: { model: "TBD", tiers: [], competitive_position: "Analysis pending", psychological_reasoning: "" },
+    launch_phases: [{ phase: "Pre-Launch", duration: "4 weeks", activities: ["Market research"], goals: ["Build awareness"], budget: "TBD" }],
+    unconventional_tactic: { tactic: "Analysis pending", why_it_works: "", how_to_execute: "", example: "" },
+    key_metrics: [{ metric: "CAC", target: "TBD", measurement: "Monthly", tool: "Analytics" }],
+    first_10_customers: "Analysis pending"
+  };
 }
 function buildFullContext(sections: Record<string, any>): string {
   const parts: string[] = [];
@@ -1553,24 +1455,22 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
     "tools": ["Specific tool 1 with why", "Tool 2"],
     "people": "Whether they need anyone else help and who"
   }
-}`;
+}
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 5000, model);
-  try {
-    const cleanedResult = cleanJsonFromMarkdown(result);
-    return JSON.parse(cleanedResult);
-  } catch (error) {
-    console.error("Action plan parse error:", error);
-    return {
-      week_1: { theme: "Getting Started", actions: [{ day: "Day 1-2", action: "Analysis pending — please regenerate", why: "N/A", deliverable: "N/A" }] },
-      week_2: { theme: "Discovery", actions: [] },
-      week_3: { theme: "Planning", actions: [] },
-      week_4: { theme: "Execution", actions: [] },
-      quick_wins: ["Regenerate the report to see this section"],
-      critical_milestones: [],
-      resources_needed: { budget_estimate: "TBD", tools: [], people: "TBD" }
-    };
-  }
+  const parsed = safeParseJSON(result, "action_plan");
+  if (parsed) return parsed;
+  return {
+    week_1: { theme: "Getting Started", actions: [{ day: "Day 1-2", action: "Analysis pending — please regenerate", why: "N/A", deliverable: "N/A" }] },
+    week_2: { theme: "Discovery", actions: [] },
+    week_3: { theme: "Planning", actions: [] },
+    week_4: { theme: "Execution", actions: [] },
+    quick_wins: ["Regenerate the report to see this section"],
+    critical_milestones: [],
+    resources_needed: { budget_estimate: "TBD", tools: [], people: "TBD" }
+  };
 }
 
 async function generateGameChangingIdea(project: any, apiKey: string, previousSections: Record<string, any>, model?: string) {
@@ -1607,24 +1507,22 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
   "risk": "The main risk of this approach and how to mitigate it (2 sentences)",
   "example_precedent": "A real-world example of a company that did something similar and succeeded",
   "potential_impact": "How much bigger/better the business could be with this change"
-}`;
+}
+
+CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const result = await callAI(prompt, apiKey, 4000, model);
-  try {
-    const cleanedResult = cleanJsonFromMarkdown(result);
-    return JSON.parse(cleanedResult);
-  } catch (error) {
-    console.error("Game-changing idea parse error:", error);
-    return {
-      headline: "Analysis pending",
-      description: "Unable to generate game-changing idea. Please try regenerating the report.",
-      why_it_works: "N/A",
-      implementation_steps: ["Regenerate the report to see this section"],
-      risk: "N/A",
-      example_precedent: "N/A",
-      potential_impact: "N/A"
-    };
-  }
+  const parsed = safeParseJSON(result, "game_changing_idea");
+  if (parsed) return parsed;
+  return {
+    headline: "Analysis pending",
+    description: "Unable to generate game-changing idea. Please try regenerating the report.",
+    why_it_works: "N/A",
+    implementation_steps: ["Regenerate the report to see this section"],
+    risk: "N/A",
+    example_precedent: "N/A",
+    potential_impact: "N/A"
+  };
 }
 
 function calculateValidationScore(sections: any): number {
