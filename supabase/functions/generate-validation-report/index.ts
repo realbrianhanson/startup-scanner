@@ -102,7 +102,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 13;
+    const creditsNeeded = 14;
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -127,6 +127,7 @@ serve(async (req) => {
           usp_analysis: "pending",
           game_changing_idea: "pending",
           financial_basics: "pending",
+          action_plan: "pending",
         },
       })
       .select()
@@ -225,6 +226,13 @@ serve(async (req) => {
 
     const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
+
+    const actionPlan = await generateActionPlan(project, LOVABLE_API_KEY, {
+      executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
+      strategicFrameworks, porterFiveForces, pestelAnalysis, catwoeAnalysis,
+      pathToMvp, goToMarketStrategy, uspAnalysis, gameChangingIdea, financialBasics
+    });
+    currentStatus = await updateSectionStatus("action_plan", actionPlan, currentStatus);
 
     // Calculate validation score
     const validationScore = calculateValidationScore({
@@ -1267,6 +1275,108 @@ Keep descriptions brief (1-2 sentences max). Return valid JSON only.`;
     };
   }
 }
+function buildFullContext(sections: Record<string, any>): string {
+  const parts: string[] = [];
+  if (sections.executiveSummary) {
+    parts.push(`Executive Summary: Score ${sections.executiveSummary.score}/100. Strengths: ${sections.executiveSummary.strengths?.slice(0, 3).join('; ')}. Concerns: ${sections.executiveSummary.concerns?.slice(0, 3).join('; ')}.`);
+  }
+  if (sections.marketAnalysis) {
+    parts.push(`Market: TAM ${sections.marketAnalysis.tam}. Growth: ${sections.marketAnalysis.growth_rate}. Timing: ${sections.marketAnalysis.timing_assessment?.substring(0, 150)}.`);
+  }
+  if (sections.customerPersonas?.[0]) {
+    const p = sections.customerPersonas[0];
+    parts.push(`Primary Customer: ${p.name}. Pain: ${p.pain_points?.[0]?.pain || 'identified'}.`);
+  }
+  if (sections.competitiveLandscape) {
+    const comps = sections.competitiveLandscape.direct_competitors;
+    if (comps?.length) parts.push(`Key Competitors: ${comps.slice(0, 3).map((c: any) => c.name || c).join(', ')}.`);
+    if (sections.competitiveLandscape.competitive_moat_strategy) parts.push(`Moat: ${sections.competitiveLandscape.competitive_moat_strategy.substring(0, 150)}.`);
+  }
+  if (sections.pathToMvp?.mvp_definition) {
+    parts.push(`MVP: ${sections.pathToMvp.mvp_definition.description?.substring(0, 150)}.`);
+  }
+  if (sections.goToMarketStrategy?.value_proposition) {
+    parts.push(`GTM Value Prop: ${sections.goToMarketStrategy.value_proposition.primary?.substring(0, 100)}.`);
+  }
+  if (sections.gameChangingIdea?.headline) {
+    parts.push(`Game-Changing Idea: ${sections.gameChangingIdea.headline}.`);
+  }
+  if (sections.financialBasics?.startup_costs) {
+    parts.push(`Budget: Conservative ${sections.financialBasics.startup_costs.conservative}, Moderate ${sections.financialBasics.startup_costs.moderate}.`);
+  }
+  return parts.length > 0 ? '\n\nFULL ANALYSIS CONTEXT:\n' + parts.join('\n') : '';
+}
+
+async function generateActionPlan(project: any, apiKey: string, allSections: Record<string, any>) {
+  const fullContext = buildFullContext(allSections);
+
+  const prompt = `Based on ALL the analysis completed for this business:
+Business: ${project.name}
+Industry: ${project.industry}
+Description: ${project.description}
+${fullContext}
+
+Create a specific, day-by-day 30-day action plan for the founder. This is not generic advice — every action should be specific to THIS business based on what the analysis revealed.
+
+Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside string values.
+{
+  "week_1": {
+    "theme": "Validation & Research",
+    "actions": [
+      {
+        "day": "Day 1-2",
+        "action": "Specific action tied to a finding from the report",
+        "why": "Which report section this addresses",
+        "deliverable": "What you should have completed by end of day"
+      }
+    ]
+  },
+  "week_2": {
+    "theme": "Customer Discovery",
+    "actions": [{"day": "Day 8-9", "action": "...", "why": "...", "deliverable": "..."}]
+  },
+  "week_3": {
+    "theme": "MVP Planning",
+    "actions": [{"day": "Day 15-16", "action": "...", "why": "...", "deliverable": "..."}]
+  },
+  "week_4": {
+    "theme": "Launch Preparation",
+    "actions": [{"day": "Day 22-23", "action": "...", "why": "...", "deliverable": "..."}]
+  },
+  "quick_wins": [
+    "Something they can do TODAY that takes less than 1 hour",
+    "A second quick win",
+    "A third quick win"
+  ],
+  "critical_milestones": [
+    {"milestone": "First milestone", "target_date": "By Day X", "success_metric": "How to know you achieved it"},
+    {"milestone": "Second milestone", "target_date": "By Day X", "success_metric": "Metric"}
+  ],
+  "resources_needed": {
+    "budget_estimate": "Estimated budget for the 30-day plan",
+    "tools": ["Specific tool 1 with why", "Tool 2"],
+    "people": "Whether they need anyone else help and who"
+  }
+}`;
+
+  const result = await callAI(prompt, apiKey, 5000);
+  try {
+    const cleanedResult = cleanJsonFromMarkdown(result);
+    return JSON.parse(cleanedResult);
+  } catch (error) {
+    console.error("Action plan parse error:", error);
+    return {
+      week_1: { theme: "Getting Started", actions: [{ day: "Day 1-2", action: "Analysis pending — please regenerate", why: "N/A", deliverable: "N/A" }] },
+      week_2: { theme: "Discovery", actions: [] },
+      week_3: { theme: "Planning", actions: [] },
+      week_4: { theme: "Execution", actions: [] },
+      quick_wins: ["Regenerate the report to see this section"],
+      critical_milestones: [],
+      resources_needed: { budget_estimate: "TBD", tools: [], people: "TBD" }
+    };
+  }
+}
+
 async function generateGameChangingIdea(project: any, apiKey: string, previousSections: Record<string, any>) {
   const context = buildContext(previousSections);
 
