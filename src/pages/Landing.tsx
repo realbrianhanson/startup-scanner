@@ -1,8 +1,47 @@
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Zap, Target, Users, Check, ArrowRight, BarChart3, Globe, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
+
+const AnimatedCounter = ({ target, suffix = "" }: { target: number; suffix?: string }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const duration = 2000;
+          const steps = 60;
+          const increment = target / steps;
+          let current = 0;
+          const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+              setCount(target);
+              clearInterval(timer);
+            } else {
+              setCount(Math.floor(current));
+            }
+          }, duration / steps);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target]);
+
+  return (
+    <span ref={ref} className="tabular-nums">
+      {count.toLocaleString()}{suffix}
+    </span>
+  );
+};
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -64,17 +103,17 @@ const Landing = () => {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="border-b border-white/10 bg-[hsl(222,47%,8%)]/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BarChart3 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+            <BarChart3 className="h-8 w-8 text-[hsl(221,83%,53%)]" />
+            <span className="text-2xl font-bold bg-gradient-to-r from-[hsl(221,83%,53%)] to-[hsl(265,71%,57%)] bg-clip-text text-transparent">
               Validifier
             </span>
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => navigate("/auth")}>
+            <Button variant="ghost" onClick={() => navigate("/auth")} className="text-white/70 hover:text-white hover:bg-white/10">
               Sign In
             </Button>
             <Button onClick={() => navigate("/auth")} className="shadow-medium">
@@ -85,44 +124,125 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-subtle py-20 md:py-32">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-                Validate Your Business Idea in{" "}
-                <span className="bg-gradient-hero bg-clip-text text-transparent">
+      <section className="relative overflow-hidden bg-[hsl(222,47%,8%)] py-28 md:py-40">
+        {/* Animated grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage: "radial-gradient(circle, hsl(221 83% 53% / 0.4) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+
+        {/* Floating gradient orbs */}
+        <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-[hsl(221,83%,53%)] opacity-[0.08] blur-[120px] animate-float" />
+        <div className="absolute bottom-1/4 -right-32 w-[400px] h-[400px] rounded-full bg-[hsl(265,71%,57%)] opacity-[0.1] blur-[100px] animate-float delay-700" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[hsl(240,60%,50%)] opacity-[0.05] blur-[140px] animate-float delay-300" />
+
+        {/* Noise texture */}
+        <div className="noise-bg absolute inset-0" />
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-5xl mx-auto text-center space-y-10">
+            {/* Headline */}
+            <div className="space-y-6">
+              <h1 className="text-6xl md:text-8xl font-bold tracking-[-0.03em] text-white animate-fade-up">
+                Validate Your Idea{" "}
+                <br className="hidden md:block" />
+                in{" "}
+                <span className="bg-gradient-to-r from-[hsl(221,83%,53%)] via-[hsl(265,71%,67%)] to-[hsl(221,83%,53%)] bg-clip-text text-transparent bg-[length:200%_100%] animate-shimmer">
                   60 Seconds
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto animate-fade-up delay-200">
                 Stop building products nobody wants. Get AI-powered validation with McKinsey-style
                 strategic analysis—before you waste months.
               </p>
             </div>
 
-            <div className="flex items-center justify-center space-x-2 text-muted-foreground">
-              <Users className="h-5 w-5" />
-              <span className="text-sm">Trusted by 10,000+ first-time entrepreneurs</span>
+            {/* CTA */}
+            <div className="animate-fade-up delay-400">
+              <Button
+                size="lg"
+                onClick={() => navigate("/auth")}
+                className="text-lg px-10 py-7 shadow-large animate-pulse-glow"
+              >
+                Validate My Idea Free
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </div>
 
-            <Button
-              size="lg"
-              onClick={() => navigate("/auth")}
-              className="text-lg px-8 py-6 shadow-large hover:shadow-glow transition-all"
-            >
-              Validate My Idea Free
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-
-            <div className="pt-8 flex justify-center space-x-8 text-sm text-muted-foreground">
+            <div className="flex justify-center space-x-8 text-sm text-white/40 animate-fade-up delay-500">
               <div className="flex items-center space-x-2">
-                <Check className="h-4 w-4 text-success" />
+                <Check className="h-4 w-4 text-[hsl(142,71%,45%)]" />
                 <span>No credit card required</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Check className="h-4 w-4 text-success" />
+                <Check className="h-4 w-4 text-[hsl(142,71%,45%)]" />
                 <span>60-second reports</span>
+              </div>
+            </div>
+
+            {/* Demo Preview */}
+            <div className="animate-fade-up delay-600 pt-4">
+              <div className="max-w-lg mx-auto glass rounded-2xl p-6 border border-white/[0.08]" style={{ transform: "perspective(1200px) rotateX(4deg)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                  </div>
+                  <span className="text-[10px] text-white/30 font-mono">validifier.com/report</span>
+                </div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-32 rounded bg-white/10" />
+                    <div className="h-2 w-20 rounded bg-white/5" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-[hsl(142,71%,45%)]">78</div>
+                    <div className="text-[9px] text-white/30">Score</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 rounded-full bg-[hsl(142,71%,45%)]/40 flex-1" style={{ maxWidth: "78%" }} />
+                    <span className="text-[9px] text-white/25">Market</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 rounded-full bg-[hsl(221,83%,53%)]/40 flex-1" style={{ maxWidth: "65%" }} />
+                    <span className="text-[9px] text-white/25">Competition</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 rounded-full bg-[hsl(265,71%,57%)]/40 flex-1" style={{ maxWidth: "85%" }} />
+                    <span className="text-[9px] text-white/25">Feasibility</span>
+                  </div>
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <div className="h-6 w-16 rounded bg-white/5" />
+                  <div className="h-6 w-20 rounded bg-white/5" />
+                  <div className="h-6 w-14 rounded bg-white/5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Trust Bar */}
+            <div className="animate-fade-up delay-700 pt-6 space-y-6">
+              <div className="flex items-center justify-center space-x-2 text-white/50">
+                <Users className="h-5 w-5" />
+                <span className="text-sm font-medium">
+                  Trusted by <AnimatedCounter target={10000} suffix="+" /> entrepreneurs
+                </span>
+              </div>
+              <div className="flex items-center justify-center space-x-6">
+                {["TechCrunch", "Product Hunt", "Y Combinator"].map((name) => (
+                  <div
+                    key={name}
+                    className="px-4 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/25 font-medium tracking-wide"
+                  >
+                    {name}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
