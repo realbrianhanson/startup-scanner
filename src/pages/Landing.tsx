@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Check, Star } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
 
@@ -158,7 +158,6 @@ const Landing = () => {
                   className="text-sm font-medium px-5 py-3.5 rounded-lg border transition-all duration-200 hover:-translate-y-px flex items-center gap-2"
                   style={{ borderColor: "hsl(220 15% 18%)", color: "hsl(215 15% 55%)" }}
                 >
-                  <Star className="h-4 w-4" />
                   See a Sample Report
                 </button>
               </div>
@@ -267,10 +266,10 @@ const Landing = () => {
             </div>
           </div>
 
-          {/* Social proof */}
+          {/* Product proof */}
           <div className="mt-20 text-center">
-            <span className="text-sm" style={{ color: "hsl(215 15% 35%)" }}>
-              Used by founders in 47 industries
+            <span className="font-mono text-sm tracking-wide" style={{ color: "hsl(215 15% 35%)" }}>
+              14 frameworks · 90 seconds · 0 fluff
             </span>
           </div>
         </div>
@@ -428,27 +427,84 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Sample Report CTA */}
+      {/* See what a report looks like */}
       <section className="py-32 md:py-40">
         <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-[-0.03em]" style={{ color: "hsl(210 10% 93%)" }}>
-              See what you'll get
-            </h2>
-            <p className="text-base leading-relaxed" style={{ color: "hsl(215 15% 50%)" }}>
-              Browse a complete validation report — every section, every framework, every data point. No sign-up required.
-            </p>
-            <button
-              onClick={() => {
-                trackEvent("cta_click", { button: "sample_report", page: "landing" });
-                navigate("/sample-report");
-              }}
-              className="text-sm font-medium px-6 py-3.5 rounded-lg border transition-all duration-200 hover:-translate-y-px inline-flex items-center gap-2"
-              style={{ borderColor: "hsl(220 15% 18%)", color: "hsl(210 10% 80%)" }}
-            >
-              <Star className="h-4 w-4" />
-              View Sample Report
-            </button>
+          <div className="max-w-4xl mx-auto space-y-10">
+            <div className="text-center space-y-4">
+              <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-[-0.03em]" style={{ color: "hsl(210 10% 93%)" }}>
+                See what a report looks like
+              </h2>
+              <p className="text-base" style={{ color: "hsl(215 15% 50%)" }}>
+                No signup required. See the full analysis for a real business idea.
+              </p>
+            </div>
+
+            {/* Blurred report preview */}
+            <div className="relative rounded-xl overflow-hidden border" style={{ borderColor: "hsl(220 15% 14%)", background: "hsl(220 15% 9%)" }}>
+              {/* Browser bar */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: "hsl(220 15% 14%)" }}>
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(0 0% 30%)" }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(0 0% 30%)" }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(0 0% 30%)" }} />
+                </div>
+                <span className="font-mono text-[10px] ml-3" style={{ color: "hsl(215 15% 35%)" }}>
+                  validifier.com/report/sample
+                </span>
+              </div>
+
+              {/* Report preview content */}
+              <div className="p-8 space-y-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-lg font-medium" style={{ color: "hsl(210 10% 80%)" }}>AI-Powered Pet Care Platform</div>
+                    <div className="text-xs mt-1" style={{ color: "hsl(215 15% 40%)" }}>Pet Services · Full Validation Report</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-5xl font-mono font-bold" style={{ color: "hsl(142 71% 55%)" }}>78</div>
+                    <div className="text-[9px] uppercase tracking-widest mt-0.5" style={{ color: "hsl(215 15% 40%)" }}>Viability Score</div>
+                  </div>
+                </div>
+
+                {/* Blurred sections */}
+                <div className="space-y-4" style={{ filter: "blur(4px)", userSelect: "none" }}>
+                  <div className="space-y-2">
+                    <div className="h-3 rounded w-48" style={{ background: "hsl(220 15% 14%)" }} />
+                    <div className="h-2.5 rounded w-full" style={{ background: "hsl(220 15% 13%)" }} />
+                    <div className="h-2.5 rounded w-[90%]" style={{ background: "hsl(220 15% 12%)" }} />
+                    <div className="h-2.5 rounded w-[75%]" style={{ background: "hsl(220 15% 13%)" }} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 p-4 rounded-lg" style={{ background: "hsl(220 15% 11%)" }}>
+                      <div className="h-2.5 rounded w-20" style={{ background: "hsl(220 15% 16%)" }} />
+                      <div className="h-2 rounded w-full" style={{ background: "hsl(220 15% 14%)" }} />
+                      <div className="h-2 rounded w-[60%]" style={{ background: "hsl(220 15% 14%)" }} />
+                    </div>
+                    <div className="space-y-2 p-4 rounded-lg" style={{ background: "hsl(220 15% 11%)" }}>
+                      <div className="h-2.5 rounded w-24" style={{ background: "hsl(220 15% 16%)" }} />
+                      <div className="h-2 rounded w-[80%]" style={{ background: "hsl(220 15% 14%)" }} />
+                      <div className="h-2 rounded w-full" style={{ background: "hsl(220 15% 14%)" }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Overlay CTA */}
+              <div className="absolute inset-0 flex items-end justify-center pb-12" style={{ background: "linear-gradient(to top, hsl(220 15% 6%) 20%, transparent 70%)" }}>
+                <button
+                  onClick={() => {
+                    trackEvent("cta_click", { button: "sample_report_preview", page: "landing" });
+                    navigate("/sample-report");
+                  }}
+                  className="text-sm font-medium px-6 py-3.5 rounded-lg transition-all duration-200 hover:-translate-y-px hover:brightness-110 inline-flex items-center gap-2"
+                  style={{ background: "hsl(217 91% 60%)", color: "#fff" }}
+                >
+                  View Sample Report
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
