@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { NetworkOfflineBanner } from "@/components/NetworkOfflineBanner";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -26,6 +27,7 @@ const App = () => (
       <ThemeProvider defaultTheme="system" storageKey="validifier-ui-theme">
         <TooltipProvider>
           <Sonner />
+          <NetworkOfflineBanner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Landing />} />

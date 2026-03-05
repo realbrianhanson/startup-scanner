@@ -65,6 +65,7 @@ import { PathToMvpSection } from "@/components/report/PathToMvpSection";
 import { GoToMarketSection } from "@/components/report/GoToMarketSection";
 import { UspAnalysisSection } from "@/components/report/UspAnalysisSection";
 import { FinancialBasicsSection } from "@/components/report/FinancialBasicsSection";
+import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 
 const ViewReport = () => {
   const { id } = useParams();
@@ -293,22 +294,46 @@ const ViewReport = () => {
             )}
 
             {/* Executive Summary (always visible when available) */}
-            <ExecutiveSummarySection reportData={reportData} />
+            <ReportSectionErrorBoundary sectionName="Executive Summary">
+              <ExecutiveSummarySection reportData={reportData} />
+            </ReportSectionErrorBoundary>
 
             {/* Report Sections */}
             {project?.status === "complete" && (
               <div className="space-y-6">
-                <MarketAnalysisSection reportData={reportData} />
-                <CustomerPersonasSection reportData={reportData} />
-                <CompetitiveLandscapeSection reportData={reportData} />
-                <StrategicFrameworksSection reportData={reportData} />
-                <PorterFiveForcesSection reportData={reportData} />
-                <PestelAnalysisSection reportData={reportData} />
-                <CatwoeAnalysisSection reportData={reportData} />
-                <PathToMvpSection reportData={reportData} />
-                <GoToMarketSection reportData={reportData} />
-                <UspAnalysisSection reportData={reportData} />
-                <FinancialBasicsSection reportData={reportData} />
+                <ReportSectionErrorBoundary sectionName="Market Analysis">
+                  <MarketAnalysisSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Customer Personas">
+                  <CustomerPersonasSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Competitive Landscape">
+                  <CompetitiveLandscapeSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Strategic Frameworks">
+                  <StrategicFrameworksSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Porter's Five Forces">
+                  <PorterFiveForcesSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="PESTEL Analysis">
+                  <PestelAnalysisSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="CATWOE Analysis">
+                  <CatwoeAnalysisSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Path to MVP">
+                  <PathToMvpSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Go-to-Market">
+                  <GoToMarketSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="USP Analysis">
+                  <UspAnalysisSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Financial Basics">
+                  <FinancialBasicsSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
               </div>
             )}
 
