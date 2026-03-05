@@ -566,16 +566,36 @@ async function generateMarketAnalysis(project: any, apiKey: string, context: str
 Description: ${project.description}
 ${context}
 
-Analyze the market. Return JSON with these exact keys:
-- tam: string (e.g. "$5B globally")
-- sam: string (e.g. "$1.2B in North America")  
-- som: string (e.g. "$50M achievable in 3 years")
-- growth_rate: string (e.g. "15% CAGR")
-- trends: array of 4-5 short strings describing market trends
-- barriers: array of 3-4 short strings describing entry barriers
-- timing_assessment: string (2-3 sentences about market timing)
+Provide a rigorous market analysis as if you were a market research analyst preparing a report for a venture capital investment committee. Use real data where possible, and clearly label estimates.
 
-IMPORTANT: Each trend must be a simple string like "Growing demand for AI solutions" - NOT an object.`;
+CRITICAL REQUIREMENTS:
+- TAM/SAM/SOM must include HOW you calculated the numbers (cite your methodology, not just a number)
+- Trends must be specific to this industry/vertical, not generic tech trends
+- Include at least one "against the grain" insight — a trend everyone else is ignoring
+- Barriers should include realistic difficulty ratings and how other companies overcame them
+- The timing assessment should reference specific market signals (funding rounds, regulatory changes, technology maturity, consumer behavior shifts)
+
+Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside string values.
+{
+  "tam": "Dollar amount with calculation methodology (e.g., '$12B — calculated from 50M US households x $240/year average spend on home services')",
+  "sam": "Dollar amount with geographic/segment scoping methodology",
+  "som": "Dollar amount with realistic year-1 through year-3 capture rate and reasoning",
+  "growth_rate": "Percentage with source or reasoning (e.g., '14% CAGR based on historical growth in adjacent markets and current adoption curves')",
+  "market_maturity": "Early/Growing/Mature/Declining with explanation of where this market sits in the adoption lifecycle",
+  "trends": [
+    "Specific trend 1 with data point or evidence (2 sentences)",
+    "Specific trend 2 with data point or evidence",
+    "Specific trend 3 with data point or evidence",
+    "Contrarian trend — something most people in this space are ignoring"
+  ],
+  "barriers": [
+    {"barrier": "Specific barrier", "difficulty": "Low/Medium/High", "how_to_overcome": "Specific strategy used by X company or recommended approach"},
+    {"barrier": "Second barrier", "difficulty": "rating", "how_to_overcome": "Strategy"}
+  ],
+  "timing_assessment": "3-4 sentences on whether NOW is the right time, referencing specific market signals",
+  "market_risks": ["Specific risk 1 that could shrink this market", "Specific risk 2"],
+  "adjacent_opportunities": "One adjacent market or pivot opportunity the founder should keep in mind"
+}`;
 
   const result = await callAI(prompt, apiKey, 4000);
   try {
@@ -586,6 +606,12 @@ IMPORTANT: Each trend must be a simple string like "Growing demand for AI soluti
         typeof t === 'string' ? t : (t.trend || t.name || t.description || JSON.stringify(t))
       );
     }
+    // Ensure barriers is normalized
+    if (parsed.barriers && Array.isArray(parsed.barriers)) {
+      parsed.barriers = parsed.barriers.map((b: any) =>
+        typeof b === 'string' ? { barrier: b, difficulty: 'Medium', how_to_overcome: 'Research needed' } : b
+      );
+    }
     return parsed;
   } catch (error) {
     console.error("Market analysis parse error:", error, "Raw:", result.substring(0, 500));
@@ -594,9 +620,12 @@ IMPORTANT: Each trend must be a simple string like "Growing demand for AI soluti
       sam: "Serviceable market pending", 
       som: "Obtainable market pending", 
       growth_rate: "Growth analysis pending", 
+      market_maturity: "Analysis pending",
       trends: ["Market trend analysis in progress"], 
-      barriers: ["Entry barrier analysis in progress"], 
-      timing_assessment: "Market timing assessment in progress" 
+      barriers: [{ barrier: "Entry barrier analysis in progress", difficulty: "Medium", how_to_overcome: "TBD" }], 
+      timing_assessment: "Market timing assessment in progress",
+      market_risks: ["Risk analysis pending"],
+      adjacent_opportunities: "Adjacent opportunity analysis pending"
     };
   }
 }
