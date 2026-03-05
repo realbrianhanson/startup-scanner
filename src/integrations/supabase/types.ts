@@ -162,6 +162,7 @@ export type Database = {
           description: string
           id: string
           industry: string
+          is_public: boolean
           name: string
           status: string
           updated_at: string
@@ -174,6 +175,7 @@ export type Database = {
           description: string
           id?: string
           industry: string
+          is_public?: boolean
           name: string
           status?: string
           updated_at?: string
@@ -186,6 +188,7 @@ export type Database = {
           description?: string
           id?: string
           industry?: string
+          is_public?: boolean
           name?: string
           status?: string
           updated_at?: string
