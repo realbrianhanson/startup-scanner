@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.create-portal-session]
 verify_jwt = false
+
+[functions.reset-monthly-credits]
+verify_jwt = false
