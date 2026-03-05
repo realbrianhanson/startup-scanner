@@ -320,14 +320,14 @@ const ViewReport = () => {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex gap-8">
+        <div className={`flex gap-8 ${isGenerating ? 'justify-center' : ''}`}>
           {project?.status === "complete" && Object.keys(reportData).length > 0 && (
             <div className="hidden lg:block w-56 shrink-0">
               <ReportNavigation reportData={reportData} />
             </div>
           )}
           
-          <div className="flex-1 max-w-3xl">
+          <div className={`flex-1 ${isGenerating ? 'max-w-2xl mx-auto' : 'max-w-3xl'}`}>
             {/* Header */}
             <div className="mb-12">
               <div className="space-y-2 mb-8">
