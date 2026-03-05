@@ -132,6 +132,7 @@ export type Database = {
           full_name: string | null
           id: string
           notification_preferences: Json
+          stripe_customer_id: string | null
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
         }
@@ -143,6 +144,7 @@ export type Database = {
           full_name?: string | null
           id: string
           notification_preferences?: Json
+          stripe_customer_id?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
@@ -154,6 +156,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           notification_preferences?: Json
+          stripe_customer_id?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
