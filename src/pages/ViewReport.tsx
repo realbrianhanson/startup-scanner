@@ -18,6 +18,8 @@ import {
   RefreshCw,
   Copy,
   Share2,
+  MoreVertical,
+  Trash2,
 } from "lucide-react";
 import { ReportNavigation } from "@/components/ReportNavigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -36,6 +38,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -64,6 +67,18 @@ const ViewReport = () => {
   const [progress, setProgress] = useState(0);
   const [isOwner, setIsOwner] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDeleteProject = async () => {
+    try {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Project deleted");
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete project");
+    }
+  };
 
   useEffect(() => {
     if (project) {
@@ -194,6 +209,29 @@ const ViewReport = () => {
             </div>
             <div className="flex items-center space-x-2">
               <ThemeToggle />
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/projects/${id}/chat`)}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Chat with Cora
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Project
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               <Button variant="ghost" onClick={() => navigate("/dashboard")} className="animate-fade-down">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Dashboard
@@ -345,6 +383,27 @@ const ViewReport = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &apos;{project?.name}&apos;? This will permanently delete the project, its validation report, and all chat history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteProject}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
