@@ -70,6 +70,10 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "Sign In | Validifier";
+  }, []);
+
+  useEffect(() => {
     if (isReset) {
       setView("reset");
       return;

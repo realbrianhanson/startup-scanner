@@ -98,6 +98,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "Dashboard | Validifier";
+  }, []);
+
+  useEffect(() => {
     const loadData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;

@@ -65,6 +65,14 @@ const ViewReport = () => {
   const [isPublic, setIsPublic] = useState(false);
 
   useEffect(() => {
+    if (project) {
+      document.title = `${project.name} - Validation Report | Validifier`;
+    } else {
+      document.title = "Validation Report | Validifier";
+    }
+  }, [project]);
+
+  useEffect(() => {
     loadProjectAndReport();
 
     const channel = supabase
