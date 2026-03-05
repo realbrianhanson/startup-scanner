@@ -26,7 +26,7 @@ export const ActionPlanSection = ({ reportData }: Props) => {
     { key: "week_4", data: data.week_4 },
   ].filter(w => w.data);
 
-  const milestones = safeArray(data.critical_milestones);
+  const milestones = Array.isArray(data.critical_milestones) ? data.critical_milestones : [];
   const quickWins = safeArray(data.quick_wins);
 
   return (
@@ -179,23 +179,24 @@ export const ActionPlanSection = ({ reportData }: Props) => {
 
               <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {milestones.map((ms: any, i: number) => {
-                  console.log('MILESTONE DEBUG:', i, JSON.stringify(ms));
                   const isObj = ms !== null && typeof ms === 'object';
-                  const milestoneText = isObj ? (ms.milestone || ms.name || ms.title || ms.description || ms.text || JSON.stringify(ms)) : String(ms || '');
-                  const targetDate = isObj ? String(ms.target_date || ms.date || ms.timeline || ms.deadline || '') : '';
-                  const successMetric = isObj ? String(ms.success_metric || ms.metric || ms.kpi || '') : '';
-                  console.log('MILESTONE PARSED:', { milestoneText, targetDate, successMetric });
+                  const milestoneText = isObj ? (ms.milestone || ms.name || ms.title || ms.description || '') : String(ms || '');
+                  const targetDate = isObj ? (ms.target_date || ms.date || ms.timeline || '') : '';
+                  const successMetric = isObj ? (ms.success_metric || ms.metric || '') : '';
                   
                   return (
                     <div key={i} className="relative bg-card rounded-lg border border-border/50 p-5 text-center flex flex-col items-center justify-center gap-2">
-                      {/* Dot on the line */}
                       <div className="hidden md:block absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-background z-10" />
                       <p className="text-sm font-semibold text-foreground">{milestoneText}</p>
-                      <p className="text-xs text-primary flex items-center gap-1">
-                        <Calendar className="h-3 w-3 inline-block" />
-                        {targetDate || 'NO DATE'}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{successMetric || 'NO METRIC'}</p>
+                      {targetDate && (
+                        <p className="text-xs text-primary flex items-center gap-1">
+                          <Calendar className="h-3 w-3 inline-block" />
+                          {targetDate}
+                        </p>
+                      )}
+                      {successMetric && (
+                        <p className="text-xs text-muted-foreground leading-relaxed">{successMetric}</p>
+                      )}
                     </div>
                   );
                 })}
