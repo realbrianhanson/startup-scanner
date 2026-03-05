@@ -142,6 +142,17 @@ serve(async (req) => {
       throw new Error("Insufficient AI credits");
     }
 
+    // If regenerating, delete the existing report first
+    const { data: existingReport } = await supabase
+      .from("reports")
+      .select("id")
+      .eq("project_id", project_id)
+      .maybeSingle();
+
+    if (existingReport) {
+      await supabase.from("reports").delete().eq("id", existingReport.id);
+    }
+
     // Create report entry
     const { data: report, error: reportError } = await supabase
       .from("reports")
