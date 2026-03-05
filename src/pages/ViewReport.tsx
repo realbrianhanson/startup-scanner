@@ -68,6 +68,7 @@ import { GameChangingIdeaSection } from "@/components/report/GameChangingIdeaSec
 import { FinancialBasicsSection } from "@/components/report/FinancialBasicsSection";
 import { RiskMatrixSection } from "@/components/report/RiskMatrixSection";
 import { ActionPlanSection } from "@/components/report/ActionPlanSection";
+import { InlineReportCTA, StickyReportCTA, EndOfReportCTA } from "@/components/report/ReportCTAs";
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
 
@@ -307,6 +308,11 @@ const ViewReport = () => {
               <GameChangingIdeaSection reportData={reportData} />
             </ReportSectionErrorBoundary>
 
+            {/* Inline CTA — after game-changing idea for peak excitement */}
+            {project?.status === "complete" && reportData.game_changing_idea && (
+              <InlineReportCTA />
+            )}
+
             {/* Report Sections */}
             {project?.status === "complete" && (
               <div className="space-y-6">
@@ -349,6 +355,9 @@ const ViewReport = () => {
                 <ReportSectionErrorBoundary sectionName="Action Plan">
                   <ActionPlanSection reportData={reportData} />
                 </ReportSectionErrorBoundary>
+
+                {/* End-of-Report CTA */}
+                <EndOfReportCTA />
               </div>
             )}
 
@@ -492,6 +501,9 @@ const ViewReport = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Sticky bottom CTA bar — only when report is complete */}
+      {project?.status === "complete" && <StickyReportCTA />}
     </div>
   );
 };
