@@ -21,6 +21,15 @@ serve(async (req) => {
       );
     }
 
+    // Authenticate the requesting user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -31,6 +40,16 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Verify user identity
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !authUser) {
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Get project details
     const { data: project, error: projectError } = await supabase
       .from("projects")
@@ -40,6 +59,14 @@ serve(async (req) => {
 
     if (projectError || !project) {
       throw new Error("Project not found");
+    }
+
+    // Verify ownership
+    if (project.user_id !== authUser.id) {
+      return new Response(
+        JSON.stringify({ error: "You don't have permission to generate a report for this project" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("Generating report for project:", project.name);
