@@ -66,6 +66,7 @@ import { GoToMarketSection } from "@/components/report/GoToMarketSection";
 import { UspAnalysisSection } from "@/components/report/UspAnalysisSection";
 import { GameChangingIdeaSection } from "@/components/report/GameChangingIdeaSection";
 import { FinancialBasicsSection } from "@/components/report/FinancialBasicsSection";
+import { RiskMatrixSection } from "@/components/report/RiskMatrixSection";
 import { ActionPlanSection } from "@/components/report/ActionPlanSection";
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
@@ -342,6 +343,9 @@ const ViewReport = () => {
                 <ReportSectionErrorBoundary sectionName="Financial Basics">
                   <FinancialBasicsSection reportData={reportData} />
                 </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Risk Matrix">
+                  <RiskMatrixSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
                 <ReportSectionErrorBoundary sectionName="Action Plan">
                   <ActionPlanSection reportData={reportData} />
                 </ReportSectionErrorBoundary>
@@ -368,7 +372,7 @@ const ViewReport = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Regenerate Report?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure? This will regenerate your entire validation report and use ~12 AI credits.
+                          Are you sure? This will regenerate your entire validation report and use ~15 AI credits.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
