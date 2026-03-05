@@ -18,7 +18,9 @@ export type Database = {
         Row: {
           cost_cents: number
           created_at: string
+          estimated_cost_usd: number | null
           id: string
+          model_name: string | null
           model_used: string
           operation_type: string
           project_id: string | null
@@ -28,7 +30,9 @@ export type Database = {
         Insert: {
           cost_cents?: number
           created_at?: string
+          estimated_cost_usd?: number | null
           id?: string
+          model_name?: string | null
           model_used: string
           operation_type: string
           project_id?: string | null
@@ -38,7 +42,9 @@ export type Database = {
         Update: {
           cost_cents?: number
           created_at?: string
+          estimated_cost_usd?: number | null
           id?: string
+          model_name?: string | null
           model_used?: string
           operation_type?: string
           project_id?: string | null

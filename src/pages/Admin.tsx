@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp, Star, MessageSquare, Settings, CalendarCheck } from "lucide-react";
+import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp, Star, MessageSquare, Settings, CalendarCheck, DollarSign } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface Profile {
@@ -52,6 +52,9 @@ const Admin = () => {
   const [ctaLoading, setCtaLoading] = useState(false);
   const [ctaSaving, setCtaSaving] = useState(false);
 
+  // AI Cost tracking state
+  const [costData, setCostData] = useState<{ totalSpend: number; avgPerReport: number; modelBreakdown: { model: string; count: number; cost: number }[] }>({ totalSpend: 0, avgPerReport: 0, modelBreakdown: [] });
+  const [costLoading, setCostLoading] = useState(false);
   useEffect(() => {
     checkAdminAccess();
   }, []);
@@ -229,6 +232,44 @@ const Admin = () => {
     finally { setCtaLoading(false); }
   };
 
+  const loadCostData = async () => {
+    setCostLoading(true);
+    try {
+      const now = new Date();
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: logs } = await supabase
+        .from("ai_usage_logs")
+        .select("*")
+        .eq("operation_type", "report_generation")
+        .gte("created_at", monthAgo)
+        .limit(1000);
+
+      if (logs && logs.length > 0) {
+        const totalSpend = logs.reduce((sum: number, l: any) => sum + (Number(l.estimated_cost_usd) || l.cost_cents / 100), 0);
+        const avgPerReport = totalSpend / logs.length;
+
+        const modelMap: Record<string, { count: number; cost: number }> = {};
+        logs.forEach((l: any) => {
+          const model = l.model_used || "unknown";
+          if (!modelMap[model]) modelMap[model] = { count: 0, cost: 0 };
+          modelMap[model].count++;
+          modelMap[model].cost += Number(l.estimated_cost_usd) || l.cost_cents / 100;
+        });
+
+        const modelBreakdown = Object.entries(modelMap)
+          .map(([model, data]) => ({ model, ...data }))
+          .sort((a, b) => b.count - a.count);
+
+        setCostData({ totalSpend, avgPerReport, modelBreakdown });
+      }
+    } catch {
+      toast.error("Failed to load cost data");
+    } finally {
+      setCostLoading(false);
+    }
+  };
+
   const saveCtaConfig = async () => {
     setCtaSaving(true);
     try {
@@ -296,6 +337,10 @@ const Admin = () => {
             <TabsTrigger value="feedback" onClick={loadFeedback}>
               <Star className="h-4 w-4 mr-2" />
               Feedback
+            </TabsTrigger>
+            <TabsTrigger value="costs" onClick={loadCostData}>
+              <DollarSign className="h-4 w-4 mr-2" />
+              AI Costs
             </TabsTrigger>
             <TabsTrigger value="cta" onClick={loadCtaConfig}>
               <CalendarCheck className="h-4 w-4 mr-2" />
@@ -582,6 +627,88 @@ const Admin = () => {
                       {ctaSaving ? "Saving..." : "Save Settings"}
                     </Button>
                   </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          {/* AI Costs Tab */}
+          <TabsContent value="costs" className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">${costData.totalSpend.toFixed(4)}</p>
+                      <p className="text-xs text-muted-foreground">Total AI spend (30 days)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                      <BarChart3 className="h-5 w-5 text-secondary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">${costData.avgPerReport.toFixed(4)}</p>
+                      <p className="text-xs text-muted-foreground">Avg cost per report</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{costData.modelBreakdown.reduce((s, m) => s + m.count, 0)}</p>
+                      <p className="text-xs text-muted-foreground">Reports generated (30 days)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Model Usage Breakdown
+                </CardTitle>
+                <CardDescription>Cost by model configuration (last 30 days)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {costLoading ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Loading cost data...</p>
+                ) : costData.modelBreakdown.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No usage data yet</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Model Config</TableHead>
+                        <TableHead className="text-right">Reports</TableHead>
+                        <TableHead className="text-right">Est. Cost</TableHead>
+                        <TableHead className="text-right">Avg/Report</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {costData.modelBreakdown.map((m) => (
+                        <TableRow key={m.model}>
+                          <TableCell className="font-medium font-mono text-sm">{m.model}</TableCell>
+                          <TableCell className="text-right">{m.count}</TableCell>
+                          <TableCell className="text-right">${m.cost.toFixed(4)}</TableCell>
+                          <TableCell className="text-right">${(m.cost / m.count).toFixed(4)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
             </Card>
