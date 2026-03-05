@@ -103,15 +103,15 @@ const CreateProject = () => {
       <AppNav showNewReport={false} />
 
       <div className="container mx-auto px-4 py-12 max-w-2xl">
-        <h1 className="font-serif text-3xl md:text-4xl tracking-tight mb-8">New Report</h1>
+        <h1 className="font-serif text-3xl md:text-4xl tracking-tight mb-8">New Analysis</h1>
 
         <div className="space-y-8">
           {/* Common fields */}
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Project Name</Label>
+              <Label className="text-sm text-muted-foreground">Business name</Label>
               <Input
-                placeholder="My Startup"
+                placeholder="e.g., AI-powered meal planning for busy families"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 maxLength={100}

@@ -82,7 +82,7 @@ const OnboardingOverlay = ({ userName, credits, onComplete, userId }: Onboarding
             </div>
 
             <Button size="lg" className="w-full" onClick={() => setStep(1)}>
-              Get Started
+              Let's go
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
@@ -100,8 +100,8 @@ const OnboardingOverlay = ({ userName, credits, onComplete, userId }: Onboarding
                   <Rocket className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">New Project</p>
-                  <p className="text-xs text-muted-foreground">Click "New Project" to start validating an idea</p>
+                  <p className="font-semibold text-sm">New Report</p>
+                  <p className="text-xs text-muted-foreground">Click "New Report" to analyze an idea</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/30">

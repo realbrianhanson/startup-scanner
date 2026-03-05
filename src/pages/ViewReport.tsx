@@ -286,7 +286,7 @@ const ViewReport = () => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => navigate(`/projects/${id}/chat`)}>
                       <MessageSquare className="h-4 w-4 mr-2" />
-                      Chat with Cora
+                      Ask a follow-up question
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -294,7 +294,7 @@ const ViewReport = () => {
                       onClick={() => setShowDeleteDialog(true)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Project
+                      Delete Report
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -468,7 +468,7 @@ const ViewReport = () => {
               <div className="flex flex-wrap items-center justify-center gap-4 pt-8">
                 <Button variant="default" size="lg" onClick={() => navigate(`/projects/${id}/chat`)}>
                   <MessageSquare className="mr-2 h-5 w-5" />
-                  Chat with Cora
+                  Ask a follow-up question
                 </Button>
 
                 {isOwner && (
@@ -587,9 +587,9 @@ const ViewReport = () => {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogTitle>Delete Report</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &apos;{project?.name}&apos;? This will permanently delete the project, its validation report, and all chat history. This action cannot be undone.
+              Are you sure you want to delete &apos;{project?.name}&apos;? This permanently removes the report and all chat history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

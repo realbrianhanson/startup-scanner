@@ -55,7 +55,7 @@ const SampleReport = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button onClick={() => navigate("/auth")} size="lg">
-            Get Started Free
+            Start Analyzing Free
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <Button variant="outline" onClick={() => navigate("/")} size="lg">
