@@ -21,6 +21,8 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
+  const [totalProjects, setTotalProjects] = useState(0);
+  const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -41,12 +43,20 @@ const Dashboard = () => {
         setProfile(profileData);
       }
 
+      // Get total count
+      const { count } = await supabase
+        .from("projects")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", session.user.id);
+
+      setTotalProjects(count || 0);
+
       const { data: projectsData } = await supabase
         .from("projects")
         .select("*")
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(20);
 
       if (projectsData) {
         setProjects(projectsData);
@@ -92,10 +102,6 @@ const Dashboard = () => {
               <div className="hidden md:flex items-center space-x-6">
                 <Button variant="ghost" className="font-medium bg-muted/50">
                   Dashboard
-                </Button>
-                <Button variant="ghost" className="font-medium" onClick={() => navigate("/dashboard")}>
-                  <FolderOpen className="mr-2 h-4 w-4" />
-                  My Projects
                 </Button>
               </div>
             </div>
@@ -150,9 +156,9 @@ const Dashboard = () => {
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Projects Created</p>
-                  <p className="text-3xl font-bold">{projects.length}</p>
+                  <p className="text-3xl font-bold">{totalProjects}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {projects.length === 0 ? "Create your first project" : "Keep validating!"}
+                    {totalProjects === 0 ? "Create your first project" : "Keep validating!"}
                   </p>
                 </div>
                 <div className="p-3 bg-gradient-card rounded-xl">
@@ -220,9 +226,16 @@ const Dashboard = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Recent Projects</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Recent Projects</h2>
+                {totalProjects > 5 && !showAll && (
+                  <p className="text-sm text-muted-foreground">
+                    Showing 5 of {totalProjects}
+                  </p>
+                )}
+              </div>
               <div className="grid gap-4">
-                {projects.map((project) => (
+                {(showAll ? projects : projects.slice(0, 5)).map((project) => (
                   <Card
                     key={project.id}
                     className="p-6 border-2 hover:border-primary/20 transition-all cursor-pointer"
@@ -273,6 +286,14 @@ const Dashboard = () => {
                   </Card>
                 ))}
               </div>
+              {totalProjects > 5 && !showAll && (
+                <div className="text-center pt-2">
+                  <Button variant="outline" onClick={() => setShowAll(true)}>
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    View All Projects ({totalProjects})
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
