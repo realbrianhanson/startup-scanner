@@ -636,25 +636,76 @@ Industry: ${project.industry}
 Description: ${project.description}
 ${context}
 
-Analyze competitive landscape:
-1. Direct competitors (3-5 with descriptions)
-2. Indirect competitors (2-3)
-3. Your competitive advantages
-4. Market positioning recommendation
+Analyze the competitive landscape as if you were preparing a war room briefing for a startup about to enter this market. Name REAL companies where possible.
 
-CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside the string values.
+REQUIREMENTS:
+- Name actual real-world competitors, not made-up ones. Include their approximate size, funding, and what they do well/poorly.
+- For each competitor, identify the specific vulnerability you would exploit.
+- The positioning recommendation should be concrete enough to become a tagline.
+- Include competitive advantages that are DEFENSIBLE (not just "better UX" — explain WHY it's defensible).
 
-Format as JSON with keys: 
-- direct_competitors (array of {name, description} - both plain strings)
-- indirect_competitors (array of plain strings)
-- competitive_advantages (array of plain strings)
-- positioning (plain text string with newlines for paragraphs - no markdown syntax)`;
+Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside string values.
+{
+  "direct_competitors": [
+    {
+      "name": "Real company name",
+      "description": "What they do and their market position",
+      "estimated_size": "Revenue/users/funding if known",
+      "what_they_do_well": "Their genuine strength",
+      "vulnerability": "The specific weakness you would exploit to win their customers",
+      "threat_level": "Low/Medium/High"
+    }
+  ],
+  "indirect_competitors": [
+    {
+      "name": "Company or alternative approach",
+      "description": "How they indirectly compete",
+      "why_customers_choose_them": "What draws customers to this alternative"
+    }
+  ],
+  "competitive_advantages": [
+    {
+      "advantage": "Specific advantage",
+      "why_defensible": "What makes this hard for competitors to copy",
+      "duration": "How long this advantage will last before competitors catch up"
+    }
+  ],
+  "positioning": {
+    "recommended_position": "The specific market position to own (2-3 sentences)",
+    "tagline_suggestion": "A concrete tagline that captures this positioning",
+    "positioning_against": "Specifically, how to position AGAINST the strongest competitor"
+  },
+  "competitive_moat_strategy": "The #1 thing to build early that will create a lasting competitive moat (2-3 sentences)"
+}`;
 
   const result = await callAI(prompt, apiKey, 4000);
   try {
-    return JSON.parse(result);
+    const parsed = JSON.parse(result);
+    // Normalize direct_competitors for backward compat
+    if (parsed.direct_competitors && Array.isArray(parsed.direct_competitors)) {
+      parsed.direct_competitors = parsed.direct_competitors.map((c: any) =>
+        typeof c === 'string' ? { name: c, description: '' } : c
+      );
+    }
+    // Normalize indirect_competitors
+    if (parsed.indirect_competitors && Array.isArray(parsed.indirect_competitors)) {
+      parsed.indirect_competitors = parsed.indirect_competitors.map((c: any) =>
+        typeof c === 'string' ? { name: c, description: c, why_customers_choose_them: '' } : c
+      );
+    }
+    // Normalize competitive_advantages
+    if (parsed.competitive_advantages && Array.isArray(parsed.competitive_advantages)) {
+      parsed.competitive_advantages = parsed.competitive_advantages.map((a: any) =>
+        typeof a === 'string' ? { advantage: a, why_defensible: '', duration: '' } : a
+      );
+    }
+    // Normalize positioning
+    if (typeof parsed.positioning === 'string') {
+      parsed.positioning = { recommended_position: parsed.positioning, tagline_suggestion: '', positioning_against: '' };
+    }
+    return parsed;
   } catch {
-    return { direct_competitors: [], indirect_competitors: [], competitive_advantages: ["Analysis pending"], positioning: result };
+    return { direct_competitors: [], indirect_competitors: [], competitive_advantages: [{ advantage: "Analysis pending", why_defensible: "", duration: "" }], positioning: { recommended_position: result, tagline_suggestion: "", positioning_against: "" } };
   }
 }
 
