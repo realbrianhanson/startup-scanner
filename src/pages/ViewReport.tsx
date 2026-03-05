@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -260,6 +262,8 @@ const ViewReport = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
 
   useEffect(() => {
     loadProjectAndReport();
@@ -288,6 +292,9 @@ const ViewReport = () => {
       
       console.log("Project loaded:", projectData);
       setProject(projectData);
+      setIsPublic(projectData.is_public || false);
+      const ownerCheck = !!user && projectData.user_id === user.id;
+      setIsOwner(ownerCheck);
 
       // Load report (public access via RLS)
       const { data: reportData, error: reportError } = await supabase
@@ -311,7 +318,7 @@ const ViewReport = () => {
         } else {
           updateProgress(reportData.generation_status);
         }
-      } else if (isOwner && projectData.user_id === user?.id) {
+      } else if (ownerCheck) {
         // Only trigger generation if user is the owner
         console.log("No report found, triggering generation");
         startReportGeneration();
@@ -401,6 +408,20 @@ const ViewReport = () => {
     if (completed === total && total > 0) {
       console.log("All sections complete!");
       setGenerating(false);
+    }
+  };
+
+  const togglePublic = async (newValue: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ is_public: newValue } as any)
+        .eq("id", id);
+      if (error) throw error;
+      setIsPublic(newValue);
+      toast.success(newValue ? "Report is now publicly shareable!" : "Report is now private.");
+    } catch (error: any) {
+      toast.error("Failed to update sharing settings");
     }
   };
 
@@ -1936,6 +1957,19 @@ const ViewReport = () => {
                 Chat with Cora
               </Button>
               
+              {isOwner && (
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="public-toggle"
+                    checked={isPublic}
+                    onCheckedChange={togglePublic}
+                  />
+                  <Label htmlFor="public-toggle" className="text-sm">
+                    {isPublic ? "Public" : "Private"}
+                  </Label>
+                </div>
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="lg">
@@ -1945,7 +1979,10 @@ const ViewReport = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center">
                   <DropdownMenuItem
-                    onClick={() => {
+                    onClick={async () => {
+                      if (isOwner && !isPublic) {
+                        await togglePublic(true);
+                      }
                       navigator.clipboard.writeText(window.location.href);
                       toast.success("Link copied to clipboard!");
                     }}
