@@ -102,7 +102,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 12;
+    const creditsNeeded = 13;
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -125,6 +125,7 @@ serve(async (req) => {
           path_to_mvp: "pending",
           go_to_market_strategy: "pending",
           usp_analysis: "pending",
+          game_changing_idea: "pending",
           financial_basics: "pending",
         },
       })
@@ -215,6 +216,12 @@ serve(async (req) => {
 
     const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("usp_analysis", uspAnalysis, currentStatus);
+
+    const gameChangingIdea = await generateGameChangingIdea(project, LOVABLE_API_KEY, {
+      executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
+      strategicFrameworks, porterFiveForces, goToMarketStrategy
+    });
+    currentStatus = await updateSectionStatus("game_changing_idea", gameChangingIdea, currentStatus);
 
     const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
@@ -1257,6 +1264,59 @@ Keep descriptions brief (1-2 sentences max). Return valid JSON only.`;
       key_metrics: [
         { metric: "Customer Acquisition Cost", target: "Industry benchmark", measurement_frequency: "Monthly" }
       ]
+    };
+  }
+}
+async function generateGameChangingIdea(project: any, apiKey: string, previousSections: Record<string, any>) {
+  const context = buildContext(previousSections);
+
+  const prompt = `Original Business Idea: ${project.name}
+Industry: ${project.industry}
+Description: ${project.description}
+${context}
+
+You are a creative business strategist who has analyzed thousands of startups. Based on your analysis of this business idea and all the data from the previous sections, propose a GAME-CHANGING enhancement that would dramatically increase the likelihood of success.
+
+This is NOT about small improvements — this is about a fundamental strategic insight that transforms the business from "another competitor" into "category creator."
+
+Think about:
+- What if they combined their idea with an adjacent industry or technology?
+- What if they flipped their business model entirely (from B2C to B2B, or from one-time to subscription)?
+- What if they targeted a completely different customer segment that's underserved?
+- What if they added a network effect, data moat, or viral loop?
+- What if they started with a different wedge/beachhead than what seems obvious?
+
+The best game-changing ideas feel obvious in hindsight but aren't what 99% of founders in this space would think of.
+
+Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside string values.
+{
+  "headline": "A bold, exciting one-sentence summary of the game-changing idea",
+  "description": "3-4 paragraphs explaining the idea in detail. Be specific — include the exact customer segment, the exact feature/model change, the exact competitive dynamic it creates.",
+  "why_it_works": "2-3 sentences on the strategic logic — what market force or customer behavior makes this work",
+  "implementation_steps": [
+    "Specific step 1 to start implementing this (actionable, concrete)",
+    "Specific step 2",
+    "Specific step 3"
+  ],
+  "risk": "The main risk of this approach and how to mitigate it (2 sentences)",
+  "example_precedent": "A real-world example of a company that did something similar and succeeded",
+  "potential_impact": "How much bigger/better the business could be with this change"
+}`;
+
+  const result = await callAI(prompt, apiKey, 4000);
+  try {
+    const cleanedResult = cleanJsonFromMarkdown(result);
+    return JSON.parse(cleanedResult);
+  } catch (error) {
+    console.error("Game-changing idea parse error:", error);
+    return {
+      headline: "Analysis pending",
+      description: "Unable to generate game-changing idea. Please try regenerating the report.",
+      why_it_works: "N/A",
+      implementation_steps: ["Regenerate the report to see this section"],
+      risk: "N/A",
+      example_precedent: "N/A",
+      potential_impact: "N/A"
     };
   }
 }

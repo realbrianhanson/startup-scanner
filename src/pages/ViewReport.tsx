@@ -64,6 +64,7 @@ import { CatwoeAnalysisSection } from "@/components/report/CatwoeAnalysisSection
 import { PathToMvpSection } from "@/components/report/PathToMvpSection";
 import { GoToMarketSection } from "@/components/report/GoToMarketSection";
 import { UspAnalysisSection } from "@/components/report/UspAnalysisSection";
+import { GameChangingIdeaSection } from "@/components/report/GameChangingIdeaSection";
 import { FinancialBasicsSection } from "@/components/report/FinancialBasicsSection";
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
@@ -331,6 +332,9 @@ const ViewReport = () => {
                 </ReportSectionErrorBoundary>
                 <ReportSectionErrorBoundary sectionName="USP Analysis">
                   <UspAnalysisSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Game-Changing Idea">
+                  <GameChangingIdeaSection reportData={reportData} />
                 </ReportSectionErrorBoundary>
                 <ReportSectionErrorBoundary sectionName="Financial Basics">
                   <FinancialBasicsSection reportData={reportData} />
