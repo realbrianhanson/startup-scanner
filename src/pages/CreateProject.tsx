@@ -136,16 +136,19 @@ const CreateProject = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Navigation */}
-      <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div
+              className="flex items-center space-x-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+              onClick={() => navigate("/dashboard")}
+            >
               <BarChart3 className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+              <span className="text-2xl font-bold gradient-text">
                 Validifier
               </span>
             </div>
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+            <Button variant="ghost" onClick={() => navigate("/dashboard")} className="animate-fade-down">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>

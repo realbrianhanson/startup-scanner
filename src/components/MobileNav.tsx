@@ -58,43 +58,49 @@ export function MobileNav({ user, profile }: MobileNavProps) {
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72">
-        <SheetHeader className="pb-6">
-          <SheetTitle className="flex items-center space-x-2">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              Validifier
-            </span>
-          </SheetTitle>
-        </SheetHeader>
+      <SheetContent side="left" className="w-72 p-0">
+        {/* Gradient header stripe */}
+        <div className="h-1 w-full bg-gradient-to-r from-primary via-secondary to-primary" />
 
-        {user && (
-          <div className="mb-6 p-4 bg-muted rounded-lg">
-            <p className="font-medium truncate">
-              {user?.user_metadata?.full_name || "Entrepreneur"}
-            </p>
-            <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-            {profile && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {profile.ai_credits_used}/{profile.ai_credits_monthly} credits used
+        <div className="p-6">
+          <SheetHeader className="pb-6">
+            <SheetTitle className="flex items-center space-x-2">
+              <BarChart3 className="h-6 w-6 text-primary" />
+              <span className="gradient-text text-xl font-bold">
+                Validifier
+              </span>
+            </SheetTitle>
+          </SheetHeader>
+
+          {user && (
+            <div className="mb-6 p-4 bg-muted rounded-lg">
+              <p className="font-medium truncate">
+                {user?.user_metadata?.full_name || "Entrepreneur"}
               </p>
-            )}
-          </div>
-        )}
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              {profile && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {profile.ai_credits_used}/{profile.ai_credits_monthly} credits used
+                </p>
+              )}
+            </div>
+          )}
 
-        <nav className="space-y-2">
-          {navItems.map((item) => (
-            <Button
-              key={item.path + item.label}
-              variant={location.pathname === item.path ? "secondary" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => navigateTo(item.path)}
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.label}
-            </Button>
-          ))}
-        </nav>
+          <nav className="space-y-1">
+            {navItems.map((item, index) => (
+              <Button
+                key={item.path + item.label}
+                variant={location.pathname === item.path ? "secondary" : "ghost"}
+                className="w-full justify-start animate-slide-in-right"
+                style={{ animationDelay: `${(index + 1) * 75}ms` }}
+                onClick={() => navigateTo(item.path)}
+              >
+                <item.icon className="mr-3 h-5 w-5" />
+                {item.label}
+              </Button>
+            ))}
+          </nav>
+        </div>
 
         <div className="absolute bottom-6 left-6 right-6 space-y-4">
           <div className="flex items-center justify-between">

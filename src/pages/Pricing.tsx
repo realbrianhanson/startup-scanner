@@ -104,19 +104,22 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Navigation */}
-      <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate("/")}>
+          <div
+            className="flex items-center space-x-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+            onClick={() => navigate("/")}
+          >
             <BarChart3 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+            <span className="text-2xl font-bold gradient-text">
               Validifier
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+            <Button variant="ghost" onClick={() => navigate("/dashboard")} className="animate-fade-down delay-100">
               Dashboard
             </Button>
-            <Button onClick={() => navigate("/auth")}>
+            <Button onClick={() => navigate("/auth")} className="animate-fade-down delay-200">
               Get Started
             </Button>
           </div>
