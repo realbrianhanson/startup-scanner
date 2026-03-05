@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const BASE_URL = Deno.env.get("APP_BASE_URL") || "https://startup-scanner.lovable.app";
+const BASE_URL = Deno.env.get("APP_BASE_URL") || "https://validifier.com";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

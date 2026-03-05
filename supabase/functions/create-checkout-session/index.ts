@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     // Create checkout session
-    const origin = req.headers.get("origin") || "https://startup-scanner.lovable.app";
+    const origin = req.headers.get("origin") || "https://validifier.com";
     const params = new URLSearchParams({
       "mode": "subscription",
       "customer": customerId!,

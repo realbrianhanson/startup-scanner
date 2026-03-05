@@ -25,7 +25,7 @@ export function formatExecutiveSummaryText(reportData: any, projectName: string,
     recommendation,
     '',
     '—',
-    'Generated with Validifier (https://startup-scanner.lovable.app)',
+    'Generated with Validifier (https://validifier.com)',
   ].join('\n');
 }
 
@@ -270,7 +270,7 @@ export function generateReportMarkdown(reportData: any, project: any): string {
   }
 
   lines.push('---');
-  lines.push('*Generated with [Validifier](https://startup-scanner.lovable.app)*');
+  lines.push('*Generated with [Validifier](https://validifier.com)*');
 
   return lines.join('\n');
 }
@@ -279,7 +279,7 @@ export function generateReportMarkdown(reportData: any, project: any): string {
  * Generate social sharing text
  */
 export function generateSocialShareText(projectName: string, score: number): string {
-  return `Just validated my business idea "${projectName}" with @validifier — scored ${score}/100! 🚀\n\nValidate yours: https://startup-scanner.lovable.app`;
+  return `Just validated my business idea "${projectName}" with @validifier — scored ${score}/100! 🚀\n\nValidate yours: https://validifier.com`;
 }
 
 /**
