@@ -1,81 +1,63 @@
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { BarChart3 } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ReportSectionCard } from "./ReportSectionCard";
 
 interface Props {
   reportData: any;
 }
 
+const QUADRANTS = [
+  { key: "strengths", label: "Strengths", bg: "bg-success/[0.06]", border: "border-success/20", dot: "bg-success", text: "text-success" },
+  { key: "weaknesses", label: "Weaknesses", bg: "bg-destructive/[0.06]", border: "border-destructive/20", dot: "bg-destructive", text: "text-destructive" },
+  { key: "opportunities", label: "Opportunities", bg: "bg-primary/[0.06]", border: "border-primary/20", dot: "bg-primary", text: "text-primary" },
+  { key: "threats", label: "Threats", bg: "bg-warning/[0.06]", border: "border-warning/20", dot: "bg-warning", text: "text-warning" },
+] as const;
+
 export const StrategicFrameworksSection = ({ reportData }: Props) => {
   if (!reportData.strategic_frameworks) return null;
 
   return (
-    <Collapsible>
-      <Card id="strategic-frameworks" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
-        <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <BarChart3 className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">Strategic Frameworks</h2>
-            </div>
-            <Badge variant="secondary">Expand</Badge>
+    <ReportSectionCard
+      id="strategic-frameworks"
+      icon={<BarChart3 className="h-5 w-5 text-primary" />}
+      title="Strategic Frameworks"
+    >
+      <h3 className="font-semibold text-lg">SWOT Analysis</h3>
+      <div className="grid md:grid-cols-2 gap-4">
+        {QUADRANTS.map((q, idx) => (
+          <div
+            key={q.key}
+            className={`rounded-xl p-5 ${q.bg} border ${q.border} animate-scale-in`}
+            style={{ animationDelay: `${idx * 100}ms` }}
+          >
+            <h4 className={`font-semibold mb-3 ${q.text}`}>{q.label}</h4>
+            <ul className="space-y-2">
+              {reportData.strategic_frameworks.swot?.[q.key]?.map((item: string, i: number) => (
+                <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+                  <span className={`w-1.5 h-1.5 rounded-full ${q.dot} mt-2 shrink-0`} />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="p-6 pt-0">
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-3">SWOT Analysis</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card className="p-4 bg-success/5">
-                  <h4 className="font-semibold mb-2 text-success">Strengths</h4>
-                  <ul className="space-y-1 text-sm">
-                    {reportData.strategic_frameworks.swot?.strengths?.map((s: string, i: number) => (
-                      <li key={i}>• {s}</li>
-                    ))}
-                  </ul>
-                </Card>
-                <Card className="p-4 bg-destructive/5">
-                  <h4 className="font-semibold mb-2 text-destructive">Weaknesses</h4>
-                  <ul className="space-y-1 text-sm">
-                    {reportData.strategic_frameworks.swot?.weaknesses?.map((w: string, i: number) => (
-                      <li key={i}>• {w}</li>
-                    ))}
-                  </ul>
-                </Card>
-                <Card className="p-4 bg-primary/5">
-                  <h4 className="font-semibold mb-2 text-primary">Opportunities</h4>
-                  <ul className="space-y-1 text-sm">
-                    {reportData.strategic_frameworks.swot?.opportunities?.map((o: string, i: number) => (
-                      <li key={i}>• {o}</li>
-                    ))}
-                  </ul>
-                </Card>
-                <Card className="p-4 bg-warning/5">
-                  <h4 className="font-semibold mb-2 text-warning">Threats</h4>
-                  <ul className="space-y-1 text-sm">
-                    {reportData.strategic_frameworks.swot?.threats?.map((t: string, i: number) => (
-                      <li key={i}>• {t}</li>
-                    ))}
-                  </ul>
-                </Card>
-              </div>
-            </div>
+        ))}
+      </div>
 
-            <div>
-              <h3 className="font-semibold mb-3">Go-to-Market Strategy</h3>
-              <ul className="space-y-2">
-                {reportData.strategic_frameworks.gtm_strategy?.map((strategy: string, i: number) => (
-                  <li key={i} className="text-sm flex items-start">
-                    <span className="mr-2 font-bold text-primary">{i + 1}.</span>
-                    <span>{strategy}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+      {reportData.strategic_frameworks.gtm_strategy?.length > 0 && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <h3 className="font-semibold text-lg mb-3">Go-to-Market Strategy</h3>
+            <ul className="space-y-2">
+              {reportData.strategic_frameworks.gtm_strategy.map((strategy: string, i: number) => (
+                <li key={i} className="text-sm flex items-start">
+                  <span className="mr-2 font-bold text-primary">{i + 1}.</span>
+                  <span>{strategy}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+        </>
+      )}
+    </ReportSectionCard>
   );
 };
