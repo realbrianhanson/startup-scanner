@@ -1,4 +1,4 @@
-import { Lightbulb, Target, Sparkles, Zap, CheckCircle2, AlertCircle } from "lucide-react";
+import { Target, Sparkles, Zap, CheckCircle2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ReportSectionCard } from "./ReportSectionCard";
 
@@ -11,14 +11,10 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
   const usp = reportData.usp_analysis;
 
   return (
-    <ReportSectionCard
-      id="usp-analysis"
-      icon={<Lightbulb className="h-5 w-5 text-primary" />}
-      title="Unique Selling Proposition (USP)"
-    >
+    <ReportSectionCard id="usp-analysis" title="Unique Selling Proposition">
       {/* Recommended USP */}
-      <div className="rounded-xl bg-primary/[0.06] border-l-[3px] border-l-primary border border-primary/20 p-5">
-        <h4 className="font-semibold mb-2">Recommended USP</h4>
+      <div className="border-l-2 border-l-primary pl-5 py-2">
+        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Recommended USP</p>
         <p className="text-lg font-medium">{usp.recommended_usp}</p>
       </div>
 
@@ -27,34 +23,29 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
         <>
           <div className="border-t border-border/50" />
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 rounded-lg bg-primary/[0.08]"><Target className="w-4 h-4 text-primary" /></div>
-              <h4 className="font-semibold text-lg">Current Positioning</h4>
-            </div>
-            <p className="mb-4 text-muted-foreground leading-relaxed">{usp.current_positioning.summary}</p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="rounded-xl bg-success/[0.06] border border-success/20 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle2 className="w-4 h-4 text-success" />
-                  <p className="font-medium text-success">Strengths</p>
-                </div>
-                <ul className="space-y-2">
+            <h3 className="font-sans text-lg font-semibold mb-3">Current Positioning</h3>
+            <p className="text-sm text-muted-foreground mb-4">{usp.current_positioning.summary}</p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-sans text-sm font-semibold text-emerald-500 flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-4 h-4" /> Strengths
+                </h4>
+                <ul className="space-y-1.5">
                   {usp.current_positioning.strengths?.map((s: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-success mt-2 shrink-0" />{s}
+                    <li key={i} className="text-sm flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />{s}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="rounded-xl bg-warning/[0.06] border border-warning/20 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="w-4 h-4 text-warning" />
-                  <p className="font-medium text-warning">Gaps to Address</p>
-                </div>
-                <ul className="space-y-2">
+              <div>
+                <h4 className="font-sans text-sm font-semibold text-amber-500 flex items-center gap-2 mb-2">
+                  <AlertCircle className="w-4 h-4" /> Gaps
+                </h4>
+                <ul className="space-y-1.5">
                   {usp.current_positioning.gaps?.map((g: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-warning mt-2 shrink-0" />{g}
+                    <li key={i} className="text-sm flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />{g}
                     </li>
                   ))}
                 </ul>
@@ -69,21 +60,16 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
         <>
           <div className="border-t border-border/50" />
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 rounded-lg bg-primary/[0.08]"><Sparkles className="w-4 h-4 text-primary" /></div>
-              <h4 className="font-semibold text-lg">Key Differentiators</h4>
-            </div>
-            <div className="space-y-3">
+            <h3 className="font-sans text-lg font-semibold mb-3">Key Differentiators</h3>
+            <div className="space-y-0">
               {usp.key_differentiators.map((diff: any, i: number) => (
-                <div key={i} className="rounded-xl border bg-gradient-to-r from-primary/[0.03] to-transparent p-4 hover:border-primary/20 transition-all">
+                <div key={i} className="py-3 border-b border-border/30 last:border-0">
                   <div className="flex items-start gap-3">
-                    <span className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">{i + 1}</span>
+                    <span className="font-mono text-sm text-muted-foreground w-5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
                     <div>
-                      <p className="font-semibold">{diff.differentiator}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{diff.description}</p>
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/[0.08] rounded-full text-xs font-medium text-primary mt-2">
-                        <Zap className="w-3 h-3" /> Impact: {diff.impact}
-                      </div>
+                      <p className="text-sm font-medium">{diff.differentiator}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{diff.description}</p>
+                      <span className="text-xs text-primary font-medium mt-1 inline-block">Impact: {diff.impact}</span>
                     </div>
                   </div>
                 </div>
@@ -98,13 +84,13 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
         <>
           <div className="border-t border-border/50" />
           <div>
-            <h4 className="font-semibold text-lg mb-3">Competitive Advantages</h4>
-            <div className="space-y-3">
+            <h3 className="font-sans text-lg font-semibold mb-3">Competitive Advantages</h3>
+            <div className="space-y-0">
               {usp.competitive_advantages.map((adv: any, i: number) => (
-                <div key={i} className="rounded-xl border p-4">
-                  <p className="font-medium">{adv.advantage}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{adv.description}</p>
-                  <p className="text-sm mt-2 text-primary">📊 {adv.quantifiable_benefit}</p>
+                <div key={i} className="py-3 border-b border-border/30 last:border-0">
+                  <p className="text-sm font-medium">{adv.advantage}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{adv.description}</p>
+                  {adv.quantifiable_benefit && <p className="text-xs text-primary mt-1">{adv.quantifiable_benefit}</p>}
                 </div>
               ))}
             </div>
@@ -117,16 +103,16 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
         <>
           <div className="border-t border-border/50" />
           <div>
-            <h4 className="font-semibold text-lg mb-3">Value Proposition Components</h4>
-            <div className="space-y-3">
+            <h3 className="font-sans text-lg font-semibold mb-3">Value Proposition</h3>
+            <div className="space-y-2">
               {[
-                { key: "what", label: "What", bg: "bg-primary/[0.05]", text: "text-primary" },
-                { key: "how", label: "How", bg: "bg-success/[0.05]", text: "text-success" },
-                { key: "why", label: "Why", bg: "bg-secondary/[0.05]", text: "text-secondary" },
+                { key: "what", label: "What" },
+                { key: "how", label: "How" },
+                { key: "why", label: "Why" },
               ].map((item) => (
-                <div key={item.key} className={`rounded-lg ${item.bg} p-3`}>
-                  <p className={`font-medium ${item.text} text-sm`}>{item.label}</p>
-                  <p className="text-sm mt-1">{(usp.value_proposition as any)[item.key]}</p>
+                <div key={item.key} className="py-2 border-b border-border/30 last:border-0">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{item.label}</span>
+                  <p className="text-sm mt-0.5">{(usp.value_proposition as any)[item.key]}</p>
                 </div>
               ))}
             </div>
@@ -139,24 +125,16 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
         <>
           <div className="border-t border-border/50" />
           <div>
-            <h4 className="font-semibold text-lg mb-3">Target Audience Alignment</h4>
-            <p className="mb-3 text-sm"><span className="font-medium">Primary Audience:</span> {usp.target_alignment.primary_audience}</p>
+            <h3 className="font-sans text-lg font-semibold mb-3">Target Audience Alignment</h3>
+            <p className="text-sm mb-3"><span className="font-medium">Primary:</span> {usp.target_alignment.primary_audience}</p>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold mb-2">Emotional Triggers:</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {usp.target_alignment.emotional_triggers?.map((t: string, i: number) => (
-                    <Badge key={i} variant="outline" className="text-[10px] bg-secondary/[0.05]">{t}</Badge>
-                  ))}
-                </div>
+                <p className="text-xs text-muted-foreground mb-1">Emotional Triggers:</p>
+                <p className="text-sm">{usp.target_alignment.emotional_triggers?.join(", ")}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold mb-2">Rational Benefits:</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {usp.target_alignment.rational_benefits?.map((b: string, i: number) => (
-                    <Badge key={i} variant="outline" className="text-[10px] bg-primary/[0.05]">{b}</Badge>
-                  ))}
-                </div>
+                <p className="text-xs text-muted-foreground mb-1">Rational Benefits:</p>
+                <p className="text-sm">{usp.target_alignment.rational_benefits?.join(", ")}</p>
               </div>
             </div>
           </div>
@@ -168,13 +146,13 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
         <>
           <div className="border-t border-border/50" />
           <div>
-            <h4 className="font-semibold text-lg mb-3">Proof Points</h4>
-            <div className="space-y-3">
+            <h3 className="font-sans text-lg font-semibold mb-3">Proof Points</h3>
+            <div className="space-y-0">
               {usp.proof_points.map((point: any, i: number) => (
-                <div key={i} className="rounded-xl border p-4">
-                  <p className="font-medium">{point.claim}</p>
-                  <p className="text-sm text-muted-foreground mt-1"><span className="font-medium">Evidence:</span> {point.evidence}</p>
-                  <p className="text-sm mt-1"><span className="font-medium">Credibility:</span> {point.credibility}</p>
+                <div key={i} className="py-3 border-b border-border/30 last:border-0">
+                  <p className="text-sm font-medium">{point.claim}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Evidence: {point.evidence}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Credibility: {point.credibility}</p>
                 </div>
               ))}
             </div>
@@ -187,33 +165,38 @@ export const UspAnalysisSection = ({ reportData }: Props) => {
         <>
           <div className="border-t border-border/50" />
           <div>
-            <h4 className="font-semibold text-lg mb-3">Communication Guidelines</h4>
+            <h3 className="font-sans text-lg font-semibold mb-3">Communication Guidelines</h3>
             <div className="space-y-4">
-              <div>
-                <p className="text-xs font-semibold mb-1">Elevator Pitch (30 seconds):</p>
-                <p className="p-3 rounded-lg bg-muted/30 text-sm italic">{usp.communication_guidelines.elevator_pitch}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold mb-2">Tagline Options:</p>
-                <div className="space-y-2">
-                  {usp.communication_guidelines.tagline_options?.map((t: string, i: number) => (
-                    <p key={i} className="p-2.5 bg-primary/[0.04] rounded-lg text-center font-medium text-sm">{t}</p>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold mb-2">Key Messages:</p>
-                <ul className="space-y-1 text-sm">
-                  {usp.communication_guidelines.key_messages?.map((m: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2"><span className="text-primary">•</span> {m}</li>
-                  ))}
-                </ul>
-              </div>
-              {usp.communication_guidelines.tone && (
+              {usp.communication_guidelines.elevator_pitch && (
                 <div>
-                  <p className="text-xs font-semibold mb-1">Tone:</p>
-                  <p className="text-sm">{usp.communication_guidelines.tone}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Elevator Pitch:</p>
+                  <blockquote className="border-l-2 border-muted-foreground/20 pl-4 py-1 text-sm italic">
+                    {usp.communication_guidelines.elevator_pitch}
+                  </blockquote>
                 </div>
+              )}
+              {usp.communication_guidelines.tagline_options && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Tagline Options:</p>
+                  <div className="space-y-1">
+                    {usp.communication_guidelines.tagline_options.map((t: string, i: number) => (
+                      <p key={i} className="text-sm font-medium">{t}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {usp.communication_guidelines.key_messages && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Key Messages:</p>
+                  <ul className="space-y-1 text-sm">
+                    {usp.communication_guidelines.key_messages.map((m: string, i: number) => (
+                      <li key={i}>· {m}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {usp.communication_guidelines.tone && (
+                <p className="text-sm"><span className="text-muted-foreground">Tone:</span> {usp.communication_guidelines.tone}</p>
               )}
             </div>
           </div>
