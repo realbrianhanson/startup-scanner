@@ -359,7 +359,7 @@ serve(async (req) => {
     console.log(`📊 Finalizing report: ${sectionsCompleted}/${sectionGenerators.length} sections completed${timedOut ? ' (timed out)' : ''}`);
 
     // Calculate validation score from whatever sections we have
-    const validationScore = calculateValidationScore({
+    const scoreResult = calculateValidationScore({
       executiveSummary: ctx.executiveSummary,
       marketAnalysis: ctx.marketAnalysis,
       customerPersonas: ctx.customerPersonas,
@@ -373,6 +373,7 @@ serve(async (req) => {
       uspAnalysis: ctx.uspAnalysis,
       financialBasics: ctx.financialBasics,
     });
+    const validationScore = scoreResult.overall;
 
     // Final update: add validation_score to report_data
     const { data: finalReport } = await supabase
@@ -386,12 +387,12 @@ serve(async (req) => {
       .update({
         report_data: {
           ...(finalReport?.report_data as Record<string, any> || {}),
-          validation_score: validationScore,
+          validation_score: scoreResult,
         },
       })
       .eq("id", report.id);
 
-    // Update project with validation score
+    // Update project with validation score (overall number for backward compat)
     await supabase
       .from("projects")
       .update({
@@ -1637,12 +1638,9 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
   };
 }
 
-function calculateValidationScore(sections: any): number {
-  let score = 0;
-
+function calculateValidationScore(sections: any): { overall: number; factors: Array<{ name: string; score: number; weight: string }> } {
   // Factor 1: AI's initial assessment (weight: 30%)
-  const aiScore = sections.executiveSummary?.score || 50;
-  score += aiScore * 0.3;
+  const aiScore = Math.min(Math.max(sections.executiveSummary?.score || 50, 0), 100);
 
   // Factor 2: Market attractiveness (weight: 20%)
   let marketScore = 50;
@@ -1652,7 +1650,7 @@ function calculateValidationScore(sections: any): number {
   const maturity = String(sections.marketAnalysis?.market_maturity || '').toLowerCase();
   if (maturity.includes('early') || maturity.includes('growing')) marketScore += 10;
   if (maturity.includes('declining')) marketScore -= 20;
-  score += Math.min(Math.max(marketScore, 0), 100) * 0.2;
+  marketScore = Math.min(Math.max(marketScore, 0), 100);
 
   // Factor 3: Competitive defensibility (weight: 15%)
   let compScore = 50;
@@ -1660,7 +1658,7 @@ function calculateValidationScore(sections: any): number {
   const competitors = sections.competitiveLandscape?.direct_competitors?.length || 0;
   compScore += advantages * 8;
   compScore -= competitors * 3;
-  score += Math.min(Math.max(compScore, 0), 100) * 0.15;
+  compScore = Math.min(Math.max(compScore, 0), 100);
 
   // Factor 4: Customer clarity (weight: 15%)
   let customerScore = 50;
@@ -1668,13 +1666,13 @@ function calculateValidationScore(sections: any): number {
   if (personas >= 3) customerScore = 70;
   const painPoints = sections.customerPersonas?.[0]?.pain_points?.length || 0;
   if (painPoints >= 3) customerScore += 10;
-  score += Math.min(customerScore, 100) * 0.15;
+  customerScore = Math.min(Math.max(customerScore, 0), 100);
 
   // Factor 5: Financial viability (weight: 10%)
   let finScore = 50;
   const startupCost = String(sections.financialBasics?.startup_costs?.conservative || '');
   if (startupCost.match(/\$\d{1,2}K/) || startupCost.toLowerCase().includes('under')) finScore = 70;
-  score += Math.min(finScore, 100) * 0.1;
+  finScore = Math.min(Math.max(finScore, 0), 100);
 
   // Factor 6: Strategic clarity (weight: 10%)
   let stratScore = 50;
@@ -1685,8 +1683,20 @@ function calculateValidationScore(sections: any): number {
     if (strengthCount > weaknessCount) stratScore = 65;
     if (strengthCount > weaknessCount + 2) stratScore = 80;
   }
-  score += Math.min(stratScore, 100) * 0.1;
+  stratScore = Math.min(Math.max(stratScore, 0), 100);
 
-  const finalScore = Math.round(score);
-  return Math.min(Math.max(finalScore, 5), 98); // Never 0 or 100 — both are unrealistic
+  const weightedScore = aiScore * 0.3 + marketScore * 0.2 + compScore * 0.15 + customerScore * 0.15 + finScore * 0.1 + stratScore * 0.1;
+  const overall = Math.min(Math.max(Math.round(weightedScore), 5), 98);
+
+  return {
+    overall,
+    factors: [
+      { name: "Market Opportunity", score: marketScore, weight: "20%" },
+      { name: "Competitive Edge", score: compScore, weight: "15%" },
+      { name: "Customer Clarity", score: customerScore, weight: "15%" },
+      { name: "Financial Viability", score: finScore, weight: "10%" },
+      { name: "Strategic Position", score: stratScore, weight: "10%" },
+      { name: "AI Assessment", score: aiScore, weight: "30%" },
+    ],
+  };
 }

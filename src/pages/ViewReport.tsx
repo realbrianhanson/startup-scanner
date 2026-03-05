@@ -259,7 +259,12 @@ const ViewReport = () => {
     );
   }
 
-  const validationScore = project?.validation_score || report?.report_data?.validation_score || 0;
+  // Support both old (number) and new (object with overall + factors) score format
+  const rawScore = report?.report_data?.validation_score;
+  const validationScore = typeof rawScore === 'object' && rawScore?.overall
+    ? rawScore.overall
+    : (project?.validation_score || rawScore || 0);
+  const scoreFactors = typeof rawScore === 'object' && rawScore?.factors ? rawScore.factors : undefined;
   const reportData = report?.report_data || {};
   const isGenerating = project?.status === "analyzing" || generating;
 
@@ -344,6 +349,7 @@ const ViewReport = () => {
                 <ValidationScoreDisplay
                   score={validationScore}
                   justification={reportData.executive_summary?.score_justification}
+                  factors={scoreFactors}
                 />
               )}
 

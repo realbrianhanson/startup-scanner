@@ -1,8 +1,16 @@
 import { useEffect, useState, useRef } from "react";
+import { ScoreBreakdownChart } from "./ScoreBreakdownChart";
+
+interface ScoreFactor {
+  name: string;
+  score: number;
+  weight: string;
+}
 
 interface ValidationScoreDisplayProps {
   score: number;
   justification?: string;
+  factors?: ScoreFactor[];
 }
 
 const getScoreColor = (score: number) => {
@@ -14,7 +22,7 @@ const getScoreColor = (score: number) => {
 const getScoreStatus = (score: number) =>
   score >= 70 ? "Strong Potential" : score >= 40 ? "Moderate Potential" : "Needs Work";
 
-export const ValidationScoreDisplay = ({ score, justification }: ValidationScoreDisplayProps) => {
+export const ValidationScoreDisplay = ({ score, justification, factors }: ValidationScoreDisplayProps) => {
   const [displayScore, setDisplayScore] = useState(0);
   const hasAnimated = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,18 +56,28 @@ export const ValidationScoreDisplay = ({ score, justification }: ValidationScore
   return (
     <div ref={containerRef} className="mb-16 md:mb-20">
       <div className="h-px bg-border mb-8" />
-      <div className="space-y-2">
-        <span className={`font-mono text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-none ${getScoreColor(score)}`}>
-          {displayScore}
-        </span>
-        <div className="flex items-center gap-3 mt-2">
-          <span className="text-lg font-medium text-foreground">{getScoreStatus(score)}</span>
-          <span className="text-muted-foreground">/ 100</span>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:gap-12">
+        {/* Score number & status */}
+        <div className="space-y-2 shrink-0">
+          <span className={`font-mono text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-none ${getScoreColor(score)}`}>
+            {displayScore}
+          </span>
+          <div className="flex items-center gap-3 mt-2">
+            <span className="text-lg font-medium text-foreground">{getScoreStatus(score)}</span>
+            <span className="text-muted-foreground">/ 100</span>
+          </div>
+          {justification && (
+            <p className="text-base text-muted-foreground leading-relaxed max-w-md mt-3">
+              {justification}
+            </p>
+          )}
         </div>
-        {justification && (
-          <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mt-3">
-            {justification}
-          </p>
+
+        {/* Radar chart */}
+        {factors && factors.length > 0 && (
+          <div className="mt-8 lg:mt-0">
+            <ScoreBreakdownChart factors={factors} overallScore={score} />
+          </div>
         )}
       </div>
     </div>
