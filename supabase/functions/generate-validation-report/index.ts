@@ -162,6 +162,7 @@ serve(async (req) => {
           usp_analysis: "pending",
           game_changing_idea: "pending",
           financial_basics: "pending",
+          risk_matrix: "pending",
           action_plan: "pending",
         },
       })
