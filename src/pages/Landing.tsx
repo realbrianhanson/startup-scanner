@@ -207,7 +207,7 @@ const Landing = () => {
             </div>
 
             {/* CTA */}
-            <div className="animate-fade-up delay-400">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up delay-400">
               <Button
                 size="lg"
                 onClick={() => { trackEvent('cta_click', { button: 'hero_validate', page: 'landing' }); navigate("/auth"); }}
@@ -215,6 +215,15 @@ const Landing = () => {
               >
                 Validate My Idea Free
                 <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => { trackEvent('cta_click', { button: 'sample_report', page: 'landing' }); navigate("/sample-report"); }}
+                className="text-lg px-8 py-7 border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+              >
+                <Star className="mr-2 h-5 w-5" />
+                See a Sample Report
               </Button>
             </div>
 

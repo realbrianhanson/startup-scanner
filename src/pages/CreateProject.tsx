@@ -28,6 +28,7 @@ import {
   Target, Users, Briefcase, Tag,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { INSPIRATION_IDEAS } from "@/lib/inspirationIdeas";
 
 /* ── Industry icons ── */
 const INDUSTRY_MAP: { label: string; icon: React.ElementType }[] = [
@@ -515,6 +516,51 @@ const CreateProject = () => {
                 </TabsContent>
               </Tabs>
             </Card>
+          </div>
+
+          {/* Need Inspiration? */}
+          <div className="space-y-4 animate-fade-up" style={{ animationDelay: "200ms" }}>
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-secondary" />
+              <h3 className="text-lg font-semibold">Need inspiration?</h3>
+              <span className="text-sm text-muted-foreground">Click an idea to pre-fill the form</span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {INSPIRATION_IDEAS.map((idea, i) => {
+                const Icon = idea.icon;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setProjectName(idea.name);
+                      setIndustry(idea.industry);
+                      setDescription(idea.description);
+                      setTargetMarket(idea.targetMarket);
+                      setCompetitors(idea.competitors);
+                      setBusinessModel(idea.businessModel);
+                      setActiveTab("describe");
+                      toast.success(`Pre-filled with "${idea.name}" — customize it to make it yours!`);
+                    }}
+                    disabled={loading}
+                    className="group relative rounded-xl p-[1px] text-left transition-all duration-300 hover:scale-[1.01]"
+                  >
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/0 to-secondary/0 group-hover:from-primary/30 group-hover:via-secondary/20 group-hover:to-primary/30 transition-all duration-300" />
+                    <div className="relative rounded-[11px] bg-card border border-border/60 group-hover:border-transparent p-4 transition-all">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-primary/[0.08] border border-primary/10 shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{idea.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{idea.description.slice(0, 80)}...</p>
+                          <span className="inline-block mt-1.5 text-[10px] font-medium text-primary/70 bg-primary/[0.06] px-2 py-0.5 rounded-full">{idea.industry}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

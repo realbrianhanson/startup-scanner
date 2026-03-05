@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import { useNavigate } from "react-router-dom";
 import { CompareProjects } from "@/components/CompareProjects";
+import { INSPIRATION_IDEAS } from "@/lib/inspirationIdeas";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -458,21 +459,53 @@ const Dashboard = () => {
 
           {/* ── Project List / Empty State ── */}
           {projects.length === 0 ? (
-            <Card className="p-16 text-center space-y-6 border border-border/50 animate-fade-up delay-400">
-              <RocketIllustration />
+            <div className="space-y-6 animate-fade-up delay-400">
+              <Card className="p-16 text-center space-y-6 border border-border/50">
+                <RocketIllustration />
+                <div className="space-y-3">
+                  <h3 className="text-2xl font-semibold">
+                    Your launchpad is ready
+                  </h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Every great company started with an idea. Create your first project and let AI validate whether yours has what it takes.
+                  </p>
+                </div>
+                <Button variant="outline" size="lg" onClick={() => navigate("/projects/new")}>
+                  <Rocket className="mr-2 h-4 w-4" />
+                  Create First Project
+                </Button>
+              </Card>
+
+              {/* Inspiration ideas */}
               <div className="space-y-3">
-                <h3 className="text-2xl font-semibold">
-                  Your launchpad is ready
-                </h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  Every great company started with an idea. Create your first project and let AI validate whether yours has what it takes.
+                <p className="text-sm font-medium text-muted-foreground text-center">
+                  Not sure where to start? Try validating one of these trending ideas:
                 </p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {INSPIRATION_IDEAS.map((idea, i) => {
+                    const Icon = idea.icon;
+                    return (
+                      <Card
+                        key={i}
+                        className="p-4 cursor-pointer border border-border/60 hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-medium transition-all duration-300"
+                        onClick={() => navigate("/projects/new")}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-primary/[0.08] border border-primary/10 shrink-0">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm">{idea.name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{idea.description.slice(0, 80)}...</p>
+                            <span className="inline-block mt-1.5 text-[10px] font-medium text-primary/70 bg-primary/[0.06] px-2 py-0.5 rounded-full">{idea.industry}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
-              <Button variant="outline" size="lg" onClick={() => navigate("/projects/new")}>
-                <Rocket className="mr-2 h-4 w-4" />
-                Create First Project
-              </Button>
-            </Card>
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
