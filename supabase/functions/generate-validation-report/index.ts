@@ -1552,10 +1552,10 @@ function calculateValidationScore(sections: any): number {
 
   // Factor 2: Market attractiveness (weight: 20%)
   let marketScore = 50;
-  const growth = (sections.marketAnalysis?.growth_rate || '').toLowerCase();
+  const growth = String(sections.marketAnalysis?.growth_rate || '').toLowerCase();
   if (growth.includes('high') || growth.match(/\d{2,}%/)) marketScore = 75;
   if (growth.includes('declining') || growth.includes('shrinking')) marketScore = 20;
-  const maturity = (sections.marketAnalysis?.market_maturity || '').toLowerCase();
+  const maturity = String(sections.marketAnalysis?.market_maturity || '').toLowerCase();
   if (maturity.includes('early') || maturity.includes('growing')) marketScore += 10;
   if (maturity.includes('declining')) marketScore -= 20;
   score += Math.min(Math.max(marketScore, 0), 100) * 0.2;
@@ -1578,7 +1578,7 @@ function calculateValidationScore(sections: any): number {
 
   // Factor 5: Financial viability (weight: 10%)
   let finScore = 50;
-  const startupCost = sections.financialBasics?.startup_costs?.conservative || '';
+  const startupCost = String(sections.financialBasics?.startup_costs?.conservative || '');
   if (startupCost.match(/\$\d{1,2}K/) || startupCost.toLowerCase().includes('under')) finScore = 70;
   score += Math.min(finScore, 100) * 0.1;
 
