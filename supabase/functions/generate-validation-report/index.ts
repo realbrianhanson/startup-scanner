@@ -426,11 +426,18 @@ function cleanJsonFromMarkdown(text: string): string {
     // Remove any leading/trailing whitespace
     .trim();
   
-  // Try to find JSON object boundaries if there's extra text
+  // Try to find JSON boundaries - support both objects and arrays
   const firstBrace = cleaned.indexOf('{');
   const lastBrace = cleaned.lastIndexOf('}');
+  const firstBracket = cleaned.indexOf('[');
+  const lastBracket = cleaned.lastIndexOf(']');
   
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+  // Determine if it's an array or object based on which delimiter comes first
+  const isArray = firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace);
+  
+  if (isArray && firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+    cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+  } else if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     cleaned = cleaned.substring(firstBrace, lastBrace + 1);
   }
   
