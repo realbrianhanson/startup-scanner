@@ -15,7 +15,10 @@ const SECTIONS = [
   { key: "path_to_mvp", label: "Path to MVP", verb: "Planning your MVP roadmap..." },
   { key: "go_to_market_strategy", label: "Go-to-Market Strategy", verb: "Designing launch strategy..." },
   { key: "usp_analysis", label: "Unique Selling Proposition", verb: "Identifying your edge..." },
+  { key: "game_changing_idea", label: "Game-Changing Idea", verb: "Generating a strategic breakthrough..." },
   { key: "financial_basics", label: "Financial Basics", verb: "Running financial projections..." },
+  { key: "risk_matrix", label: "Risk Matrix", verb: "Mapping risks and mitigations..." },
+  { key: "action_plan", label: "30-Day Action Plan", verb: "Building your action plan..." },
 ] as const;
 
 const PRO_TIPS = [
@@ -169,7 +172,7 @@ export const GenerationExperience = ({
 
   const estimatedRemaining = useMemo(() => {
     const remaining = SECTIONS.length - completedCount;
-    const seconds = remaining * 7; // ~7s per section
+    const seconds = remaining * 8; // ~8s per section
     if (seconds <= 10) return "Almost done...";
     if (seconds <= 30) return `About ${Math.round(seconds / 5) * 5} seconds remaining`;
     return `About ${Math.ceil(seconds / 60)} minute${Math.ceil(seconds / 60) > 1 ? "s" : ""} remaining`;
