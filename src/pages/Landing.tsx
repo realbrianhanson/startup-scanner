@@ -74,7 +74,7 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen grain-overlay" style={{ background: "hsl(220 15% 6%)", color: "hsl(210 10% 93%)" }}>
+    <div className="min-h-screen grain" style={{ background: "hsl(220 15% 6%)", color: "hsl(210 10% 93%)" }}>
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b" style={{ background: "hsl(220 15% 6% / 0.9)", backdropFilter: "blur(12px)", borderColor: "hsl(220 15% 12%)" }}>
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
