@@ -267,6 +267,43 @@ const ViewReport = () => {
 
   useEffect(() => {
     loadProjectAndReport();
+
+    // Set up realtime subscription separately (not inside async)
+    const channel = supabase
+      .channel(`report-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "reports",
+          filter: `project_id=eq.${id}`,
+        },
+        (payload) => {
+          console.log("Report updated:", payload);
+          setReport(payload.new);
+          updateProgress(payload.new.generation_status);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "projects",
+          filter: `id=eq.${id}`,
+        },
+        (payload) => {
+          console.log("Project updated:", payload);
+          setProject(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Cleaning up realtime subscriptions");
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   const loadProjectAndReport = async () => {
@@ -274,11 +311,9 @@ const ViewReport = () => {
       console.log("Loading project and report for ID:", id);
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Check if user is the owner (for showing owner-specific features)
-      const isOwner = !!user;
-      console.log("User authenticated:", user?.id, "isOwner:", isOwner);
+      const isOwnerVal = !!user;
+      console.log("User authenticated:", user?.id, "isOwner:", isOwnerVal);
 
-      // Load project (public access via RLS)
       const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("*")
@@ -296,7 +331,6 @@ const ViewReport = () => {
       const ownerCheck = !!user && projectData.user_id === user.id;
       setIsOwner(ownerCheck);
 
-      // Load report (public access via RLS)
       const { data: reportData, error: reportError } = await supabase
         .from("reports")
         .select("*")
@@ -305,7 +339,6 @@ const ViewReport = () => {
 
       if (reportError) {
         console.error("Report error:", reportError);
-        // Don't throw here, just log - report might not exist yet
       }
 
       console.log("Report data:", reportData);
@@ -319,50 +352,11 @@ const ViewReport = () => {
           updateProgress(reportData.generation_status);
         }
       } else if (ownerCheck) {
-        // Only trigger generation if user is the owner
         console.log("No report found, triggering generation");
         startReportGeneration();
       }
 
       setLoading(false);
-
-      // Subscribe to realtime updates
-      console.log("Setting up realtime subscriptions");
-      const channel = supabase
-        .channel(`report-${id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "reports",
-            filter: `project_id=eq.${id}`,
-          },
-          (payload) => {
-            console.log("Report updated:", payload);
-            setReport(payload.new);
-            updateProgress(payload.new.generation_status);
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "projects",
-            filter: `id=eq.${id}`,
-          },
-          (payload) => {
-            console.log("Project updated:", payload);
-            setProject(payload.new);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        console.log("Cleaning up realtime subscriptions");
-        supabase.removeChannel(channel);
-      };
     } catch (error: any) {
       console.error("Error loading project:", error);
       toast.error(error.message || "Failed to load project");
