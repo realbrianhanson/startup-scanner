@@ -253,7 +253,64 @@ serve(async (req) => {
       cost_cents: 50,
     });
 
-    
+    // Send report-complete email
+    try {
+      if (profile.email_notifications_enabled !== false) {
+        const notifPrefs = profile.notification_preferences as Record<string, boolean> | null;
+        if (!notifPrefs || notifPrefs.report_completion !== false) {
+          const topInsights: string[] = [];
+          if (executiveSummary?.strengths) topInsights.push(...executiveSummary.strengths.slice(0, 3));
+
+          const sendEmailUrl = `${SUPABASE_URL}/functions/v1/send-email`;
+          await fetch(sendEmailUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+            body: JSON.stringify({
+              to: profile.email,
+              template: 'report_complete',
+              template_data: {
+                name: profile.full_name || profile.email,
+                project_name: project.name,
+                validation_score: validationScore,
+                top_insights: topInsights,
+                report_url: `https://startup-scanner.lovable.app/report/${project_id}`,
+              },
+            }),
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.error('Failed to send report email:', emailErr);
+    }
+
+    // Check if credits are running low (75%+) and send alert
+    try {
+      const newCreditsUsed = profile.ai_credits_used + creditsNeeded;
+      const usagePercent = (newCreditsUsed / profile.ai_credits_monthly) * 100;
+      const prevPercent = (profile.ai_credits_used / profile.ai_credits_monthly) * 100;
+
+      if (usagePercent >= 75 && prevPercent < 75 && profile.email_notifications_enabled !== false) {
+        const notifPrefs = profile.notification_preferences as Record<string, boolean> | null;
+        if (!notifPrefs || notifPrefs.credit_alerts !== false) {
+          const sendEmailUrl = `${SUPABASE_URL}/functions/v1/send-email`;
+          await fetch(sendEmailUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+            body: JSON.stringify({
+              to: profile.email,
+              template: 'credits_low',
+              template_data: {
+                name: profile.full_name || profile.email,
+                credits_used: newCreditsUsed,
+                credits_total: profile.ai_credits_monthly,
+              },
+            }),
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.error('Failed to send credits email:', emailErr);
+    }
 
     return new Response(
       JSON.stringify({ success: true, report_id: report.id, validation_score: validationScore }),

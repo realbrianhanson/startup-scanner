@@ -112,7 +112,7 @@ const Auth = () => {
         trackEvent('sign_in');
         toast.success("Welcome back!");
       } else if (view === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -126,6 +126,17 @@ const Auth = () => {
         if (error) throw error;
         trackEvent('sign_up', { method: 'email', has_promo: !!promoCode.trim() });
         toast.success("Account created! Welcome to Validifier.");
+
+        // Send welcome email (fire-and-forget)
+        if (data?.user) {
+          supabase.functions.invoke("send-email", {
+            body: {
+              to: email,
+              template: "welcome",
+              template_data: { name: fullName || email },
+            },
+          }).catch(() => {});
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Something went wrong. Please try again.");
