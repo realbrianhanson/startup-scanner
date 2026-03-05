@@ -534,6 +534,37 @@ const Settings = () => {
                 </p>
               </div>
 
+              {/* Master email toggle */}
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                <div>
+                  <Label htmlFor="email-notifications" className="font-medium cursor-pointer">Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email notifications for important events
+                  </p>
+                </div>
+                <Switch
+                  id="email-notifications"
+                  checked={profile?.email_notifications_enabled !== false}
+                  disabled={savingPrefs}
+                  onCheckedChange={async (v) => {
+                    setSavingPrefs(true);
+                    try {
+                      const { error } = await supabase
+                        .from("profiles")
+                        .update({ email_notifications_enabled: v } as any)
+                        .eq("id", user.id);
+                      if (error) throw error;
+                      setProfile((prev: any) => ({ ...prev, email_notifications_enabled: v }));
+                      toast.success(v ? "Email notifications enabled" : "Email notifications disabled");
+                    } catch {
+                      toast.error("Failed to update preference");
+                    } finally {
+                      setSavingPrefs(false);
+                    }
+                  }}
+                />
+              </div>
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
@@ -542,7 +573,7 @@ const Settings = () => {
                       Get notified when validation reports are ready
                     </p>
                   </div>
-                  <Switch id="report-completion" checked={notifPrefs.report_completion} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("report_completion", v)} />
+                  <Switch id="report-completion" checked={notifPrefs.report_completion} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("report_completion", v)} />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -552,7 +583,7 @@ const Settings = () => {
                       Alert when you've used 75% of monthly credits
                     </p>
                   </div>
-                  <Switch id="credit-alerts" checked={notifPrefs.credit_alerts} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("credit_alerts", v)} />
+                  <Switch id="credit-alerts" checked={notifPrefs.credit_alerts} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("credit_alerts", v)} />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -562,7 +593,7 @@ const Settings = () => {
                       Weekly summary of your validation activity
                     </p>
                   </div>
-                  <Switch id="weekly-digest" checked={notifPrefs.weekly_digest} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("weekly_digest", v)} />
+                  <Switch id="weekly-digest" checked={notifPrefs.weekly_digest} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("weekly_digest", v)} />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -572,7 +603,7 @@ const Settings = () => {
                       News about new features and improvements
                     </p>
                   </div>
-                  <Switch id="product-updates" checked={notifPrefs.product_updates} disabled={savingPrefs} onCheckedChange={(v) => handleToggleNotif("product_updates", v)} />
+                  <Switch id="product-updates" checked={notifPrefs.product_updates} disabled={savingPrefs || profile?.email_notifications_enabled === false} onCheckedChange={(v) => handleToggleNotif("product_updates", v)} />
                 </div>
               </div>
             </Card>

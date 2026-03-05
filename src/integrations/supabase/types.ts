@@ -193,6 +193,7 @@ export type Database = {
           ai_credits_used: number
           created_at: string
           email: string
+          email_notifications_enabled: boolean
           full_name: string | null
           id: string
           notification_preferences: Json
@@ -206,6 +207,7 @@ export type Database = {
           ai_credits_used?: number
           created_at?: string
           email: string
+          email_notifications_enabled?: boolean
           full_name?: string | null
           id: string
           notification_preferences?: Json
@@ -219,6 +221,7 @@ export type Database = {
           ai_credits_used?: number
           created_at?: string
           email?: string
+          email_notifications_enabled?: boolean
           full_name?: string | null
           id?: string
           notification_preferences?: Json

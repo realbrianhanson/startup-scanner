@@ -211,9 +211,10 @@ RESPONSE:`;
     }
 
     // Update credits used
+    const newCreditsUsed = profile.ai_credits_used + creditsNeeded;
     const { error: creditsError } = await supabase
       .from('profiles')
-      .update({ ai_credits_used: profile.ai_credits_used + creditsNeeded })
+      .update({ ai_credits_used: newCreditsUsed })
       .eq('id', user.id);
 
     if (creditsError) {
@@ -229,6 +230,34 @@ RESPONSE:`;
       tokens_used: aiData.usage?.total_tokens || 0,
       cost_cents: Math.ceil((aiData.usage?.total_tokens || 0) * 0.0001),
     });
+
+    // Check if credits crossed 75% threshold — send low-credit email
+    try {
+      const usagePercent = (newCreditsUsed / profile.ai_credits_monthly) * 100;
+      const prevPercent = (profile.ai_credits_used / profile.ai_credits_monthly) * 100;
+
+      if (usagePercent >= 75 && prevPercent < 75 && profile.email_notifications_enabled !== false) {
+        const notifPrefs = profile.notification_preferences as Record<string, boolean> | null;
+        if (!notifPrefs || notifPrefs.credit_alerts !== false) {
+          const sendEmailUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`;
+          await fetch(sendEmailUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+            body: JSON.stringify({
+              to: profile.email,
+              template: 'credits_low',
+              template_data: {
+                name: profile.full_name || profile.email,
+                credits_used: newCreditsUsed,
+                credits_total: profile.ai_credits_monthly,
+              },
+            }),
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.error('Failed to send credits email:', emailErr);
+    }
 
     
 
