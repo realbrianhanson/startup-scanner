@@ -130,7 +130,7 @@ const Landing = () => {
       </section>
 
       {/* Value Props */}
-      <section className="py-20 bg-background">
+      <section id="features" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
             {valueProps.map((prop, index) => (
@@ -150,7 +150,7 @@ const Landing = () => {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-gradient-subtle">
+      <section id="how-it-works" className="py-20 bg-gradient-subtle">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center space-y-12">
             <div>
@@ -316,25 +316,16 @@ const Landing = () => {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Features</li>
-                <li>Pricing</li>
-                <li>Case Studies</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>About</li>
-                <li>Blog</li>
-                <li>Careers</li>
+                <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
+                <li><button onClick={() => navigate("/pricing")} className="hover:text-primary transition-colors">Pricing</button></li>
+                <li><a href="#how-it-works" className="hover:text-primary transition-colors">How It Works</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Privacy</li>
-                <li>Terms</li>
-                <li>Security</li>
+                <li><button onClick={() => navigate("/privacy")} className="hover:text-primary transition-colors">Privacy</button></li>
+                <li><button onClick={() => navigate("/terms")} className="hover:text-primary transition-colors">Terms</button></li>
               </ul>
             </div>
           </div>
