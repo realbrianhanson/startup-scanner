@@ -20,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    const { project_id } = await req.json();
+    const { project_id, quality = 'standard' } = await req.json();
 
     if (!project_id) {
       return new Response(
@@ -110,7 +110,22 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 15;
+    // Determine models based on quality level
+    let sectionPremiumModel: string;
+    let sectionFastModel: string;
+    let creditsNeeded: number;
+
+    if (quality === 'premium') {
+      sectionPremiumModel = PREMIUM_MODEL;
+      sectionFastModel = FAST_MODEL;
+      creditsNeeded = 12;
+    } else {
+      // Standard: use Gemini 3 Flash for everything
+      sectionPremiumModel = FAST_MODEL;
+      sectionFastModel = FAST_MODEL;
+      creditsNeeded = 5;
+    }
+
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -189,68 +204,66 @@ serve(async (req) => {
     const ctx: Record<string, any> = {};
     const industryCtx = getIndustryContext(project.industry);
 
-    // PREMIUM MODEL — sections that need deep analytical reasoning
-    const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY, industryCtx, PREMIUM_MODEL);
+    // Use quality-appropriate models for each section
+    const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY, industryCtx, sectionPremiumModel);
     ctx.executiveSummary = executiveSummary;
     currentStatus = await updateSectionStatus("executive_summary", executiveSummary, currentStatus);
 
-    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), PREMIUM_MODEL);
+    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
     ctx.marketAnalysis = marketAnalysis;
     currentStatus = await updateSectionStatus("market_analysis", marketAnalysis, currentStatus);
 
-    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), PREMIUM_MODEL);
+    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
     ctx.customerPersonas = customerPersonas;
     currentStatus = await updateSectionStatus("customer_personas", customerPersonas, currentStatus);
 
-    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), PREMIUM_MODEL);
+    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
     ctx.competitiveLandscape = competitiveLandscape;
     currentStatus = await updateSectionStatus("competitive_landscape", competitiveLandscape, currentStatus);
 
-    // FAST MODEL — structured framework sections where speed matters more
-    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), FAST_MODEL);
+    // Structured framework sections
+    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
     currentStatus = await updateSectionStatus("strategic_frameworks", strategicFrameworks, currentStatus);
 
-    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), FAST_MODEL);
+    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
     currentStatus = await updateSectionStatus("porter_five_forces", porterFiveForces, currentStatus);
 
-    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), FAST_MODEL);
+    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
     currentStatus = await updateSectionStatus("pestel_analysis", pestelAnalysis, currentStatus);
 
-    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), FAST_MODEL);
+    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
     currentStatus = await updateSectionStatus("catwoe_analysis", catwoeAnalysis, currentStatus);
 
-    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), FAST_MODEL);
+    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
     currentStatus = await updateSectionStatus("path_to_mvp", pathToMvp, currentStatus);
 
-    // PREMIUM MODEL — GTM needs deep strategic reasoning
-    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), PREMIUM_MODEL);
+    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
     currentStatus = await updateSectionStatus("go_to_market_strategy", goToMarketStrategy, currentStatus);
 
-    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), FAST_MODEL);
+    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionFastModel);
     currentStatus = await updateSectionStatus("usp_analysis", uspAnalysis, currentStatus);
 
     const gameChangingIdea = await generateGameChangingIdea(project, LOVABLE_API_KEY, {
       executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
       strategicFrameworks, porterFiveForces, goToMarketStrategy
-    }, PREMIUM_MODEL);
+    }, sectionPremiumModel);
     currentStatus = await updateSectionStatus("game_changing_idea", gameChangingIdea, currentStatus);
 
-    // PREMIUM MODEL — financial projections need accuracy
-    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), PREMIUM_MODEL);
+    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx, industryCtx), sectionPremiumModel);
     currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
 
     const riskMatrix = await generateRiskMatrix(project, LOVABLE_API_KEY, {
       executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
       strategicFrameworks, porterFiveForces, pestelAnalysis, catwoeAnalysis,
       pathToMvp, goToMarketStrategy, uspAnalysis, gameChangingIdea, financialBasics
-    }, PREMIUM_MODEL);
+    }, sectionPremiumModel);
     currentStatus = await updateSectionStatus("risk_matrix", riskMatrix, currentStatus);
 
     const actionPlan = await generateActionPlan(project, LOVABLE_API_KEY, {
       executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
       strategicFrameworks, porterFiveForces, pestelAnalysis, catwoeAnalysis,
       pathToMvp, goToMarketStrategy, uspAnalysis, gameChangingIdea, financialBasics, riskMatrix
-    }, PREMIUM_MODEL);
+    }, sectionPremiumModel);
     currentStatus = await updateSectionStatus("action_plan", actionPlan, currentStatus);
 
     // Calculate validation score
@@ -308,7 +321,7 @@ serve(async (req) => {
       user_id: project.user_id,
       project_id: project_id,
       operation_type: "report_generation",
-      model_used: "gemini-3.1-pro + gemini-3-flash (hybrid)",
+      model_used: quality === 'premium' ? "gemini-3.1-pro + gemini-3-flash (hybrid)" : "gemini-3-flash (standard)",
       tokens_used: 15000,
       cost_cents: 50,
     });
