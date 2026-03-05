@@ -912,52 +912,107 @@ Industry: ${project.industry}
 Description: ${project.description}
 ${context}
 
-Provide financial basics:
-1. Estimated startup costs (conservative, moderate, aggressive scenarios)
-2. Revenue model analysis with revenue streams
-3. Customer acquisition cost (CAC) estimates
-4. Basic 3-year revenue projections
+Create detailed financial projections as if you were a startup financial advisor helping a first-time founder build their first financial model. All numbers should be realistic and specific to this business.
 
-CRITICAL: Return ONLY valid JSON. The revenue_model and cac_estimate must be PLAIN TEXT STRINGS, not nested JSON objects.
+REQUIREMENTS:
+- Startup costs must list specific line items, not just a total
+- Revenue projections must show the math (price × customers × frequency)
+- CAC must reference specific acquisition channels with per-channel estimates
+- Unit economics must make sense (LTV must exceed CAC by at least 3x for a viable business)
 
-Format as JSON with keys: 
-- startup_costs {conservative, moderate, aggressive} (all strings like "$10K-15K")
-- revenue_model (single plain text string with newlines describing the model and revenue streams - NOT a nested object)
-- cac_estimate (single plain text string with newlines describing CAC - NOT a nested object)
-- projections {year1, year2, year3} (all strings)
+CRITICAL: Return ONLY valid JSON. No markdown, no comments.
 
-Example revenue_model format: "Primarily a freemium model. The free workshop acts as a lead magnet.\n\nRevenue streams include:\n- Premium training programs\n- Consulting services\n- Membership subscriptions"`;
+{
+  "startup_costs": {
+    "conservative": {
+      "total": "$X",
+      "breakdown": [
+        {"item": "Specific cost item", "amount": "$X", "notes": "Why this is needed"}
+      ]
+    },
+    "moderate": {
+      "total": "$X",
+      "breakdown": [{"item": "Item", "amount": "$X", "notes": "Notes"}]
+    },
+    "aggressive": {
+      "total": "$X",
+      "breakdown": [{"item": "Item", "amount": "$X", "notes": "Notes"}]
+    }
+  },
+  "revenue_model": {
+    "primary_model": "Subscription/One-time/Marketplace/etc",
+    "pricing_recommendation": "Specific price point(s) with reasoning",
+    "revenue_streams": [
+      {"stream": "Primary revenue stream", "percentage": "70%", "description": "How this generates revenue"}
+    ]
+  },
+  "unit_economics": {
+    "average_revenue_per_customer": "$X/month or /year",
+    "estimated_cac": "$X",
+    "cac_breakdown": [
+      {"channel": "Specific channel", "cost_per_acquisition": "$X", "expected_volume": "X customers/month"}
+    ],
+    "estimated_ltv": "$X",
+    "ltv_to_cac_ratio": "X:1",
+    "payback_period": "X months",
+    "viability_assessment": "Whether unit economics are sustainable and what needs to improve"
+  },
+  "projections": {
+    "year1": {
+      "revenue": "$X",
+      "customers": "X",
+      "expenses": "$X",
+      "net": "$X (profit/loss)",
+      "assumptions": "Key assumption behind this projection"
+    },
+    "year2": {
+      "revenue": "$X",
+      "customers": "X",
+      "expenses": "$X",
+      "net": "$X (profit/loss)",
+      "assumptions": "Key assumption"
+    },
+    "year3": {
+      "revenue": "$X",
+      "customers": "X",
+      "expenses": "$X",
+      "net": "$X (profit/loss)",
+      "assumptions": "Key assumption"
+    }
+  },
+  "funding_recommendation": "Whether the founder should bootstrap, seek angel funding, or VC funding — and why (2-3 sentences)",
+  "break_even_estimate": "When the business is projected to become profitable and what needs to happen to get there"
+}`;
 
-  const result = await callAI(prompt, apiKey, 3000);
+  const result = await callAI(prompt, apiKey, 4000);
   try {
     const parsed = JSON.parse(result);
-    
-    // Convert nested objects to plain strings if AI returned them
-    if (typeof parsed.revenue_model === 'object') {
-      const rm = parsed.revenue_model;
-      let text = rm.description || '';
-      if (rm.revenue_streams && Array.isArray(rm.revenue_streams)) {
-        text += '\n\nRevenue streams:\n' + rm.revenue_streams.map((s: string) => `- ${s}`).join('\n');
+
+    // Backwards compat: if startup_costs entries are plain strings, wrap them
+    for (const tier of ['conservative', 'moderate', 'aggressive']) {
+      if (typeof parsed.startup_costs?.[tier] === 'string') {
+        parsed.startup_costs[tier] = { total: parsed.startup_costs[tier], breakdown: [] };
       }
-      parsed.revenue_model = text || JSON.stringify(rm);
     }
-    
-    if (typeof parsed.cac_estimate === 'object') {
-      const cac = parsed.cac_estimate;
-      const parts = [];
-      if (cac.cac_per_paying_customer) parts.push(`CAC per paying customer: ${cac.cac_per_paying_customer}`);
-      if (cac.free_workshop_registration) parts.push(`Free workshop registration: ${cac.free_workshop_registration}`);
-      if (cac.paid_program_conversion_rate) parts.push(`Conversion rate: ${cac.paid_program_conversion_rate}`);
-      parsed.cac_estimate = parts.join('\n\n') || JSON.stringify(cac);
+
+    // If revenue_model came back as a string, wrap it
+    if (typeof parsed.revenue_model === 'string') {
+      parsed.revenue_model = { primary_model: 'See details', pricing_recommendation: parsed.revenue_model, revenue_streams: [] };
     }
-    
+
     return parsed;
   } catch {
-    return { 
-      startup_costs: { conservative: "$10K", moderate: "$25K", aggressive: "$50K" },
-      revenue_model: result,
-      cac_estimate: "Analysis pending",
-      projections: { year1: "TBD", year2: "TBD", year3: "TBD" }
+    return {
+      startup_costs: {
+        conservative: { total: "$10K", breakdown: [] },
+        moderate: { total: "$25K", breakdown: [] },
+        aggressive: { total: "$50K", breakdown: [] }
+      },
+      revenue_model: { primary_model: "Analysis pending", pricing_recommendation: "", revenue_streams: [] },
+      unit_economics: null,
+      projections: { year1: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year2: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year3: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" } },
+      funding_recommendation: "Analysis pending",
+      break_even_estimate: "Analysis pending"
     };
   }
 }
