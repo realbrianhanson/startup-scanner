@@ -41,6 +41,22 @@ serve(async (req) => {
 
     if (profileError) throw profileError;
 
+    // Rate limit: max 10 messages per minute per user
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    const { count: recentMsgCount } = await supabase
+      .from('ai_usage_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('operation_type', 'chat')
+      .gte('created_at', oneMinuteAgo);
+
+    if (recentMsgCount !== null && recentMsgCount >= 10) {
+      return new Response(
+        JSON.stringify({ error: "You're sending messages too quickly. Please wait a moment." }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '10' } }
+      );
+    }
+
     // Check credits (estimate 1 credit per chat message)
     const creditsNeeded = 1;
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {

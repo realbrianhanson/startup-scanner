@@ -69,7 +69,27 @@ serve(async (req) => {
       );
     }
 
-    
+    // Rate limit: max 1 report per 60 seconds per user
+    const { data: recentReports } = await supabase
+      .from("reports")
+      .select("created_at")
+      .in("project_id", 
+        (await supabase.from("projects").select("id").eq("user_id", authUser.id)).data?.map((p: any) => p.id) || []
+      )
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (recentReports && recentReports.length > 0) {
+      const lastCreated = new Date(recentReports[0].created_at).getTime();
+      const secondsSince = (Date.now() - lastCreated) / 1000;
+      if (secondsSince < 60) {
+        const retryAfter = Math.ceil(60 - secondsSince);
+        return new Response(
+          JSON.stringify({ error: "Please wait before generating another report", retry_after: retryAfter }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(retryAfter) } }
+        );
+      }
+    }
 
     // Check user credits
     const { data: profile } = await supabase
@@ -82,7 +102,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 12; // Updated to include customer personas, PESTEL, CATWOE, and Porter's 5 Forces
+    const creditsNeeded = 12;
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
