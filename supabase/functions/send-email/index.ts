@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const BASE_URL = Deno.env.get("APP_BASE_URL") || "https://startup-scanner.lovable.app";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -76,13 +77,13 @@ export function welcomeEmail(name: string): { subject: string; html: string; tex
       <p>✅ <strong>Actionable insights</strong> to help you decide whether to pursue your idea</p>
     </div>
     <p>Ready to validate your first idea?</p>
-    <a href="https://startup-scanner.lovable.app/projects/new" class="cta">Validate Your Idea →</a>
+    <a href="${BASE_URL}/projects/new" class="cta">Validate Your Idea →</a>
     <p style="color:#71717a;font-size:13px">Need help getting started? Just reply to this email — we're here to help.</p>
   `;
   return {
     subject: "Welcome to Validifier — Let's validate your first idea",
     html: buildEmailHtml(body, "Welcome! Let's validate your first business idea."),
-    text: `Welcome to Validifier, ${firstName}!\n\nYou've joined thousands of founders who validate their business ideas before investing time and money.\n\n- AI-powered validation in 60 seconds\n- 12 strategic frameworks\n- Actionable insights\n\nReady? Visit https://startup-scanner.lovable.app/projects/new to validate your first idea.\n\n— The Validifier Team`,
+    text: `Welcome to Validifier, ${firstName}!\n\nYou've joined thousands of founders who validate their business ideas before investing time and money.\n\n- AI-powered validation in 60 seconds\n- 12 strategic frameworks\n- Actionable insights\n\nReady? Visit ${BASE_URL}/projects/new to validate your first idea.\n\n— The Validifier Team`,
   };
 }
 
@@ -134,13 +135,13 @@ export function creditsLowEmail(
       <p style="font-size:42px;font-weight:700;color:#ca8a04;margin:0">${remaining} / ${creditsTotal}</p>
     </div>
     <p>Upgrade your plan to get more credits and keep validating ideas without interruption.</p>
-    <a href="https://startup-scanner.lovable.app/pricing" class="cta">Upgrade Plan →</a>
+    <a href="${BASE_URL}/pricing" class="cta">Upgrade Plan →</a>
     <p style="color:#71717a;font-size:13px">Credits reset on the 1st of each month.</p>
   `;
   return {
     subject: "You're running low on AI credits",
     html: buildEmailHtml(body, `${remaining} credits remaining — upgrade to keep validating.`),
-    text: `You're running low on AI credits.\n\nYou've used ${creditsUsed} of ${creditsTotal} credits. ${remaining} remaining.\n\nUpgrade at https://startup-scanner.lovable.app/pricing\n\nCredits reset on the 1st of each month.\n\n— The Validifier Team`,
+    text: `You're running low on AI credits.\n\nYou've used ${creditsUsed} of ${creditsTotal} credits. ${remaining} remaining.\n\nUpgrade at ${BASE_URL}/pricing\n\nCredits reset on the 1st of each month.\n\n— The Validifier Team`,
   };
 }
 
