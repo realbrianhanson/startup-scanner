@@ -129,22 +129,28 @@ export const ActionPlanSection = ({ reportData }: Props) => {
 
                 {/* Actions as checklist */}
                 <div className="space-y-2.5">
-                  {safeArray(week.data.actions).map((action: any, i: number) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" strokeWidth={1.5} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-snug">{action.action}</p>
-                        {action.deliverable && (
-                          <Badge variant="secondary" className="text-[10px] mt-1.5 font-normal">
-                            📦 {action.deliverable}
-                          </Badge>
-                        )}
-                        {action.why && (
-                          <p className="text-xs text-muted-foreground mt-1">{action.why}</p>
-                        )}
+                  {safeArray(week.data.actions).map((action: any, i: number) => {
+                    const actionText = typeof action === 'string' ? action : (action.action || action.task || action.description || action.text || action.name || '');
+                    const deliverable = typeof action === 'object' ? action.deliverable : null;
+                    const why = typeof action === 'object' ? action.why : null;
+                    if (!actionText) return null;
+                    return (
+                      <div key={i} className="flex items-start gap-2.5">
+                        <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-snug">{actionText}</p>
+                          {deliverable && (
+                            <Badge variant="secondary" className="text-[10px] mt-1.5 font-normal">
+                              📦 {deliverable}
+                            </Badge>
+                          )}
+                          {why && (
+                            <p className="text-xs text-muted-foreground mt-1">{why}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
