@@ -178,20 +178,30 @@ export const ActionPlanSection = ({ reportData }: Props) => {
               <div className="hidden md:block absolute top-6 left-8 right-8 border-t border-dashed border-muted-foreground/30" />
 
               <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {milestones.map((ms: any, i: number) => (
-                  <div key={i} className="relative bg-card rounded-lg border border-border/50 p-4 text-center">
-                    {/* Dot on the line */}
-                    <div className="hidden md:block absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-background z-10" />
-                    <p className="text-sm font-semibold mb-2 mt-1">{ms.milestone}</p>
-                    <Badge variant="outline" className="text-[10px] mb-2">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {ms.target_date}
-                    </Badge>
-                    {ms.success_metric && (
-                      <p className="text-xs text-muted-foreground mt-1">{ms.success_metric}</p>
-                    )}
-                  </div>
-                ))}
+                {milestones.map((ms: any, i: number) => {
+                  const milestoneText = typeof ms === 'string' ? ms : (ms.milestone || ms.name || ms.title || ms.description || ms.text || '');
+                  const targetDate = typeof ms === 'object' ? (ms.target_date || ms.date || ms.timeline || ms.deadline || '') : '';
+                  const successMetric = typeof ms === 'object' ? (ms.success_metric || ms.metric || ms.kpi || '') : '';
+                  
+                  return (
+                    <div key={i} className="relative bg-card rounded-lg border border-border/50 p-4 text-center">
+                      {/* Dot on the line */}
+                      <div className="hidden md:block absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-background z-10" />
+                      {milestoneText && (
+                        <p className="text-sm font-semibold text-foreground mb-2 mt-1">{milestoneText}</p>
+                      )}
+                      {targetDate && (
+                        <Badge variant="outline" className="text-[10px] mb-2">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {targetDate}
+                        </Badge>
+                      )}
+                      {successMetric && (
+                        <p className="text-xs text-muted-foreground mt-1">{successMetric}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </>
