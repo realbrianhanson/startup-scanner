@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,7 @@ const ViewReport = () => {
     try {
       const { error } = await supabase.functions.invoke("generate-validation-report", { body: { project_id: id, regenerate } });
       if (error) throw error;
+      trackEvent('report_generation_started', { project_id: id, regenerate });
       toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
     } catch (error: any) {
       toast.error(error.message || "Failed to start report generation");

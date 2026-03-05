@@ -5,6 +5,7 @@ import { Zap, Target, Users, Check, ArrowRight, BarChart3, Globe, Lightbulb, Sta
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { trackEvent } from "@/lib/analytics";
 
 const AnimatedCounter = ({ target, suffix = "" }: { target: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
@@ -49,6 +50,7 @@ const Landing = () => {
 
   useEffect(() => {
     document.title = "Validifier - AI Business Idea Validation in 60 Seconds";
+    trackEvent('landing_page_view');
 
     // JSON-LD structured data
     const script = document.createElement("script");
@@ -208,7 +210,7 @@ const Landing = () => {
             <div className="animate-fade-up delay-400">
               <Button
                 size="lg"
-                onClick={() => navigate("/auth")}
+                onClick={() => { trackEvent('cta_click', { button: 'hero_validate', page: 'landing' }); navigate("/auth"); }}
                 className="text-lg px-10 py-7 shadow-large animate-pulse-glow"
               >
                 Validate My Idea Free

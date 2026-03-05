@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, BarChart3, ArrowLeft, Lock, CreditCard, Zap, Quote } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
 
@@ -108,6 +109,7 @@ const Auth = () => {
       if (view === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        trackEvent('sign_in');
         toast.success("Welcome back!");
       } else if (view === "signup") {
         const { error } = await supabase.auth.signUp({
@@ -122,6 +124,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        trackEvent('sign_up', { method: 'email', has_promo: !!promoCode.trim() });
         toast.success("Account created! Welcome to Validifier.");
       }
     } catch (error: any) {

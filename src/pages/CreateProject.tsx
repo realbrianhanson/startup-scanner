@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { trackEvent } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -214,6 +215,7 @@ const CreateProject = () => {
       const { data: project, error: projectError } = await supabase.from("projects").insert(projectData).select().single();
       if (projectError) throw projectError;
       toast.success("Project created! Starting validation analysis...");
+      trackEvent('project_created', { industry, input_method: useWebsite ? 'website' : 'describe' });
       navigate(`/projects/${project.id}/report`);
     } catch (error: any) {
       toast.error(error.message || "Failed to create project");
