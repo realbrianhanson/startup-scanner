@@ -38,10 +38,7 @@ const Settings = () => {
   const loadData = async () => {
     try {
       const { data: { user: userData } } = await supabase.auth.getUser();
-      if (!userData) {
-        navigate("/auth");
-        return;
-      }
+      if (!userData) return;
 
       setUser(userData);
 
