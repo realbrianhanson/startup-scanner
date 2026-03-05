@@ -61,7 +61,7 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 
-import { ValidationScoreRing } from "@/components/report/ValidationScoreRing";
+import { ValidationScoreDisplay } from "@/components/report/ValidationScoreDisplay";
 import { GenerationExperience } from "@/components/report/GenerationExperience";
 import { ExecutiveSummarySection } from "@/components/report/ExecutiveSummarySection";
 import { MarketAnalysisSection } from "@/components/report/MarketAnalysisSection";
@@ -234,7 +234,7 @@ const ViewReport = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-muted-foreground">Loading project...</p>
@@ -245,7 +245,7 @@ const ViewReport = () => {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
           <h2 className="text-2xl font-bold">Project Not Found</h2>
@@ -264,16 +264,15 @@ const ViewReport = () => {
   const isGenerating = project?.status === "analyzing" || generating;
 
   return (
-    <div className="min-h-screen bg-gradient-subtle animate-fade-in" style={{ opacity: 1 }}>
-      <nav className="glass-nav sticky top-0 z-50">
+    <div className="min-h-screen bg-background" style={{ opacity: 1 }}>
+      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div
-              className="flex items-center space-x-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+              className="flex items-center space-x-2 cursor-pointer"
               onClick={() => navigate("/dashboard")}
             >
-              <BarChart3 className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold gradient-text">Validifier</span>
+              <span className="font-serif text-xl">Validifier</span>
             </div>
             <div className="flex items-center space-x-2">
               <ThemeToggle />
@@ -300,7 +299,7 @@ const ViewReport = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              <Button variant="ghost" onClick={() => navigate("/dashboard")} className="animate-fade-down">
+              <Button variant="ghost" onClick={() => navigate("/dashboard")}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Dashboard
               </Button>
@@ -317,40 +316,42 @@ const ViewReport = () => {
             </div>
           )}
           
-          <div className="flex-1 max-w-4xl space-y-8">
+          <div className="flex-1 max-w-3xl">
             {/* Header */}
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-4xl font-bold">{project?.name}</h1>
-                    {project?.status === "complete" && (
-                      project?.report_quality === "premium" ? (
-                        <Badge className="bg-gradient-to-r from-primary to-secondary text-primary-foreground border-0 gap-1">
-                          <Sparkles className="h-3 w-3" /> Premium Analysis
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1">
-                          <Zap className="h-3 w-3" /> Standard Analysis
-                        </Badge>
-                      )
-                    )}
-                  </div>
-                  <p className="text-muted-foreground">
-                    {project?.industry} • Created {new Date(project?.created_at).toLocaleDateString()}
-                  </p>
+            <div className="mb-12">
+              <div className="space-y-2 mb-8">
+                <div className="flex items-center gap-3">
+                  <h1 className="font-serif text-3xl md:text-4xl tracking-tight">{project?.name}</h1>
+                  {project?.status === "complete" && (
+                    project?.report_quality === "premium" ? (
+                      <Badge variant="secondary" className="gap-1 text-[10px]">
+                        <Sparkles className="h-3 w-3" /> Premium
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 text-[10px]">
+                        Standard
+                      </Badge>
+                    )
+                  )}
                 </div>
-                {project?.status === "complete" && (
-                  <ValidationScoreRing score={validationScore} size="lg" />
-                )}
+                <p className="text-sm text-muted-foreground">
+                  {project?.industry} · {new Date(project?.created_at).toLocaleDateString()}
+                </p>
               </div>
+
+              {/* Score Display — large typography, no ring */}
+              {project?.status === "complete" && (
+                <ValidationScoreDisplay
+                  score={validationScore}
+                  justification={reportData.executive_summary?.score_justification}
+                />
+              )}
 
               {/* Upsell banner for standard reports */}
               {project?.status === "complete" && project?.report_quality !== "premium" && isOwner && userTier !== "free" && (
-                <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-5 py-3">
-                  <Sparkles className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex items-center gap-3 border-l-2 border-l-primary pl-4 py-3 mb-8">
                   <p className="text-sm text-muted-foreground flex-1">
-                    Want deeper insights? Regenerate with <span className="font-semibold text-foreground">Premium AI</span> for more specific competitors, detailed financials, and strategic recommendations.
+                    Want deeper insights? Regenerate with <span className="font-medium text-foreground">Premium AI</span>.
                   </p>
                   <Button
                     size="sm"
@@ -364,10 +365,10 @@ const ViewReport = () => {
                 </div>
               )}
               {project?.status === "complete" && project?.report_quality !== "premium" && isOwner && userTier === "free" && (
-                <div className="flex items-center gap-3 bg-muted/50 border border-border rounded-xl px-5 py-3">
-                  <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="flex items-center gap-3 border-l-2 border-l-muted-foreground/30 pl-4 py-3 mb-8">
+                  <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
                   <p className="text-sm text-muted-foreground flex-1">
-                    Unlock <span className="font-semibold text-foreground">Premium AI reports</span> with deeper analysis, real competitor names, and detailed financials.
+                    Unlock <span className="font-medium text-foreground">Premium AI reports</span> with deeper analysis.
                   </p>
                   <Button
                     size="sm"
@@ -414,9 +415,9 @@ const ViewReport = () => {
               <InlineReportCTA />
             )}
 
-            {/* Report Sections */}
+            {/* Report Sections — continuous document */}
             {project?.status === "complete" && (
-              <div className="space-y-6">
+              <div>
                 <ReportSectionErrorBoundary sectionName="Market Analysis">
                   <MarketAnalysisSection reportData={reportData} />
                 </ReportSectionErrorBoundary>
