@@ -14,6 +14,18 @@ const corsHeaders = {
 const PREMIUM_MODEL = Deno.env.get("PREMIUM_MODEL") || "google/gemini-3.1-pro-preview";
 const FAST_MODEL = Deno.env.get("FAST_MODEL") || "google/gemini-3-flash-preview";
 
+// Cost estimation for margin tracking (per 1M output tokens, March 2026 pricing)
+function estimateCost(model: string, outputTokens: number): number {
+  const outputPricing: Record<string, number> = {
+    "google/gemini-3.1-pro-preview": 12.00,
+    "google/gemini-3-flash-preview": 3.00,
+    "google/gemini-3.1-flash-lite-preview": 1.50,
+    "google/gemini-2.5-flash": 0.30,
+  };
+  const pricePerMillion = outputPricing[model] || 3.00;
+  return (outputTokens * pricePerMillion) / 1_000_000;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -316,14 +328,20 @@ serve(async (req) => {
       })
       .eq("id", project.user_id);
 
-    // Log AI usage
+    // Log AI usage with cost tracking
+    const estimatedPremiumTokens = quality === 'premium' ? 25000 : 0;
+    const estimatedFastTokens = quality === 'premium' ? 15000 : 40000;
+    const estimatedTotalCost = estimateCost(sectionPremiumModel, estimatedPremiumTokens) + estimateCost(sectionFastModel, estimatedFastTokens);
+
     await supabase.from("ai_usage_logs").insert({
       user_id: project.user_id,
       project_id: project_id,
       operation_type: "report_generation",
       model_used: quality === 'premium' ? "gemini-3.1-pro + gemini-3-flash (hybrid)" : "gemini-3-flash (standard)",
-      tokens_used: 15000,
-      cost_cents: 50,
+      model_name: `Premium: ${sectionPremiumModel}, Fast: ${sectionFastModel}`,
+      tokens_used: estimatedPremiumTokens + estimatedFastTokens,
+      cost_cents: Math.ceil(estimatedTotalCost * 100),
+      estimated_cost_usd: estimatedTotalCost,
     });
 
     // Send report-complete email
