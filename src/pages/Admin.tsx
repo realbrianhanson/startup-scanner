@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp } from "lucide-react";
+import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp, Star, MessageSquare } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -39,6 +39,10 @@ const Admin = () => {
   const [projectsMonth, setProjectsMonth] = useState(0);
   const [topEvents, setTopEvents] = useState<EventCount[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Feedback state
+  const [feedbackList, setFeedbackList] = useState<any[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -184,6 +188,22 @@ const Admin = () => {
     }
   };
 
+  const loadFeedback = async () => {
+    setFeedbackLoading(true);
+    try {
+      const { data } = await supabase
+        .from("report_feedback" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setFeedbackList(data || []);
+    } catch {
+      toast.error("Failed to load feedback");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -228,6 +248,10 @@ const Admin = () => {
             <TabsTrigger value="analytics" onClick={loadAnalytics}>
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="feedback" onClick={loadFeedback}>
+              <Star className="h-4 w-4 mr-2" />
+              Feedback
             </TabsTrigger>
           </TabsList>
 
@@ -416,6 +440,49 @@ const Admin = () => {
                       ))}
                     </TableBody>
                   </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Feedback Tab */}
+          <TabsContent value="feedback" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Recent Feedback
+                </CardTitle>
+                <CardDescription>Report feedback and ratings from users</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {feedbackLoading ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Loading feedback...</p>
+                ) : feedbackList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No feedback yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {feedbackList.map((fb: any) => (
+                      <div key={fb.id} className="p-4 border rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <Star key={s} className={`h-4 w-4 ${s <= fb.rating ? 'fill-primary text-primary' : 'text-muted-foreground/20'}`} />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(fb.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {fb.comment && (
+                          <p className="text-sm text-foreground/80">{fb.comment}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Project: {fb.project_id?.slice(0, 8)}...
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
