@@ -11,6 +11,7 @@ import {
   Lightbulb,
   FileText,
   Sparkles,
+  ShieldAlert,
   Rocket,
 } from "lucide-react";
 
@@ -41,6 +42,7 @@ export function ReportNavigation({ reportData }: ReportNavigationProps) {
     ...(reportData.go_to_market_strategy ? [{ id: "go-to-market", label: "Go-to-Market", icon: <Target className="h-4 w-4" /> }] : []),
     ...(reportData.usp_analysis ? [{ id: "usp-analysis", label: "USP Analysis", icon: <Zap className="h-4 w-4" /> }] : []),
     ...(reportData.financial_basics ? [{ id: "financial-basics", label: "Financial Basics", icon: <DollarSign className="h-4 w-4" /> }] : []),
+    ...(reportData.risk_matrix ? [{ id: "risk-matrix", label: "Risk Matrix", icon: <ShieldAlert className="h-4 w-4" /> }] : []),
     ...(reportData.action_plan ? [{ id: "action-plan", label: "Your Action Plan", icon: <Rocket className="h-4 w-4" /> }] : []),
   ];
 

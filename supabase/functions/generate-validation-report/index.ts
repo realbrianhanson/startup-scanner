@@ -102,7 +102,7 @@ serve(async (req) => {
       throw new Error("User profile not found");
     }
 
-    const creditsNeeded = 14;
+    const creditsNeeded = 15;
     if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
       throw new Error("Insufficient AI credits");
     }
@@ -227,10 +227,17 @@ serve(async (req) => {
     const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
 
-    const actionPlan = await generateActionPlan(project, LOVABLE_API_KEY, {
+    const riskMatrix = await generateRiskMatrix(project, LOVABLE_API_KEY, {
       executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
       strategicFrameworks, porterFiveForces, pestelAnalysis, catwoeAnalysis,
       pathToMvp, goToMarketStrategy, uspAnalysis, gameChangingIdea, financialBasics
+    });
+    currentStatus = await updateSectionStatus("risk_matrix", riskMatrix, currentStatus);
+
+    const actionPlan = await generateActionPlan(project, LOVABLE_API_KEY, {
+      executiveSummary, marketAnalysis, customerPersonas, competitiveLandscape,
+      strategicFrameworks, porterFiveForces, pestelAnalysis, catwoeAnalysis,
+      pathToMvp, goToMarketStrategy, uspAnalysis, gameChangingIdea, financialBasics, riskMatrix
     });
     currentStatus = await updateSectionStatus("action_plan", actionPlan, currentStatus);
 
@@ -1013,6 +1020,54 @@ CRITICAL: Return ONLY valid JSON. No markdown, no comments.
       projections: { year1: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year2: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year3: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" } },
       funding_recommendation: "Analysis pending",
       break_even_estimate: "Analysis pending"
+    };
+  }
+}
+
+async function generateRiskMatrix(project: any, apiKey: string, allSections: Record<string, any>) {
+  const condensed = Object.entries(allSections)
+    .map(([key, val]) => `${key}: ${JSON.stringify(val).slice(0, 600)}`)
+    .join('\n\n');
+
+  const prompt = `Based on all the analysis for ${project.name}:
+
+${condensed}
+
+Create a comprehensive risk matrix that consolidates ALL risks identified across the market analysis, competitive landscape, PESTEL analysis, and strategic frameworks. For each risk, provide a specific mitigation strategy.
+
+CRITICAL: Return ONLY valid JSON. No markdown, no comments.
+
+{
+  "critical_risks": [
+    {
+      "risk": "Specific risk description",
+      "category": "Market/Competition/Financial/Operational/Regulatory",
+      "probability": "High/Medium/Low",
+      "impact": "High/Medium/Low",
+      "source_section": "Which analysis section identified this",
+      "mitigation_strategy": "Specific, actionable mitigation steps (2-3 sentences)",
+      "early_warning_sign": "What to watch for that signals this risk is materializing",
+      "contingency_plan": "What to do if this risk becomes reality"
+    }
+  ],
+  "moderate_risks": [same structure as above],
+  "low_risks": [same structure as above],
+  "overall_risk_assessment": "2-3 sentences on the overall risk profile of this business — is it high-risk/high-reward, or low-risk/steady-growth?",
+  "biggest_unknown": "The single biggest uncertainty that the founder should resolve ASAP through research or experimentation"
+}
+
+Include 2-4 risks in each category (critical, moderate, low). Be specific to THIS business.`;
+
+  const result = await callAI(prompt, apiKey, 4000);
+  try {
+    return JSON.parse(result);
+  } catch {
+    return {
+      critical_risks: [],
+      moderate_risks: [],
+      low_risks: [],
+      overall_risk_assessment: "Risk analysis pending",
+      biggest_unknown: "Analysis pending"
     };
   }
 }
