@@ -1,57 +1,48 @@
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Globe, DollarSign, Users, Zap, FileText } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { toMarkdownString } from "@/lib/reportHelpers";
+import { ReportSectionCard } from "./ReportSectionCard";
 
 interface Props {
   reportData: any;
 }
 
-const PestelFactor = ({ icon, label, content }: { icon: React.ReactNode; label: string; content: any }) => {
-  if (!content) return null;
-  return (
-    <div>
-      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-        {icon}
-        {label}
-      </h3>
-      <Card className="p-4 bg-muted/30">
-        <MarkdownContent content={toMarkdownString(content)} />
-      </Card>
-    </div>
-  );
-};
+const PESTEL_ITEMS = [
+  { key: "political", label: "Political", icon: <span className="text-lg">🏛️</span>, color: "border-l-primary" },
+  { key: "economic", label: "Economic", icon: <DollarSign className="h-4 w-4 text-success" />, color: "border-l-success" },
+  { key: "social", label: "Social", icon: <Users className="h-4 w-4 text-secondary" />, color: "border-l-secondary" },
+  { key: "technological", label: "Technological", icon: <Zap className="h-4 w-4 text-warning" />, color: "border-l-warning" },
+  { key: "environmental", label: "Environmental", icon: <span className="text-lg">🌱</span>, color: "border-l-success" },
+  { key: "legal", label: "Legal", icon: <FileText className="h-4 w-4 text-primary" />, color: "border-l-primary" },
+] as const;
 
 export const PestelAnalysisSection = ({ reportData }: Props) => {
   if (!reportData.pestel_analysis) return null;
-
   const p = reportData.pestel_analysis;
 
   return (
-    <Collapsible>
-      <Card id="pestel-analysis" className="overflow-hidden border-2 hover:border-primary/20 transition-all scroll-mt-28">
-        <CollapsibleTrigger className="w-full p-6 hover:bg-muted/50 transition-colors">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Globe className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">PESTEL Analysis</h2>
+    <ReportSectionCard
+      id="pestel-analysis"
+      icon={<Globe className="h-5 w-5 text-primary" />}
+      title="PESTEL Analysis"
+    >
+      <div className="space-y-4">
+        {PESTEL_ITEMS.map((item, idx) => {
+          const content = p[item.key];
+          if (!content) return null;
+          return (
+            <div key={item.key}>
+              {idx > 0 && <div className="border-t border-border/50 mb-4" />}
+              <div className={`rounded-lg border-l-[3px] ${item.color} bg-muted/20 p-4`}>
+                <h3 className="font-semibold flex items-center gap-2 mb-2">
+                  {item.icon} {item.label}
+                </h3>
+                <MarkdownContent content={toMarkdownString(content)} />
+              </div>
             </div>
-            <Badge variant="secondary">Expand</Badge>
-          </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="p-6 pt-0">
-          <div className="space-y-6">
-            <PestelFactor icon={<span className="text-xl">🏛️</span>} label="Political Factors" content={p.political} />
-            <PestelFactor icon={<DollarSign className="h-5 w-5 text-primary" />} label="Economic Factors" content={p.economic} />
-            <PestelFactor icon={<Users className="h-5 w-5 text-primary" />} label="Social Factors" content={p.social} />
-            <PestelFactor icon={<Zap className="h-5 w-5 text-primary" />} label="Technological Factors" content={p.technological} />
-            <PestelFactor icon={<span className="text-xl">🌱</span>} label="Environmental Factors" content={p.environmental} />
-            <PestelFactor icon={<FileText className="h-5 w-5 text-primary" />} label="Legal Factors" content={p.legal} />
-          </div>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+          );
+        })}
+      </div>
+    </ReportSectionCard>
   );
 };

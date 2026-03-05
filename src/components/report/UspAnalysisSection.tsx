@@ -1,6 +1,6 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Lightbulb, Target, Sparkles, Zap, CheckCircle2, AlertCircle } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { ReportSectionCard } from "./ReportSectionCard";
 
 interface Props {
   reportData: any;
@@ -8,216 +8,217 @@ interface Props {
 
 export const UspAnalysisSection = ({ reportData }: Props) => {
   if (!reportData.usp_analysis) return null;
-
   const usp = reportData.usp_analysis;
 
   return (
-    <Card>
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="usp">
-          <AccordionTrigger className="px-6 hover:no-underline">
-            <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-6 w-6" />
-                Unique Selling Proposition (USP)
-              </CardTitle>
-            </CardHeader>
-          </AccordionTrigger>
-          <AccordionContent>
-            <CardContent className="space-y-6">
-              {/* Recommended USP */}
-              <div className="bg-primary/5 p-4 rounded-lg border-l-4 border-primary">
-                <h4 className="font-semibold mb-2">Recommended USP</h4>
-                <p className="text-lg font-medium">{usp.recommended_usp}</p>
+    <ReportSectionCard
+      id="usp-analysis"
+      icon={<Lightbulb className="h-5 w-5 text-primary" />}
+      title="Unique Selling Proposition (USP)"
+    >
+      {/* Recommended USP */}
+      <div className="rounded-xl bg-primary/[0.06] border-l-[3px] border-l-primary border border-primary/20 p-5">
+        <h4 className="font-semibold mb-2">Recommended USP</h4>
+        <p className="text-lg font-medium">{usp.recommended_usp}</p>
+      </div>
+
+      {/* Current Positioning */}
+      {usp.current_positioning && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 rounded-lg bg-primary/[0.08]"><Target className="w-4 h-4 text-primary" /></div>
+              <h4 className="font-semibold text-lg">Current Positioning</h4>
+            </div>
+            <p className="mb-4 text-muted-foreground leading-relaxed">{usp.current_positioning.summary}</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="rounded-xl bg-success/[0.06] border border-success/20 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle2 className="w-4 h-4 text-success" />
+                  <p className="font-medium text-success">Strengths</p>
+                </div>
+                <ul className="space-y-2">
+                  {usp.current_positioning.strengths?.map((s: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-success mt-2 shrink-0" />{s}
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              {/* Current Positioning */}
-              {usp.current_positioning && (
-                <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-6 border border-border/50">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Target className="w-4 h-4 text-primary" />
-                    </div>
-                    <h4 className="font-semibold text-lg">Current Positioning</h4>
-                  </div>
-                  <p className="mb-5 text-muted-foreground leading-relaxed">{usp.current_positioning.summary}</p>
-                  <div className="grid md:grid-cols-2 gap-5">
-                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        <p className="font-medium text-emerald-600 dark:text-emerald-400">Strengths</p>
-                      </div>
-                      <ul className="space-y-2">
-                        {usp.current_positioning.strengths?.map((strength: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                            <span>{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <AlertCircle className="w-4 h-4 text-amber-500" />
-                        <p className="font-medium text-amber-600 dark:text-amber-400">Gaps to Address</p>
-                      </div>
-                      <ul className="space-y-2">
-                        {usp.current_positioning.gaps?.map((gap: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
-                            <span>{gap}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+              <div className="rounded-xl bg-warning/[0.06] border border-warning/20 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-4 h-4 text-warning" />
+                  <p className="font-medium text-warning">Gaps to Address</p>
                 </div>
-              )}
+                <ul className="space-y-2">
+                  {usp.current_positioning.gaps?.map((g: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-warning mt-2 shrink-0" />{g}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
-              {/* Key Differentiators */}
-              {usp.key_differentiators && (
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                    </div>
-                    <h4 className="font-semibold text-lg">Key Differentiators</h4>
-                  </div>
-                  <div className="grid gap-4">
-                    {usp.key_differentiators.map((diff: any, i: number) => (
-                      <div key={i} className="group relative bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-xl p-5 border border-primary/10 hover:border-primary/30 transition-all duration-300">
-                        <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                          {i + 1}
-                        </div>
-                        <div className="ml-12">
-                          <p className="font-semibold text-foreground mb-1">{diff.differentiator}</p>
-                          <p className="text-sm text-muted-foreground mb-3">{diff.description}</p>
-                          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-xs font-medium text-primary">
-                            <Zap className="w-3 h-3" />
-                            Impact: {diff.impact}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Competitive Advantages */}
-              {usp.competitive_advantages && (
-                <div>
-                  <h4 className="font-semibold mb-3">Competitive Advantages</h4>
-                  <div className="grid gap-3">
-                    {usp.competitive_advantages.map((adv: any, i: number) => (
-                      <div key={i} className="p-3 bg-muted/50 rounded-lg">
-                        <p className="font-medium">{adv.advantage}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{adv.description}</p>
-                        <p className="text-sm mt-2 text-primary">📊 {adv.quantifiable_benefit}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Value Proposition */}
-              {usp.value_proposition && (
-                <div>
-                  <h4 className="font-semibold mb-3">Value Proposition Components</h4>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-blue-500/10 rounded">
-                      <p className="font-medium text-blue-700 dark:text-blue-300">What</p>
-                      <p className="text-sm">{usp.value_proposition.what}</p>
-                    </div>
-                    <div className="p-3 bg-green-500/10 rounded">
-                      <p className="font-medium text-green-700 dark:text-green-300">How</p>
-                      <p className="text-sm">{usp.value_proposition.how}</p>
-                    </div>
-                    <div className="p-3 bg-purple-500/10 rounded">
-                      <p className="font-medium text-purple-700 dark:text-purple-300">Why</p>
-                      <p className="text-sm">{usp.value_proposition.why}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Target Alignment */}
-              {usp.target_alignment && (
-                <div>
-                  <h4 className="font-semibold mb-3">Target Audience Alignment</h4>
-                  <p className="mb-3"><span className="font-medium">Primary Audience:</span> {usp.target_alignment.primary_audience}</p>
-                  <div className="grid md:grid-cols-2 gap-4">
+      {/* Key Differentiators */}
+      {usp.key_differentiators && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 rounded-lg bg-primary/[0.08]"><Sparkles className="w-4 h-4 text-primary" /></div>
+              <h4 className="font-semibold text-lg">Key Differentiators</h4>
+            </div>
+            <div className="space-y-3">
+              {usp.key_differentiators.map((diff: any, i: number) => (
+                <div key={i} className="rounded-xl border bg-gradient-to-r from-primary/[0.03] to-transparent p-4 hover:border-primary/20 transition-all">
+                  <div className="flex items-start gap-3">
+                    <span className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">{i + 1}</span>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Emotional Triggers:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        {usp.target_alignment.emotional_triggers?.map((trigger: string, i: number) => (
-                          <li key={i}>{trigger}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Rational Benefits:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        {usp.target_alignment.rational_benefits?.map((benefit: string, i: number) => (
-                          <li key={i}>{benefit}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Proof Points */}
-              {usp.proof_points && (
-                <div>
-                  <h4 className="font-semibold mb-3">Proof Points</h4>
-                  <div className="space-y-3">
-                    {usp.proof_points.map((point: any, i: number) => (
-                      <div key={i} className="border rounded-lg p-3">
-                        <p className="font-medium">{point.claim}</p>
-                        <p className="text-sm text-muted-foreground mt-1"><span className="font-medium">Evidence:</span> {point.evidence}</p>
-                        <p className="text-sm mt-1"><span className="font-medium">Credibility:</span> {point.credibility}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Communication Guidelines */}
-              {usp.communication_guidelines && (
-                <div>
-                  <h4 className="font-semibold mb-3">Communication Guidelines</h4>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Elevator Pitch (30 seconds):</p>
-                      <p className="p-3 bg-muted/50 rounded">{usp.communication_guidelines.elevator_pitch}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Tagline Options:</p>
-                      <div className="space-y-2">
-                        {usp.communication_guidelines.tagline_options?.map((tagline: string, i: number) => (
-                          <p key={i} className="p-2 bg-primary/5 rounded text-center font-medium">{tagline}</p>
-                        ))}
+                      <p className="font-semibold">{diff.differentiator}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{diff.description}</p>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/[0.08] rounded-full text-xs font-medium text-primary mt-2">
+                        <Zap className="w-3 h-3" /> Impact: {diff.impact}
                       </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Key Messages:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        {usp.communication_guidelines.key_messages?.map((message: string, i: number) => (
-                          <li key={i}>{message}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Tone:</p>
-                      <p>{usp.communication_guidelines.tone}</p>
-                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Competitive Advantages */}
+      {usp.competitive_advantages && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Competitive Advantages</h4>
+            <div className="space-y-3">
+              {usp.competitive_advantages.map((adv: any, i: number) => (
+                <div key={i} className="rounded-xl border p-4">
+                  <p className="font-medium">{adv.advantage}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{adv.description}</p>
+                  <p className="text-sm mt-2 text-primary">📊 {adv.quantifiable_benefit}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Value Proposition */}
+      {usp.value_proposition && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Value Proposition Components</h4>
+            <div className="space-y-3">
+              {[
+                { key: "what", label: "What", bg: "bg-primary/[0.05]", text: "text-primary" },
+                { key: "how", label: "How", bg: "bg-success/[0.05]", text: "text-success" },
+                { key: "why", label: "Why", bg: "bg-secondary/[0.05]", text: "text-secondary" },
+              ].map((item) => (
+                <div key={item.key} className={`rounded-lg ${item.bg} p-3`}>
+                  <p className={`font-medium ${item.text} text-sm`}>{item.label}</p>
+                  <p className="text-sm mt-1">{(usp.value_proposition as any)[item.key]}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Target Alignment */}
+      {usp.target_alignment && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Target Audience Alignment</h4>
+            <p className="mb-3 text-sm"><span className="font-medium">Primary Audience:</span> {usp.target_alignment.primary_audience}</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-semibold mb-2">Emotional Triggers:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {usp.target_alignment.emotional_triggers?.map((t: string, i: number) => (
+                    <Badge key={i} variant="outline" className="text-[10px] bg-secondary/[0.05]">{t}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold mb-2">Rational Benefits:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {usp.target_alignment.rational_benefits?.map((b: string, i: number) => (
+                    <Badge key={i} variant="outline" className="text-[10px] bg-primary/[0.05]">{b}</Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Proof Points */}
+      {usp.proof_points && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Proof Points</h4>
+            <div className="space-y-3">
+              {usp.proof_points.map((point: any, i: number) => (
+                <div key={i} className="rounded-xl border p-4">
+                  <p className="font-medium">{point.claim}</p>
+                  <p className="text-sm text-muted-foreground mt-1"><span className="font-medium">Evidence:</span> {point.evidence}</p>
+                  <p className="text-sm mt-1"><span className="font-medium">Credibility:</span> {point.credibility}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Communication Guidelines */}
+      {usp.communication_guidelines && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Communication Guidelines</h4>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold mb-1">Elevator Pitch (30 seconds):</p>
+                <p className="p-3 rounded-lg bg-muted/30 text-sm italic">{usp.communication_guidelines.elevator_pitch}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold mb-2">Tagline Options:</p>
+                <div className="space-y-2">
+                  {usp.communication_guidelines.tagline_options?.map((t: string, i: number) => (
+                    <p key={i} className="p-2.5 bg-primary/[0.04] rounded-lg text-center font-medium text-sm">{t}</p>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold mb-2">Key Messages:</p>
+                <ul className="space-y-1 text-sm">
+                  {usp.communication_guidelines.key_messages?.map((m: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2"><span className="text-primary">•</span> {m}</li>
+                  ))}
+                </ul>
+              </div>
+              {usp.communication_guidelines.tone && (
+                <div>
+                  <p className="text-xs font-semibold mb-1">Tone:</p>
+                  <p className="text-sm">{usp.communication_guidelines.tone}</p>
+                </div>
               )}
-            </CardContent>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </Card>
+            </div>
+          </div>
+        </>
+      )}
+    </ReportSectionCard>
   );
 };
