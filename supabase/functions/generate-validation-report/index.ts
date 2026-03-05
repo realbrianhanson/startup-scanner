@@ -176,41 +176,47 @@ serve(async (req) => {
 
     let currentStatus = { ...report.generation_status };
 
-    // Generate sections sequentially to show progress
+    // Generate sections sequentially with context chaining
+    const ctx: Record<string, any> = {};
+
     const executiveSummary = await generateExecutiveSummary(project, LOVABLE_API_KEY);
+    ctx.executiveSummary = executiveSummary;
     currentStatus = await updateSectionStatus("executive_summary", executiveSummary, currentStatus);
 
-    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY);
+    const marketAnalysis = await generateMarketAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
+    ctx.marketAnalysis = marketAnalysis;
     currentStatus = await updateSectionStatus("market_analysis", marketAnalysis, currentStatus);
 
-    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY);
+    const customerPersonas = await generateCustomerPersonas(project, LOVABLE_API_KEY, buildContext(ctx));
+    ctx.customerPersonas = customerPersonas;
     currentStatus = await updateSectionStatus("customer_personas", customerPersonas, currentStatus);
 
-    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY);
+    const competitiveLandscape = await generateCompetitiveLandscape(project, LOVABLE_API_KEY, buildContext(ctx));
+    ctx.competitiveLandscape = competitiveLandscape;
     currentStatus = await updateSectionStatus("competitive_landscape", competitiveLandscape, currentStatus);
 
-    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY);
+    const strategicFrameworks = await generateStrategicFrameworks(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("strategic_frameworks", strategicFrameworks, currentStatus);
 
-    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY);
+    const porterFiveForces = await generatePorterFiveForces(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("porter_five_forces", porterFiveForces, currentStatus);
 
-    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY);
+    const pestelAnalysis = await generatePestelAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("pestel_analysis", pestelAnalysis, currentStatus);
 
-    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY);
+    const catwoeAnalysis = await generateCatwoeAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("catwoe_analysis", catwoeAnalysis, currentStatus);
 
-    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY);
+    const pathToMvp = await generatePathToMvp(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("path_to_mvp", pathToMvp, currentStatus);
 
-    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY);
+    const goToMarketStrategy = await generateGoToMarketStrategy(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("go_to_market_strategy", goToMarketStrategy, currentStatus);
 
-    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY);
+    const uspAnalysis = await generateUSPAnalysis(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("usp_analysis", uspAnalysis, currentStatus);
 
-    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY);
+    const financialBasics = await generateFinancialBasics(project, LOVABLE_API_KEY, buildContext(ctx));
     currentStatus = await updateSectionStatus("financial_basics", financialBasics, currentStatus);
 
     // Calculate validation score
@@ -432,13 +438,52 @@ function balanceBrackets(jsonStr: string): string {
   return result;
 }
 
+function buildContext(previousSections: Record<string, any>): string {
+  const parts: string[] = [];
+
+  if (previousSections.executiveSummary) {
+    parts.push(`PREVIOUS ANALYSIS - Executive Summary: Score ${previousSections.executiveSummary.score}/100. Key strengths: ${previousSections.executiveSummary.strengths?.slice(0, 3).join(', ')}. Key concerns: ${previousSections.executiveSummary.concerns?.slice(0, 3).join(', ')}.`);
+  }
+  if (previousSections.marketAnalysis) {
+    parts.push(`PREVIOUS ANALYSIS - Market: TAM ${previousSections.marketAnalysis.tam}. Growth: ${previousSections.marketAnalysis.growth_rate}. Key trends: ${previousSections.marketAnalysis.trends?.slice(0, 3).join(', ')}.`);
+  }
+  if (previousSections.customerPersonas) {
+    const persona1 = previousSections.customerPersonas[0];
+    if (persona1) {
+      parts.push(`PREVIOUS ANALYSIS - Primary Customer: ${persona1.name}. Pain: ${persona1.pain_points?.[0]?.pain || 'identified'}. Dream outcome: ${persona1.dream_outcome || 'identified'}.`);
+    }
+  }
+  if (previousSections.competitiveLandscape) {
+    const comps = previousSections.competitiveLandscape.direct_competitors;
+    if (comps?.length) {
+      parts.push(`PREVIOUS ANALYSIS - Competitors: ${comps.slice(0, 3).map((c: any) => c.name || c).join(', ')}. Advantages: ${previousSections.competitiveLandscape.competitive_advantages?.slice(0, 2).join(', ')}.`);
+    }
+  }
+
+  return parts.length > 0 ? '\n\nCONTEXT FROM PRIOR ANALYSIS:\n' + parts.join('\n') : '';
+}
+
+const SYSTEM_PROMPT = `You are a world-class business strategist combining McKinsey analytical rigor with Y Combinator startup pragmatism. Your analysis must be:
+
+1. SPECIFIC — Never give generic advice. Every insight must be tailored to THIS exact business, THIS exact industry, THIS exact market. If analyzing a dog-walking app in Austin, mention Austin's pet ownership rates, local competitors by name, and neighborhood-specific strategies.
+
+2. BRUTALLY HONEST — If an idea has fatal flaws, say so clearly. Founders need truth, not encouragement. A score of 30 with clear reasoning is more valuable than an inflated 70.
+
+3. ACTIONABLE — Every section must answer 'so what should I do about this?' Don't just identify trends — explain how to exploit them. Don't just list risks — explain how to mitigate them.
+
+4. DATA-GROUNDED — Use real market data, real competitor names, real pricing benchmarks, and realistic financial estimates. When you don't have exact data, give calibrated ranges with your confidence level.
+
+5. CONTRARIAN — Challenge assumptions. If everyone is doing X, ask whether Y would be a better approach. The best business advice often goes against conventional wisdom.
+
+Return ONLY valid JSON without any markdown formatting, code blocks, or extra text. Ensure all JSON is complete and properly formatted.`;
+
 async function callAI(prompt: string, apiKey: string, maxTokens?: number): Promise<string> {
   const body: any = {
     model: "google/gemini-2.5-flash",
     messages: [
       {
         role: "system",
-        content: "You are a McKinsey-style business analyst. Return ONLY valid JSON without any markdown formatting, code blocks, or extra text. Ensure all JSON is complete and properly formatted."
+        content: SYSTEM_PROMPT
       },
       {
         role: "user",
@@ -492,7 +537,7 @@ Format as JSON with keys:
 - recommendation (plain text string with newlines for paragraphs - no markdown syntax, no "Go:" prefix)
 - reasoning (plain text string with newlines for paragraphs - no markdown syntax)`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
     return JSON.parse(result);
   } catch {
@@ -500,9 +545,10 @@ Format as JSON with keys:
   }
 }
 
-async function generateMarketAnalysis(project: any, apiKey: string) {
+async function generateMarketAnalysis(project: any, apiKey: string, context: string = '') {
   const prompt = `Business: ${project.name} (${project.industry})
 Description: ${project.description}
+${context}
 
 Analyze the market. Return JSON with these exact keys:
 - tam: string (e.g. "$5B globally")
@@ -515,7 +561,7 @@ Analyze the market. Return JSON with these exact keys:
 
 IMPORTANT: Each trend must be a simple string like "Growing demand for AI solutions" - NOT an object.`;
 
-  const result = await callAI(prompt, apiKey, 2000);
+  const result = await callAI(prompt, apiKey, 4000);
   try {
     const parsed = JSON.parse(result);
     // Ensure trends is an array of strings
@@ -539,10 +585,11 @@ IMPORTANT: Each trend must be a simple string like "Growing demand for AI soluti
   }
 }
 
-async function generateCompetitiveLandscape(project: any, apiKey: string) {
+async function generateCompetitiveLandscape(project: any, apiKey: string, context: string = '') {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
+${context}
 
 Analyze competitive landscape:
 1. Direct competitors (3-5 with descriptions)
@@ -558,7 +605,7 @@ Format as JSON with keys:
 - competitive_advantages (array of plain strings)
 - positioning (plain text string with newlines for paragraphs - no markdown syntax)`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 4000);
   try {
     return JSON.parse(result);
   } catch {
@@ -566,10 +613,11 @@ Format as JSON with keys:
   }
 }
 
-async function generateStrategicFrameworks(project: any, apiKey: string) {
+async function generateStrategicFrameworks(project: any, apiKey: string, context: string = '') {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
+${context}
 
 Provide strategic analysis:
 1. SWOT Analysis (5 items per quadrant)
@@ -581,7 +629,7 @@ Format as JSON with keys:
 - swot {strengths, weaknesses, opportunities, threats} (all arrays of plain strings)
 - gtm_strategy (array of plain strings - no bold formatting)`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
     return JSON.parse(result);
   } catch {
@@ -592,8 +640,9 @@ Format as JSON with keys:
   }
 }
 
-async function generatePorterFiveForces(project: any, apiKey: string) {
+async function generatePorterFiveForces(project: any, apiKey: string, context: string = '') {
   const prompt = `Analyze "${project.name}" (${project.industry}) using Porter's Five Forces.
+${context}
 
 For each force, give a rating (High/Medium/Low) and 2-3 sentence analysis.
 
@@ -610,7 +659,7 @@ Business: ${project.description?.substring(0, 500)}
 
 IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.`;
 
-  const result = await callAI(prompt, apiKey, 2000);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     const parsed = JSON.parse(cleanedResult);
@@ -637,11 +686,12 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.`;
   }
 }
 
-async function generateCustomerPersonas(project: any, apiKey: string) {
+async function generateCustomerPersonas(project: any, apiKey: string, context: string = '') {
   const prompt = `Generate 3 distinct customer personas for: ${project.name}
 
 Industry: ${project.industry}
 Description: ${project.description?.substring(0, 800)}
+${context}
 
 For each persona, provide:
 1. Targeting priority (1st, 2nd, or 3rd) and why
@@ -745,10 +795,11 @@ CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text.`;
   }
 }
 
-async function generateFinancialBasics(project: any, apiKey: string) {
+async function generateFinancialBasics(project: any, apiKey: string, context: string = '') {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
+${context}
 
 Provide financial basics:
 1. Estimated startup costs (conservative, moderate, aggressive scenarios)
@@ -766,7 +817,7 @@ Format as JSON with keys:
 
 Example revenue_model format: "Primarily a freemium model. The free workshop acts as a lead magnet.\n\nRevenue streams include:\n- Premium training programs\n- Consulting services\n- Membership subscriptions"`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
     const parsed = JSON.parse(result);
     
@@ -800,10 +851,11 @@ Example revenue_model format: "Primarily a freemium model. The free workshop act
   }
 }
 
-async function generatePestelAnalysis(project: any, apiKey: string) {
+async function generatePestelAnalysis(project: any, apiKey: string, context: string = '') {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
+${context}
 
 Provide a PESTEL analysis covering all six factors. For each factor, write 2-3 sentences about the impact on this business.
 
@@ -865,10 +917,11 @@ CRITICAL: Return ONLY valid JSON with these exact 6 keys. Each value must be a p
   }
 }
 
-async function generateCatwoeAnalysis(project: any, apiKey: string) {
+async function generateCatwoeAnalysis(project: any, apiKey: string, context: string = '') {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
+${context}
 
 Provide a comprehensive CATWOE analysis for this business idea:
 
@@ -891,7 +944,7 @@ Format as JSON with keys:
 - owners { description (string), stakeholders (array) }
 - environmental_constraints { description (string), constraints (array) }`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
     return JSON.parse(result);
   } catch {
@@ -906,10 +959,11 @@ Format as JSON with keys:
   }
 }
 
-async function generatePathToMvp(project: any, apiKey: string) {
+async function generatePathToMvp(project: any, apiKey: string, context: string = '') {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
+${context}
 
 Create a comprehensive Path to MVP (Minimum Viable Product) roadmap covering:
 
@@ -932,7 +986,7 @@ Format as JSON with keys:
 - success_metrics (array of { metric, target, measurement })
 - iteration_plan { feedback_channels (array), review_frequency (string), improvement_process (string) }`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     return JSON.parse(cleanedResult);
@@ -970,12 +1024,13 @@ Format as JSON with keys:
   }
 }
 
-async function generateUSPAnalysis(project: any, apiKey: string) {
+async function generateUSPAnalysis(project: any, apiKey: string, context: string = '') {
   const prompt = `Based on the following business idea, create a comprehensive USP (Unique Selling Proposition) analysis:
 
 Project: ${project.name}
 Description: ${project.description}
 Industry: ${project.industry}
+${context}
 
 Provide a detailed USP analysis with:
 1. Current positioning analysis (what makes them unique now)
@@ -1034,7 +1089,7 @@ Return ONLY a JSON object (no markdown) in this exact structure:
   }
 }`;
 
-  const result = await callAI(prompt, apiKey);
+  const result = await callAI(prompt, apiKey, 3000);
   try {
     const cleanedResult = cleanJsonFromMarkdown(result);
     return JSON.parse(cleanedResult);
@@ -1053,9 +1108,10 @@ Return ONLY a JSON object (no markdown) in this exact structure:
   }
 }
 
-async function generateGoToMarketStrategy(project: any, apiKey: string) {
+async function generateGoToMarketStrategy(project: any, apiKey: string, context: string = '') {
   const prompt = `Business: ${project.name} (${project.industry})
 Description: ${project.description}
+${context}
 
 Create a concise GTM strategy. Return JSON with:
 - target_segments: array of 2 objects with {segment, description, size, characteristics: [3 items]}
