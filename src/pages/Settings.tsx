@@ -17,7 +17,9 @@ import {
   CreditCard, 
   Bell, 
   TrendingUp,
-  ArrowLeft 
+  ArrowLeft,
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNav } from "@/components/MobileNav";
@@ -279,6 +281,47 @@ const Settings = () => {
                   {profile?.subscription_tier === 'free' ? 'Upgrade Plan' : 'Change Plan'}
                 </Button>
               </div>
+
+              {profile?.subscription_tier !== 'free' && (
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg space-y-2">
+                    <h4 className="font-semibold">Billing Management</h4>
+                    <p className="text-sm text-muted-foreground">
+                      View invoices, update payment method, or cancel your subscription through the billing portal.
+                    </p>
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const { data, error } = await supabase.functions.invoke("create-portal-session");
+                            if (error) throw error;
+                            if (data?.url) window.location.href = data.url;
+                          } catch (err: any) {
+                            toast.error(err.message || "Failed to open billing portal");
+                          }
+                        }}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Manage Subscription
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            const { data, error } = await supabase.functions.invoke("create-portal-session");
+                            if (error) throw error;
+                            if (data?.url) window.location.href = data.url;
+                          } catch (err: any) {
+                            toast.error(err.message || "Failed to open billing portal");
+                          }
+                        }}
+                      >
+                        Cancel Subscription
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {profile?.subscription_tier === 'free' && (
                 <div className="p-4 bg-gradient-hero text-white rounded-lg">
