@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   BarChart3,
@@ -76,10 +77,75 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center">
-          <BarChart3 className="h-12 w-12 text-primary mx-auto animate-pulse" />
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+      <div className="min-h-screen bg-gradient-subtle">
+        {/* Nav skeleton */}
+        <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-8 rounded" />
+              <Skeleton className="h-7 w-28" />
+            </div>
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-9 w-9 rounded" />
+              <Skeleton className="h-9 w-24" />
+            </div>
+          </div>
+        </nav>
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* Welcome header skeleton */}
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-80" />
+              <Skeleton className="h-6 w-64" />
+            </div>
+
+            {/* Stats cards skeleton */}
+            <div className="grid md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-6 border-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-3 flex-1">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* CTA card skeleton */}
+            <Card className="p-12 border-2">
+              <div className="flex flex-col items-center space-y-6">
+                <Skeleton className="h-20 w-20 rounded-3xl" />
+                <Skeleton className="h-8 w-72" />
+                <Skeleton className="h-5 w-96 max-w-full" />
+                <Skeleton className="h-12 w-40 rounded-md" />
+              </div>
+            </Card>
+
+            {/* Projects list skeleton */}
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-44" />
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-6 border-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-4 w-full max-w-md" />
+                      <Skeleton className="h-3 w-36" />
+                    </div>
+                    <Skeleton className="h-12 w-12 ml-4" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
