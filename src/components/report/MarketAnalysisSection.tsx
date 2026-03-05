@@ -1,4 +1,5 @@
-import { ShieldAlert, Lightbulb } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
+import { InsightCallout } from "./InsightCallout";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { safeString, safeArray, getMarketData, toMarkdownString } from "@/lib/reportHelpers";
 import { ReportSectionCard } from "./ReportSectionCard";
@@ -124,10 +125,9 @@ export const MarketAnalysisSection = ({ reportData }: Props) => {
       {marketData.timing_assessment && (
         <>
           <div className="border-t border-border/30" />
-          <div>
-            <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-3">Timing Assessment</h3>
+          <InsightCallout type="insight" title="Market Timing">
             <MarkdownContent content={toMarkdownString(marketData.timing_assessment)} />
-          </div>
+          </InsightCallout>
         </>
       )}
 
@@ -149,13 +149,9 @@ export const MarketAnalysisSection = ({ reportData }: Props) => {
               </div>
             )}
             {marketData.adjacent_opportunities && (
-              <div className="bg-primary/[0.04] rounded-lg p-4">
-                <h4 className="font-sans text-sm font-semibold text-primary flex items-center gap-2 mb-2">
-                  <Lightbulb className="h-4 w-4" />
-                  Adjacent Opportunity
-                </h4>
-                <p className="text-sm">{marketData.adjacent_opportunities}</p>
-              </div>
+              <InsightCallout type="opportunity" title="Adjacent Opportunity">
+                {marketData.adjacent_opportunities}
+              </InsightCallout>
             )}
           </div>
         </>

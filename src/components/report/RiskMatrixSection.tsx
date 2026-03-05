@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, AlertTriangle, Info, ArrowRight, Eye, Shield } from "lucide-react";
+import { InsightCallout } from "./InsightCallout";
 import { ReportSectionCard } from "./ReportSectionCard";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -139,10 +140,9 @@ export const RiskMatrixSection = ({ reportData }: Props) => {
           </div>
         )}
         {rm.biggest_unknown && (
-          <div>
-            <p className="text-xs font-medium text-red-500 uppercase tracking-wider mb-1">Biggest Unknown</p>
-            <p className="text-sm">{rm.biggest_unknown}</p>
-          </div>
+          <InsightCallout type="warning" title="Biggest Unknown">
+            {rm.biggest_unknown}
+          </InsightCallout>
         )}
       </div>
     </ReportSectionCard>

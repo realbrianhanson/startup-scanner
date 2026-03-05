@@ -1,4 +1,5 @@
-import { Lightbulb, AlertTriangle, TrendingUp, BookOpen } from "lucide-react";
+import { Lightbulb, BookOpen } from "lucide-react";
+import { InsightCallout } from "./InsightCallout";
 import { safeArray } from "@/lib/reportHelpers";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
@@ -52,13 +53,9 @@ export const GameChangingIdeaSection = ({ reportData }: Props) => {
           {data.why_it_works && (
             <>
               <div className="border-t border-border/30" />
-              <div>
-                <h4 className="font-sans text-sm font-semibold text-emerald-500 flex items-center gap-2 mb-2">
-                  <Lightbulb className="h-4 w-4" />
-                  Why This Works
-                </h4>
-                <p className="text-sm text-foreground/90 leading-relaxed">{data.why_it_works}</p>
-              </div>
+              <InsightCallout type="insight" title="Why This Works">
+                {data.why_it_works}
+              </InsightCallout>
             </>
           )}
 
@@ -88,13 +85,9 @@ export const GameChangingIdeaSection = ({ reportData }: Props) => {
               <div className="border-t border-border/30" />
               <div className="grid md:grid-cols-2 gap-6">
                 {data.risk && (
-                  <div>
-                    <h4 className="font-sans text-sm font-semibold text-red-500 flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Key Risk & Mitigation
-                    </h4>
-                    <p className="text-sm text-foreground/90 leading-relaxed">{data.risk}</p>
-                  </div>
+                  <InsightCallout type="warning" title="Key Risk">
+                    {data.risk}
+                  </InsightCallout>
                 )}
                 {data.example_precedent && (
                   <div className="bg-muted/30 rounded-lg p-4">
@@ -113,13 +106,9 @@ export const GameChangingIdeaSection = ({ reportData }: Props) => {
           {data.potential_impact && (
             <>
               <div className="border-t border-border/30" />
-              <div className="bg-primary/[0.04] rounded-lg p-4 border border-primary/10">
-                <h4 className="font-sans text-sm font-semibold text-primary flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Potential Impact
-                </h4>
-                <p className="text-base text-foreground font-medium leading-relaxed">{data.potential_impact}</p>
-              </div>
+              <InsightCallout type="opportunity" title="Potential Impact">
+                <span className="font-medium">{data.potential_impact}</span>
+              </InsightCallout>
             </>
           )}
         </div>

@@ -1,4 +1,5 @@
 import { CheckCircle2, ShieldCheck, Crosshair, Target } from "lucide-react";
+import { InsightCallout } from "./InsightCallout";
 import { Badge } from "@/components/ui/badge";
 import { safeString, getCompetitiveLandscape } from "@/lib/reportHelpers";
 import { ReportSectionCard } from "./ReportSectionCard";
@@ -53,13 +54,9 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
                 </p>
               )}
               {comp.vulnerability && (
-                <div className="bg-primary/[0.04] rounded p-2.5 flex items-start gap-2 mt-2">
-                  <Target className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm">
-                    <span className="font-medium text-primary text-xs uppercase tracking-wider">Vulnerability: </span>
-                    <span className="text-foreground/90">{comp.vulnerability}</span>
-                  </p>
-                </div>
+                <InsightCallout type="opportunity" title="Exploitable Vulnerability">
+                  {comp.vulnerability}
+                </InsightCallout>
               )}
             </div>
           ))}
@@ -151,10 +148,9 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
       {compData.competitive_moat_strategy && (
         <>
           <div className="border-t border-border/30" />
-          <div>
-            <h4 className="font-sans text-sm font-semibold text-primary mb-2">Competitive Moat Strategy</h4>
-            <p className="text-sm">{compData.competitive_moat_strategy}</p>
-          </div>
+          <InsightCallout type="action" title="Your Moat Strategy">
+            {compData.competitive_moat_strategy}
+          </InsightCallout>
         </>
       )}
     </ReportSectionCard>

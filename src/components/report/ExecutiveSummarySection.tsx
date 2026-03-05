@@ -1,4 +1,5 @@
-import { CheckCircle2, AlertTriangle, Lightbulb, CalendarClock } from "lucide-react";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { InsightCallout } from "./InsightCallout";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { toMarkdownString } from "@/lib/reportHelpers";
 import { ScrollReveal } from "@/components/ScrollReveal";
@@ -69,22 +70,14 @@ export const ExecutiveSummarySection = ({ reportData }: Props) => {
           {(reportData.executive_summary.contrarian_insight || reportData.executive_summary.seven_day_action) && (
             <div className="grid md:grid-cols-2 gap-6 border-t border-border/50 pt-6">
               {reportData.executive_summary.contrarian_insight && (
-                <div className="bg-primary/[0.04] border border-primary/10 rounded-lg p-4">
-                  <h4 className="font-sans text-sm font-semibold flex items-center gap-2 mb-2 text-primary">
-                    <Lightbulb className="h-4 w-4" />
-                    Contrarian Insight
-                  </h4>
-                  <p className="text-sm text-foreground/90 leading-relaxed">{reportData.executive_summary.contrarian_insight}</p>
-                </div>
+                <InsightCallout type="insight" title="Contrarian Insight">
+                  {reportData.executive_summary.contrarian_insight}
+                </InsightCallout>
               )}
               {reportData.executive_summary.seven_day_action && (
-                <div className="bg-emerald-500/[0.04] border border-emerald-500/10 rounded-lg p-4">
-                  <h4 className="font-sans text-sm font-semibold flex items-center gap-2 mb-2 text-emerald-500">
-                    <CalendarClock className="h-4 w-4" />
-                    7-Day Action Item
-                  </h4>
-                  <p className="text-sm text-foreground/90 leading-relaxed">{reportData.executive_summary.seven_day_action}</p>
-                </div>
+                <InsightCallout type="action" title="Do This in the Next 7 Days">
+                  {reportData.executive_summary.seven_day_action}
+                </InsightCallout>
               )}
             </div>
           )}
