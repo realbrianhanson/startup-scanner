@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 const PLANS = [
   {
@@ -204,6 +205,7 @@ const Pricing = () => {
 
   useEffect(() => {
     document.title = "Pricing | Validifier";
+    trackEvent('pricing_page_view');
   }, []);
 
   useEffect(() => {
@@ -252,6 +254,7 @@ const Pricing = () => {
 
       if (error) throw error;
       if (data?.url) {
+        trackEvent('checkout_started', { plan: plan.name });
         window.location.href = data.url;
       } else {
         throw new Error("No checkout URL returned");
