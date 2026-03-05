@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, ArrowLeft, Sparkles } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/MarkdownContent';
 
 interface Message {
@@ -31,7 +31,6 @@ const STARTER_QUESTIONS = [
 export default function Chat() {
   const { id: projectId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [project, setProject] = useState<Project | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -135,11 +134,7 @@ export default function Chat() {
       setMessages((messagesData || []) as Message[]);
     } catch (error) {
       console.error('Error loading chat:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load chat. Please try again.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to load chat. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -188,17 +183,9 @@ export default function Chat() {
       setIsTyping(false);
       
       if (error.message?.includes('credits')) {
-        toast({
-          title: 'Credits Exhausted',
-          description: "You've reached your message limit. Upgrade to continue chatting.",
-          variant: 'destructive'
-        });
+        toast.error("You've reached your message limit. Upgrade to continue chatting.");
       } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to send message. Please try again.',
-          variant: 'destructive'
-        });
+        toast.error('Failed to send message. Please try again.');
       }
     } finally {
       setIsSending(false);

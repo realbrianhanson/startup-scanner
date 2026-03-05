@@ -14,13 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { ArrowLeft, Globe, Lightbulb, Loader2, Zap, BarChart3 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 
 const CreateProject = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -58,11 +57,7 @@ const CreateProject = () => {
 
   const analyzeWebsite = async () => {
     if (!websiteUrl) {
-      toast({
-        variant: "destructive",
-        title: "Missing URL",
-        description: "Please enter a website URL",
-      });
+      toast.error("Please enter a website URL");
       return;
     }
 
@@ -75,17 +70,10 @@ const CreateProject = () => {
       if (error) throw error;
 
       setExtractedData(data);
-      toast({
-        title: "Analysis complete!",
-        description: "Website data extracted successfully",
-      });
+      toast.success("Website data extracted successfully!");
     } catch (error: any) {
       console.error("Error analyzing website:", error);
-      toast({
-        variant: "destructive",
-        title: "Analysis failed",
-        description: error.message || "Failed to analyze website",
-      });
+      toast.error(error.message || "Failed to analyze website");
     } finally {
       setAnalyzing(false);
     }
@@ -93,29 +81,17 @@ const CreateProject = () => {
 
   const handleSubmit = async (useWebsite: boolean) => {
     if (!projectName || !industry) {
-      toast({
-        variant: "destructive",
-        title: "Missing information",
-        description: "Please fill in project name and industry",
-      });
+      toast.error("Please fill in project name and industry");
       return;
     }
 
     if (useWebsite && !extractedData) {
-      toast({
-        variant: "destructive",
-        title: "Website not analyzed",
-        description: "Please analyze the website first",
-      });
+      toast.error("Please analyze the website first");
       return;
     }
 
     if (!useWebsite && !description) {
-      toast({
-        variant: "destructive",
-        title: "Missing description",
-        description: "Please describe your business idea",
-      });
+      toast.error("Please describe your business idea");
       return;
     }
 
@@ -124,7 +100,6 @@ const CreateProject = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Create project
       const projectData = useWebsite
         ? {
             user_id: user.id,
@@ -150,20 +125,11 @@ const CreateProject = () => {
 
       if (projectError) throw projectError;
 
-      toast({
-        title: "Project created!",
-        description: "Starting validation analysis...",
-      });
-
-      // Navigate to report page
+      toast.success("Project created! Starting validation analysis...");
       navigate(`/projects/${project.id}/report`);
     } catch (error: any) {
       console.error("Error creating project:", error);
-      toast({
-        variant: "destructive",
-        title: "Creation failed",
-        description: error.message || "Failed to create project",
-      });
+      toast.error(error.message || "Failed to create project");
     } finally {
       setLoading(false);
     }
