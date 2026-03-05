@@ -114,6 +114,16 @@ const Landing = () => {
 
       {/* Hero */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+        {/* Background spinning brain video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover opacity-15 dark:opacity-20 pointer-events-none"
+          src="/brain-spin.mp4"
+        />
+        <div className="absolute inset-0 bg-background/70 dark:bg-background/60" />
         <div className="absolute inset-0 dot-grid opacity-[0.04]" />
         <div className="container mx-auto px-4 relative z-10 py-32 md:py-40">
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
