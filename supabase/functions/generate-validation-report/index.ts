@@ -1334,54 +1334,85 @@ async function generateGoToMarketStrategy(project: any, apiKey: string, context:
 Description: ${project.description}
 ${context}
 
-Create a concise GTM strategy. Return JSON with:
-- target_segments: array of 2 objects with {segment, description, size, characteristics: [3 items]}
-- value_proposition: {primary: string, differentiators: [3 items]}
-- marketing_channels: array of 3 objects with {channel, strategy, budget_allocation, expected_roi}
-- sales_strategy: {process: string, team_structure: [3 roles], conversion_tactics: [3 items]}
-- pricing_strategy: {model: string, tiers: [{name, price, features: [3 items]}], competitive_position: string}
-- launch_phases: array of 2 objects with {phase, duration, activities: [3 items], goals: [2 items]}
-- growth_tactics: array of 2 objects with {tactic, description, expected_impact}
-- key_metrics: array of 3 objects with {metric, target, measurement_frequency}
+Create a go-to-market strategy so specific that the founder could hand it to a marketing team and they'd know exactly what to do. No generic advice — every recommendation must be actionable for THIS specific business.
 
-Keep descriptions brief (1-2 sentences max). Return valid JSON only.`;
+REQUIREMENTS:
+- Channel recommendations must include specific platforms, tactics, and budget allocations
+- Pricing must reference real competitor pricing in this market
+- Launch phases must have specific timelines and measurable goals
+- Include at least one unconventional growth tactic that competitors aren't using
 
-  const result = await callAI(prompt, apiKey, 3000);
+CRITICAL: Return ONLY valid JSON. No markdown, no comments.
+
+{
+  "target_segments": [
+    {
+      "segment": "Specific segment name",
+      "description": "Who exactly these people are",
+      "size": "Estimated number of people/businesses in this segment",
+      "where_to_find_them": "Specific platforms, communities, events, publications where they gather",
+      "messaging_angle": "The specific message that would resonate with this segment"
+    }
+  ],
+  "value_proposition": {
+    "primary": "The core value prop in one clear sentence",
+    "for_segment_1": "How to frame it for the first segment specifically",
+    "for_segment_2": "How to frame it for the second segment"
+  },
+  "marketing_channels": [
+    {
+      "channel": "Specific channel (e.g., 'LinkedIn organic + LinkedIn Ads targeting Series A startup founders')",
+      "strategy": "Exact tactics to use on this channel (2-3 sentences)",
+      "budget_allocation": "Specific monthly budget",
+      "expected_roi": "Expected return with reasoning",
+      "timeline_to_results": "How long before this channel produces meaningful results"
+    }
+  ],
+  "pricing_strategy": {
+    "model": "Pricing model recommendation",
+    "tiers": [
+      {"name": "Tier name", "price": "Specific price", "target": "Who this tier is for", "features": ["feature1", "feature2"]}
+    ],
+    "competitive_position": "How this pricing compares to specific named competitors",
+    "psychological_reasoning": "Why this pricing strategy works for the target market"
+  },
+  "launch_phases": [
+    {
+      "phase": "Pre-Launch (specific dates relative to launch)",
+      "duration": "X weeks",
+      "activities": ["Very specific activity 1", "Specific activity 2"],
+      "goals": ["Measurable goal with specific number"],
+      "budget": "Estimated budget for this phase"
+    }
+  ],
+  "unconventional_tactic": {
+    "tactic": "A creative growth hack specific to this business",
+    "why_it_works": "The strategic reasoning",
+    "how_to_execute": "Step-by-step implementation",
+    "example": "A company that used a similar approach successfully"
+  },
+  "key_metrics": [
+    {"metric": "Specific metric", "target": "Specific target number", "measurement": "How to track it", "tool": "Recommended tool"}
+  ],
+  "first_10_customers": "A specific step-by-step strategy for getting the first 10 paying customers (3-4 sentences). This is the most important thing in the entire GTM strategy."
+}
+
+Include 2-3 target segments, 3-4 marketing channels, 2-3 pricing tiers, 3-4 launch phases, and 4-5 key metrics.`;
+
+  const result = await callAI(prompt, apiKey, 4000);
   try {
-    const parsed = JSON.parse(result);
-    return parsed;
+    return JSON.parse(result);
   } catch (error) {
     console.error("Go to market parse error:", error, "Raw result:", result.substring(0, 1000));
     return {
-      target_segments: [
-        { segment: "Primary Market Segment", description: "Core target customers for this business", size: "Analysis in progress", characteristics: ["Key characteristic 1", "Key characteristic 2", "Key characteristic 3"] }
-      ],
-      value_proposition: {
-        primary: "Unique value this business provides to customers",
-        differentiators: ["Key differentiator 1", "Key differentiator 2", "Key differentiator 3"]
-      },
-      marketing_channels: [
-        { channel: "Digital Marketing", strategy: "Online presence and advertising", budget_allocation: "40%", expected_roi: "3x" }
-      ],
-      sales_strategy: {
-        process: "Consultative sales approach focused on customer needs",
-        team_structure: ["Sales Lead", "Account Executive", "Customer Success"],
-        conversion_tactics: ["Discovery calls", "Product demos", "Trial offers"]
-      },
-      pricing_strategy: {
-        model: "Value-based pricing",
-        tiers: [{ name: "Starter", price: "Entry level", features: ["Core features", "Email support", "Basic analytics"] }],
-        competitive_position: "Competitive with market leaders while offering unique value"
-      },
-      launch_phases: [
-        { phase: "Pre-Launch", duration: "4-6 weeks", activities: ["Market research", "Brand setup", "Content creation"], goals: ["Build awareness", "Generate leads"] }
-      ],
-      growth_tactics: [
-        { tactic: "Content Marketing", description: "Build authority through valuable content", expected_impact: "Organic traffic growth" }
-      ],
-      key_metrics: [
-        { metric: "Customer Acquisition Cost", target: "Industry benchmark", measurement_frequency: "Monthly" }
-      ]
+      target_segments: [{ segment: "Primary Segment", description: "Analysis pending", size: "TBD", where_to_find_them: "TBD", messaging_angle: "TBD" }],
+      value_proposition: { primary: "Analysis pending", for_segment_1: "", for_segment_2: "" },
+      marketing_channels: [{ channel: "Digital Marketing", strategy: "Analysis pending", budget_allocation: "TBD", expected_roi: "TBD", timeline_to_results: "TBD" }],
+      pricing_strategy: { model: "TBD", tiers: [], competitive_position: "Analysis pending", psychological_reasoning: "" },
+      launch_phases: [{ phase: "Pre-Launch", duration: "4 weeks", activities: ["Market research"], goals: ["Build awareness"], budget: "TBD" }],
+      unconventional_tactic: { tactic: "Analysis pending", why_it_works: "", how_to_execute: "", example: "" },
+      key_metrics: [{ metric: "CAC", target: "TBD", measurement: "Monthly", tool: "Analytics" }],
+      first_10_customers: "Analysis pending"
     };
   }
 }
