@@ -256,24 +256,75 @@ const Landing = () => {
         </section>
       </ScrollReveal>
 
-      {/* Pricing */}
+      {/* Pricing — two tiers side by side */}
       <ScrollReveal>
         <section className="py-20 bg-background">
           <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center space-y-6">
-              <h2 className="text-4xl font-extrabold tracking-tight">Straightforward pricing</h2>
-              <p className="text-lg text-muted-foreground">
-                Your first report is free. Upgrade when you need deeper analysis and more projects.
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center space-y-4 mb-12">
+                <h2 className="text-4xl font-extrabold tracking-tight">Straightforward pricing</h2>
+                <p className="text-lg text-muted-foreground">
+                  Your first report is free. Upgrade when you need deeper analysis.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                {/* Free */}
+                <div className="rounded-2xl border border-border p-8 space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-bold">Free</h3>
+                    <div className="mt-3">
+                      <span className="text-4xl font-extrabold font-mono">$0</span>
+                    </div>
+                  </div>
+                  <ul className="space-y-3">
+                    {["1 validation report per month", "Standard AI analysis (Gemini 3 Flash)", "All 12 report sections included", "AI advisor chat (10 messages)", "PDF export"].map((f, i) => (
+                      <li key={i} className="flex items-start gap-2.5">
+                        <div className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Check className="h-3 w-3 text-primary" />
+                        </div>
+                        <span className="text-sm">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button className="w-full" variant="outline" onClick={() => navigate("/auth")}>
+                    Start Free
+                  </Button>
+                </div>
+
+                {/* Pro */}
+                <div className="relative rounded-2xl border-2 border-primary p-8 space-y-6 shadow-lg">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-medium">
+                    Most popular
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">Pro</h3>
+                    <div className="mt-3">
+                      <span className="text-4xl font-extrabold font-mono">$29</span>
+                      <span className="text-muted-foreground text-sm ml-1">/month</span>
+                    </div>
+                  </div>
+                  <ul className="space-y-3">
+                    {["5 validation reports per month", "Premium AI analysis (Gemini 3.1 Pro)", "All sections + Game-Changing Idea + Action Plan", "AI advisor chat (unlimited)", "Real competitor names and market data", "Detailed financial projections", "PDF + Markdown export", "Priority email support"].map((f, i) => (
+                      <li key={i} className="flex items-start gap-2.5">
+                        <div className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Check className="h-3 w-3 text-primary" />
+                        </div>
+                        <span className="text-sm">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button className="w-full" onClick={() => navigate("/auth")}>
+                    Start 7-Day Free Trial
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-center mt-8 text-sm text-muted-foreground">
+                <button onClick={() => navigate("/pricing")} className="text-primary hover:underline cursor-pointer">
+                  See full pricing details →
+                </button>
               </p>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate("/pricing")}
-                className="mt-4"
-              >
-                View All Plans
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
             </div>
           </div>
         </section>
