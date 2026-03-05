@@ -18,7 +18,7 @@ export const ExecutiveSummarySection = ({ reportData }: Props) => {
 
         <div className="space-y-8">
           <div className="grid md:grid-cols-2 gap-10">
-            <div className="space-y-4">
+            <div className="border-l-2 border-l-emerald-500/30 pl-4 space-y-4">
               <h3 className="font-sans text-lg font-semibold flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 Top Strengths
@@ -33,7 +33,7 @@ export const ExecutiveSummarySection = ({ reportData }: Props) => {
               </ul>
             </div>
 
-            <div className="space-y-4">
+            <div className="border-l-2 border-l-amber-500/30 pl-4 space-y-4">
               <h3 className="font-sans text-lg font-semibold flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 Key Concerns
@@ -51,7 +51,7 @@ export const ExecutiveSummarySection = ({ reportData }: Props) => {
 
           {reportData.executive_summary.score_justification && (
             <div className="py-4 border-t border-border/50">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Score Justification</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Score Justification</p>
               <p className="text-base text-foreground/90 leading-relaxed">{reportData.executive_summary.score_justification}</p>
             </div>
           )}
@@ -69,7 +69,7 @@ export const ExecutiveSummarySection = ({ reportData }: Props) => {
           {(reportData.executive_summary.contrarian_insight || reportData.executive_summary.seven_day_action) && (
             <div className="grid md:grid-cols-2 gap-6 border-t border-border/50 pt-6">
               {reportData.executive_summary.contrarian_insight && (
-                <div>
+                <div className="bg-primary/[0.04] border border-primary/10 rounded-lg p-4">
                   <h4 className="font-sans text-sm font-semibold flex items-center gap-2 mb-2 text-primary">
                     <Lightbulb className="h-4 w-4" />
                     Contrarian Insight
@@ -78,7 +78,7 @@ export const ExecutiveSummarySection = ({ reportData }: Props) => {
                 </div>
               )}
               {reportData.executive_summary.seven_day_action && (
-                <div>
+                <div className="bg-emerald-500/[0.04] border border-emerald-500/10 rounded-lg p-4">
                   <h4 className="font-sans text-sm font-semibold flex items-center gap-2 mb-2 text-emerald-500">
                     <CalendarClock className="h-4 w-4" />
                     7-Day Action Item

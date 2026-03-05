@@ -6,6 +6,28 @@ interface Props {
   reportData: any;
 }
 
+const AVATAR_COLORS = [
+  "bg-blue-500/15 text-blue-500",
+  "bg-emerald-500/15 text-emerald-500",
+  "bg-amber-500/15 text-amber-500",
+  "bg-purple-500/15 text-purple-500",
+  "bg-rose-500/15 text-rose-500",
+];
+
+const getAvatarColor = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
+
+const PRIORITY_BARS = [
+  "bg-primary",
+  "bg-secondary",
+  "bg-muted-foreground/30",
+];
+
 const getInitials = (name: string) =>
   name
     .split(" ")
@@ -33,9 +55,12 @@ export const CustomerPersonasSection = ({ reportData }: Props) => {
       <div className="space-y-10">
         {reportData.customer_personas.map((persona: any, idx: number) => (
           <div key={idx} className="border-t border-border/50 pt-6 first:border-0 first:pt-0">
+            {/* Priority color bar */}
+            <div className={`h-1 ${PRIORITY_BARS[Math.min(idx, PRIORITY_BARS.length - 1)]} rounded-t-lg mb-4`} />
+
             {/* Persona header */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-mono text-sm font-semibold shrink-0">
+              <div className={`w-10 h-10 rounded-full ${getAvatarColor(persona.name || `P${idx + 1}`)} flex items-center justify-center font-mono text-sm font-semibold shrink-0`}>
                 {getInitials(persona.name || `P${idx + 1}`)}
               </div>
               <div>
@@ -78,9 +103,12 @@ export const CustomerPersonasSection = ({ reportData }: Props) => {
               </h4>
               <div className="space-y-2">
                 {persona.pain_points?.map((pp: any, i: number) => (
-                  <div key={i} className="text-sm">
-                    <span className="font-medium">{pp.pain}</span>
-                    {pp.impact && <span className="text-muted-foreground"> — {pp.impact}</span>}
+                  <div key={i} className="text-sm flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">{pp.pain}</span>
+                      {pp.impact && <span className="text-muted-foreground"> — {pp.impact}</span>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -97,9 +125,12 @@ export const CustomerPersonasSection = ({ reportData }: Props) => {
               </h4>
               <div className="space-y-2">
                 {persona.objections?.map((obj: any, i: number) => (
-                  <div key={i} className="text-sm">
-                    <p className="font-medium">"{obj.objection}"</p>
-                    <p className="text-muted-foreground text-xs mt-0.5">Root cause: {obj.root_cause}</p>
+                  <div key={i} className="text-sm flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                    <div>
+                      <p className="font-medium">"{obj.objection}"</p>
+                      <p className="text-muted-foreground text-xs mt-0.5">Root cause: {obj.root_cause}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -112,9 +143,12 @@ export const CustomerPersonasSection = ({ reportData }: Props) => {
               </h4>
               <div className="space-y-2">
                 {persona.closing_angles?.map((angle: any, i: number) => (
-                  <div key={i} className="text-sm">
-                    <p className="font-medium">{angle.angle}</p>
-                    <p className="text-muted-foreground text-xs mt-0.5">Addresses: {angle.addresses}</p>
+                  <div key={i} className="text-sm flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                    <div>
+                      <p className="font-medium">{angle.angle}</p>
+                      <p className="text-muted-foreground text-xs mt-0.5">Addresses: {angle.addresses}</p>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -1,15 +1,7 @@
-import { CheckCircle2, ShieldCheck, Crosshair } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Crosshair, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { safeString, getCompetitiveLandscape } from "@/lib/reportHelpers";
 import { ReportSectionCard } from "./ReportSectionCard";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface Props {
   reportData: any;
@@ -22,6 +14,13 @@ const threatColor = (level: string) => {
   return 'outline';
 };
 
+const threatBarColor = (level: string) => {
+  const l = level?.toLowerCase();
+  if (l === 'high') return 'bg-red-500';
+  if (l === 'low') return 'bg-emerald-500';
+  return 'bg-amber-500';
+};
+
 export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
   if (!reportData.competitive_landscape) return null;
 
@@ -29,35 +28,42 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
 
   return (
     <ReportSectionCard id="competitive-landscape" title="Competitive Landscape">
-      {/* Direct Competitors — proper table */}
-      <h3 className="font-sans text-lg font-semibold">Direct Competitors</h3>
+      {/* Direct Competitors — card layout */}
+      <h3 className="font-sans text-lg font-semibold flex items-center gap-2">Direct Competitors</h3>
       {compData.direct_competitors && compData.direct_competitors.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs h-8">Name</TableHead>
-              <TableHead className="text-xs h-8">Size</TableHead>
-              <TableHead className="text-xs h-8">Strength</TableHead>
-              <TableHead className="text-xs h-8">Vulnerability</TableHead>
-              <TableHead className="text-xs h-8 text-right">Threat</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {compData.direct_competitors.map((comp: any, i: number) => (
-              <TableRow key={i} className={i % 2 === 0 ? "" : "bg-muted/20"}>
-                <TableCell className="py-3 font-medium">{comp.name}</TableCell>
-                <TableCell className="py-3 text-sm text-muted-foreground">{comp.estimated_size || "—"}</TableCell>
-                <TableCell className="py-3 text-sm text-muted-foreground">{comp.what_they_do_well || "—"}</TableCell>
-                <TableCell className="py-3 text-sm text-muted-foreground">{comp.vulnerability || "—"}</TableCell>
-                <TableCell className="py-3 text-right">
+        <div className="space-y-4">
+          {compData.direct_competitors.map((comp: any, i: number) => (
+            <div key={i} className="bg-card/50 rounded-lg p-4 border border-border/50">
+              {/* Threat bar */}
+              <div className={`h-0.5 ${threatBarColor(comp.threat_level)} rounded-full mb-3`} />
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-sm">{comp.name}</h4>
+                <div className="flex items-center gap-2">
+                  {comp.estimated_size && (
+                    <span className="text-xs text-muted-foreground font-mono">{comp.estimated_size}</span>
+                  )}
                   {comp.threat_level && (
                     <Badge variant={threatColor(comp.threat_level)} className="text-[10px]">{comp.threat_level}</Badge>
                   )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+              </div>
+              {comp.what_they_do_well && (
+                <p className="text-sm text-muted-foreground mb-2">
+                  <span className="font-medium text-foreground">Strength:</span> {comp.what_they_do_well}
+                </p>
+              )}
+              {comp.vulnerability && (
+                <div className="bg-primary/[0.04] rounded p-2.5 flex items-start gap-2 mt-2">
+                  <Target className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                  <p className="text-sm">
+                    <span className="font-medium text-primary text-xs uppercase tracking-wider">Vulnerability: </span>
+                    <span className="text-foreground/90">{comp.vulnerability}</span>
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       ) : (
         <p className="text-muted-foreground italic text-sm">Competitor analysis in progress...</p>
       )}
@@ -65,8 +71,8 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
       {/* Indirect Competitors */}
       {compData.indirect_competitors && compData.indirect_competitors.length > 0 && (
         <>
-          <div className="border-t border-border/50" />
-          <h3 className="font-sans text-lg font-semibold">Indirect Competitors</h3>
+          <div className="border-t border-border/30" />
+          <h3 className="font-sans text-lg font-semibold flex items-center gap-2">Indirect Competitors</h3>
           <div className="space-y-2">
             {compData.indirect_competitors.map((comp: any, i: number) => {
               const c = typeof comp === 'string' ? { name: comp } : comp;
@@ -82,7 +88,7 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
         </>
       )}
 
-      <div className="border-t border-border/50" />
+      <div className="border-t border-border/30" />
 
       {/* Competitive Advantages */}
       <div>
@@ -114,7 +120,7 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
       {/* Positioning */}
       {compData.positioning && (
         <>
-          <div className="border-t border-border/50" />
+          <div className="border-t border-border/30" />
           <div>
             <h3 className="font-sans text-lg font-semibold mb-3 flex items-center gap-2">
               <Crosshair className="h-4 w-4 text-primary" />
@@ -144,7 +150,7 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
       {/* Moat Strategy */}
       {compData.competitive_moat_strategy && (
         <>
-          <div className="border-t border-border/50" />
+          <div className="border-t border-border/30" />
           <div>
             <h4 className="font-sans text-sm font-semibold text-primary mb-2">Competitive Moat Strategy</h4>
             <p className="text-sm">{compData.competitive_moat_strategy}</p>
