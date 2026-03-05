@@ -76,9 +76,19 @@ serve(async (req) => {
 // --- Helpers ---
 function safe(val: any, fallback = ''): string {
   if (val === null || val === undefined) return fallback;
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
   if (typeof val === 'object') {
     if (val.total) return String(val.total);
-    return JSON.stringify(val);
+    // Try to extract meaningful text from common object shapes
+    const text = val.description || val.text || val.summary || val.detail || val.name || val.title || val.feature || val.task || val.action || val.item || val.channel || val.strategy || val.value || '';
+    if (text) return String(text);
+    // Format key-value pairs instead of raw JSON
+    const entries = Object.entries(val).filter(([_, v]) => v !== null && v !== undefined && v !== '');
+    if (entries.length) {
+      return entries.map(([k, v]) => `<strong>${k.replace(/_/g, ' ')}:</strong> ${typeof v === 'object' ? safe(v) : String(v)}`).join(' · ');
+    }
+    return fallback;
   }
   return String(val);
 }
@@ -87,9 +97,31 @@ function safeArr(val: any): any[] {
   return Array.isArray(val) ? val : [];
 }
 
+function formatItem(item: any): string {
+  if (typeof item === 'string') return item;
+  if (typeof item !== 'object' || item === null) return String(item ?? '');
+  // Smart object rendering: look for common patterns
+  const name = item.name || item.title || item.feature || item.task || item.action || item.channel || item.risk || item.item || '';
+  const desc = item.description || item.detail || item.details || item.strategy || item.analysis || item.rationale || item.mitigation || item.mitigation_strategy || '';
+  const extra: string[] = [];
+  if (item.value && item.value !== name) extra.push(item.value);
+  if (item.effort) extra.push(`Effort: ${item.effort}`);
+  if (item.priority) extra.push(`Priority: ${item.priority}`);
+  if (item.probability || item.likelihood) extra.push(`Probability: ${item.probability || item.likelihood}`);
+  if (item.impact && item.impact !== desc) extra.push(`Impact: ${item.impact}`);
+  if (item.rating) extra.push(`Rating: ${item.rating}`);
+  
+  let result = '';
+  if (name) result += `<strong>${name}</strong>`;
+  if (desc) result += (result ? ': ' : '') + desc;
+  if (!result && item.value) result = String(item.value);
+  if (extra.length) result += (result ? ' — ' : '') + extra.join(' · ');
+  return result || safe(item);
+}
+
 function bulletList(items: any[], render?: (item: any) => string): string {
   if (!items.length) return '<p class="muted">No data available</p>';
-  return '<ul>' + items.map(i => `<li>${render ? render(i) : safe(i)}</li>`).join('') + '</ul>';
+  return '<ul>' + items.map(i => `<li>${render ? render(i) : formatItem(i)}</li>`).join('') + '</ul>';
 }
 
 function section(title: string, content: string): string {
