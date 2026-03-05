@@ -139,9 +139,12 @@ const Landing = () => {
         />
 
         {/* Floating gradient orbs */}
-        <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-[hsl(221,83%,53%)] opacity-[0.08] blur-[120px] animate-float" />
-        <div className="absolute bottom-1/4 -right-32 w-[400px] h-[400px] rounded-full bg-[hsl(265,71%,57%)] opacity-[0.1] blur-[100px] animate-float delay-700" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[hsl(240,60%,50%)] opacity-[0.05] blur-[140px] animate-float delay-300" />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden -z-0">
+          <div className="absolute top-[10%] -left-24 w-[300px] h-[300px] rounded-full bg-primary opacity-[0.08] dark:opacity-[0.12] blur-[120px] animate-float float-slow will-change-transform" />
+          <div className="absolute bottom-[15%] -right-20 w-[250px] h-[250px] rounded-full bg-secondary opacity-[0.08] dark:opacity-[0.12] blur-[100px] animate-float float-slower will-change-transform" style={{ animationDelay: "2s" }} />
+          <div className="absolute top-[60%] left-[30%] w-[200px] h-[200px] rounded-full bg-primary opacity-[0.06] dark:opacity-[0.10] blur-[120px] animate-float float-slowest will-change-transform" style={{ animationDelay: "4s" }} />
+          <div className="absolute top-[5%] right-[25%] w-[180px] h-[180px] rounded-full bg-secondary opacity-[0.06] dark:opacity-[0.10] blur-[100px] animate-float float-slow will-change-transform" style={{ animationDelay: "1s" }} />
+        </div>
 
         {/* Noise texture */}
         <div className="noise-bg absolute inset-0" />

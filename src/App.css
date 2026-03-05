@@ -56,9 +56,22 @@
 .animate-fade-down { animation: fade-down 0.4s ease-out forwards; }
 .animate-scale-in { animation: scale-in 0.4s ease-out forwards; }
 .animate-slide-in-right { animation: slide-in-right 0.5s ease-out forwards; }
-.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; will-change: transform; }
 .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 .animate-gradient { animation: gradient-shift 8s ease infinite; background-size: 200% 200%; }
+.animate-shimmer { animation: shimmer 2s linear infinite; background-size: 200% 100%; }
+
+/* Float speed variants */
+.float-slow { animation-duration: 8s; }
+.float-slower { animation-duration: 10s; }
+.float-slowest { animation-duration: 12s; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float, .animate-gradient, .animate-pulse-glow, .animate-shimmer {
+    animation: none !important;
+  }
+}
 .animate-shimmer { animation: shimmer 2s linear infinite; background-size: 200% 100%; }
 
 /* Stagger Delays */

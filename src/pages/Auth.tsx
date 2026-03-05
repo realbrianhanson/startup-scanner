@@ -194,9 +194,11 @@ const Auth = () => {
       {/* LEFT — Visual panel (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary via-primary to-secondary">
         {/* Floating gradient orbs */}
-        <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-secondary/30 blur-[100px] animate-float" />
-        <div className="absolute bottom-20 right-10 w-60 h-60 rounded-full bg-primary-foreground/10 blur-[80px] animate-float" style={{ animationDelay: "1.5s" }} />
-        <div className="absolute top-1/2 left-1/3 w-40 h-40 rounded-full bg-primary-foreground/5 blur-[60px] animate-float" style={{ animationDelay: "3s" }} />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute top-[10%] left-[5%] w-[250px] h-[250px] rounded-full bg-secondary/40 blur-[100px] animate-float float-slow will-change-transform" />
+          <div className="absolute bottom-[15%] right-[5%] w-[200px] h-[200px] rounded-full bg-primary-foreground/15 blur-[80px] animate-float float-slower will-change-transform" style={{ animationDelay: "2s" }} />
+          <div className="absolute top-[50%] left-[40%] w-[150px] h-[150px] rounded-full bg-primary-foreground/10 blur-[100px] animate-float float-slowest will-change-transform" style={{ animationDelay: "4s" }} />
+        </div>
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
