@@ -79,6 +79,7 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  useEffect(() => { document.title = "Chat with Cora | Validifier"; }, []);
   useEffect(() => { loadProjectAndChat(); }, [projectId]);
   useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
 

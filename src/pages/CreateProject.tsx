@@ -122,6 +122,10 @@ const TypewriterText = ({ text }: { text: string }) => {
   const idx = useRef(0);
 
   useEffect(() => {
+    document.title = "New Project | Validifier";
+  }, []);
+
+  useEffect(() => {
     idx.current = 0;
     setDisplayed("");
     const interval = setInterval(() => {

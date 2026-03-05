@@ -41,6 +41,10 @@ const Settings = () => {
   const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
+    document.title = "Settings | Validifier";
+  }, []);
+
+  useEffect(() => {
     loadData();
   }, []);
 

@@ -47,6 +47,35 @@ const AnimatedCounter = ({ target, suffix = "" }: { target: number; suffix?: str
 const Landing = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = "Validifier - AI Business Idea Validation in 60 Seconds";
+
+    // JSON-LD structured data
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Validifier",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "AI-powered business idea validation platform that generates McKinsey-style reports in 60 seconds using SWOT, PESTEL, Porter's Five Forces, and financial projections.",
+      "url": "https://startup-scanner.lovable.app",
+      "offers": [
+        { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" },
+        { "@type": "Offer", "price": "29", "priceCurrency": "USD", "name": "Starter" },
+        { "@type": "Offer", "price": "79", "priceCurrency": "USD", "name": "Growth" },
+        { "@type": "Offer", "price": "199", "priceCurrency": "USD", "name": "Pro" }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "2400"
+      }
+    });
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, []);
   const valueProps = [
     {
       icon: Zap,

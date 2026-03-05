@@ -203,6 +203,10 @@ const Pricing = () => {
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
+    document.title = "Pricing | Validifier";
+  }, []);
+
+  useEffect(() => {
     const loadUser = async () => {
       const { data: { user: u } } = await supabase.auth.getUser();
       if (u) {
