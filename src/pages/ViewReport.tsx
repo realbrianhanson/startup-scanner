@@ -20,7 +20,16 @@ import {
   Share2,
   MoreVertical,
   Trash2,
+  FileText,
+  Twitter,
+  ClipboardCheck,
 } from "lucide-react";
+import {
+  formatExecutiveSummaryText,
+  generateReportMarkdown,
+  generateSocialShareText,
+  downloadAsFile,
+} from "@/lib/exportHelpers";
 import { ReportNavigation } from "@/components/ReportNavigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -347,10 +356,10 @@ const ViewReport = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="lg">
                       <Share2 className="mr-2 h-5 w-5" />
-                      Share
+                      Share & Export
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center">
+                  <DropdownMenuContent align="center" className="w-56">
                     <DropdownMenuItem onClick={async () => {
                       if (isOwner && !isPublic) await togglePublic(true);
                       navigator.clipboard.writeText(window.location.href);
@@ -359,6 +368,15 @@ const ViewReport = () => {
                       <Copy className="mr-2 h-4 w-4" />
                       Copy Link
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      const text = formatExecutiveSummaryText(reportData, project?.name, validationScore);
+                      navigator.clipboard.writeText(text);
+                      toast.success("Executive summary copied to clipboard!");
+                    }}>
+                      <ClipboardCheck className="mr-2 h-4 w-4" />
+                      Copy Executive Summary
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={async () => {
                       toast.info("Generating print preview...");
                       try {
@@ -375,6 +393,24 @@ const ViewReport = () => {
                     }}>
                       <Download className="mr-2 h-4 w-4" />
                       Print / Save PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      const md = generateReportMarkdown(reportData, project);
+                      const slug = project?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'report';
+                      downloadAsFile(md, `${slug}-report.md`);
+                      toast.success("Markdown report downloaded!");
+                    }}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Export as Markdown
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={async () => {
+                      const shareText = generateSocialShareText(project?.name, validationScore);
+                      await navigator.clipboard.writeText(shareText);
+                      toast.success("Social share message copied! Paste it on X/LinkedIn/anywhere 🚀");
+                    }}>
+                      <Twitter className="mr-2 h-4 w-4" />
+                      Share to Social
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
