@@ -141,8 +141,8 @@ const ViewReport = () => {
 
     const channel = supabase
       .channel(`report-${id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "reports", filter: `project_id=eq.${id}` },
-        (payload) => { setReport(payload.new); updateProgress(payload.new.generation_status); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "reports", filter: `project_id=eq.${id}` },
+        (payload) => { setReport(payload.new as any); updateProgress((payload.new as any).generation_status); })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "projects", filter: `id=eq.${id}` },
         (payload) => { setProject(payload.new); })
       .subscribe();
