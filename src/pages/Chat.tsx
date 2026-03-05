@@ -3,11 +3,9 @@ import { trackEvent } from '@/lib/analytics';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, ArrowLeft, Sparkles, WifiOff, ThumbsUp, ThumbsDown, CalendarCheck } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/MarkdownContent';
-import { useCalendly } from '@/hooks/useCalendly';
 
 interface Message {
   id: string;
@@ -36,43 +34,9 @@ const FOLLOW_UP_SETS = [
   ["How do I validate this?", "What metrics should I track?", "Who should I hire first?"],
 ];
 
-const CALL_TRIGGER_WORDS = ["help", "confused", "next steps", "how do i", "stuck", "overwhelmed", "hire", "budget", "funding", "lost", "don't know", "not sure", "advice"];
-
-/* ── Cora Avatar ── */
-const CoraAvatar = ({ size = 28 }: { size?: number }) => (
-  <div className="relative shrink-0" style={{ width: size, height: size }}>
-    <div
-      className="w-full h-full rounded-full flex items-center justify-center"
-      style={{ background: 'var(--gradient-hero)' }}
-    >
-      <Sparkles className="text-white" style={{ width: size * 0.45, height: size * 0.45 }} />
-    </div>
-    <div
-      className="absolute -bottom-0.5 -right-0.5 rounded-full bg-success border-2 border-background"
-      style={{ width: size * 0.3, height: size * 0.3 }}
-    />
-  </div>
-);
-
-/* ── Typing shimmer ── */
-const TypingIndicator = () => (
-  <div className="flex justify-start animate-fade-up">
-    <div className="max-w-[85%] lg:max-w-[70%] rounded-2xl rounded-tl-md px-5 py-4 bg-card border border-l-[3px] border-l-primary/40">
-      <div className="flex items-center gap-3">
-        <CoraAvatar size={24} />
-        <div className="space-y-1.5">
-          <div className="h-2.5 w-48 rounded-full bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 bg-[length:200%_100%] animate-shimmer" />
-          <p className="text-xs text-muted-foreground">Cora is analyzing your question...</p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 export default function Chat() {
   const { id: projectId } = useParams();
   const navigate = useNavigate();
-  const { ctaEnabled, openCalendly } = useCalendly();
   const [project, setProject] = useState<Project | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -80,22 +44,18 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [newMessageIds, setNewMessageIds] = useState<Set<string>>(new Set());
   const [connectionLost, setConnectionLost] = useState(false);
-  const [messageFeedback, setMessageFeedback] = useState<Record<string, boolean | null>>({});
-  const [calendlyShown, setCalendlyShown] = useState(false);
   const retryCountRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { document.title = "Chat with Cora | Validifier"; }, []);
   useEffect(() => { loadProjectAndChat(); }, [projectId]);
-  useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
 
   useEffect(() => {
     if (!conversationId) return;
     let channel: any;
-
     const subscribe = () => {
       channel = supabase
         .channel('chat-messages')
@@ -105,75 +65,48 @@ export default function Chat() {
         }, (payload) => {
           const newMessage = payload.new as Message;
           if (newMessage.role === 'assistant') {
-            setNewMessageIds(prev => new Set(prev).add(newMessage.id));
             setMessages(prev => [...prev, newMessage]);
             setIsTyping(false);
-            setTimeout(() => setNewMessageIds(prev => {
-              const next = new Set(prev);
-              next.delete(newMessage.id);
-              return next;
-            }), 600);
           }
         })
         .subscribe((status: string) => {
-          if (status === 'SUBSCRIBED') {
-            setConnectionLost(false);
-            retryCountRef.current = 0;
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          if (status === 'SUBSCRIBED') { setConnectionLost(false); retryCountRef.current = 0; }
+          else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
             if (retryCountRef.current < 3) {
               setConnectionLost(true);
               retryCountRef.current++;
-              setTimeout(() => {
-                supabase.removeChannel(channel);
-                subscribe();
-              }, 2000 * retryCountRef.current);
-            } else {
-              setConnectionLost(true);
-            }
+              setTimeout(() => { supabase.removeChannel(channel); subscribe(); }, 2000 * retryCountRef.current);
+            } else setConnectionLost(true);
           }
         });
     };
-
     subscribe();
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [conversationId]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const loadProjectAndChat = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects').select('*').eq('id', projectId).single();
+      const { data: projectData, error: projectError } = await supabase.from('projects').select('*').eq('id', projectId).single();
       if (projectError) throw projectError;
       setProject(projectData);
 
-      let { data: conversations } = await supabase
-        .from('chat_conversations').select('*').eq('project_id', projectId)
-        .order('created_at', { ascending: false }).limit(1);
-
+      let { data: conversations } = await supabase.from('chat_conversations').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(1);
       let convId: string;
       if (conversations && conversations.length > 0) {
         convId = conversations[0].id;
       } else {
-        const { data: newConv, error: convError } = await supabase
-          .from('chat_conversations')
-          .insert({ project_id: projectId, title: `Chat about ${projectData.name}` })
-          .select().single();
+        const { data: newConv, error: convError } = await supabase.from('chat_conversations').insert({ project_id: projectId, title: `Chat about ${projectData.name}` }).select().single();
         if (convError) throw convError;
         convId = newConv.id;
       }
       setConversationId(convId);
 
-      const { data: messagesData } = await supabase
-        .from('chat_messages').select('*').eq('conversation_id', convId)
-        .order('created_at', { ascending: true });
+      const { data: messagesData } = await supabase.from('chat_messages').select('*').eq('conversation_id', convId).order('created_at', { ascending: true });
       setMessages((messagesData || []) as Message[]);
     } catch {
-      toast.error('Failed to load chat. Please try again.');
+      toast.error('Failed to load chat.');
     } finally {
       setIsLoading(false);
     }
@@ -190,19 +123,10 @@ export default function Chat() {
         id: crypto.randomUUID(), role: 'user',
         content: messageText, created_at: new Date().toISOString()
       };
-      setNewMessageIds(prev => new Set(prev).add(userMessage.id));
       setMessages(prev => [...prev, userMessage]);
       setInput('');
-      setTimeout(() => setNewMessageIds(prev => {
-        const next = new Set(prev);
-        next.delete(userMessage.id);
-        return next;
-      }), 600);
 
-      await supabase.from('chat_messages').insert({
-        conversation_id: conversationId, role: 'user', content: messageText
-      });
-
+      await supabase.from('chat_messages').insert({ conversation_id: conversationId, role: 'user', content: messageText });
       const { data, error } = await supabase.functions.invoke('chat-with-cora', {
         body: { conversation_id: conversationId, user_message: messageText, project_id: projectId }
       });
@@ -210,281 +134,142 @@ export default function Chat() {
       if (data.error) throw new Error(data.error);
     } catch (error: any) {
       setIsTyping(false);
-      if (error.message?.includes('credits')) {
-        toast.error("You've reached your message limit. Upgrade to continue chatting.");
-      } else {
-        toast.error('Failed to send message. Please try again.');
-      }
+      toast.error(error.message?.includes('credits') ? "Message limit reached. Upgrade to continue." : 'Failed to send message.');
     } finally {
       setIsSending(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(input);
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
   };
 
-  // Pick a semi-random follow-up set based on message count
   const getFollowUps = () => FOLLOW_UP_SETS[messages.length % FOLLOW_UP_SETS.length];
-
-  // Check if message is the last assistant message (for showing follow-ups)
-  const isLastAssistantMessage = (msg: Message) => {
-    const assistantMessages = messages.filter(m => m.role === 'assistant');
-    return assistantMessages.length > 0 && assistantMessages[assistantMessages.length - 1].id === msg.id;
-  };
-
-  // Determine if the Calendly CTA should show after the last assistant message
-  const shouldShowCalendlyCTA = (msg: Message) => {
-    if (calendlyShown || !ctaEnabled || !isLastAssistantMessage(msg)) return false;
-    const userMessages = messages.filter(m => m.role === 'user');
-    // Show after 5+ user messages
-    if (userMessages.length >= 5) return true;
-    // Or if any user message contains trigger words
-    const lastUserMsg = userMessages[userMessages.length - 1]?.content?.toLowerCase() || '';
-    return CALL_TRIGGER_WORDS.some(word => lastUserMsg.includes(word));
-  };
-
-  // Show thumbs on every 5th assistant message
-  const shouldShowThumbs = (msg: Message) => {
-    if (msg.role !== 'assistant') return false;
-    const assistantMessages = messages.filter(m => m.role === 'assistant');
-    const idx = assistantMessages.findIndex(m => m.id === msg.id);
-    return (idx + 1) % 5 === 0;
-  };
-
-  const handleMessageFeedback = async (messageId: string, isPositive: boolean) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setMessageFeedback(prev => ({ ...prev, [messageId]: isPositive }));
-      await supabase.from('chat_message_feedback' as any).upsert({
-        message_id: messageId,
-        user_id: user.id,
-        is_positive: isPositive,
-      } as any, { onConflict: 'message_id,user_id' });
-    } catch {
-      // silent fail
-    }
+  const isLastAssistant = (msg: Message) => {
+    const assistants = messages.filter(m => m.role === 'assistant');
+    return assistants.length > 0 && assistants[assistants.length - 1].id === msg.id;
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
-        <div className="flex flex-col items-center gap-3">
-          <CoraAvatar size={48} />
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <div className="h-screen flex flex-col">
-        {/* ── Glass Header ── */}
-        <header className="glass-nav sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(`/projects/${projectId}/report`)}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <CoraAvatar size={36} />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold truncate">{project?.name}</h1>
-              <p className="text-xs text-muted-foreground">Cora • AI Business Advisor</p>
+    <div className="min-h-screen bg-background flex flex-col h-screen">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-card border-b border-border">
+        <div className="container mx-auto px-4 h-14 flex items-center gap-4">
+          <button onClick={() => navigate(`/projects/${projectId}/report`)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-medium truncate">{project?.name}</h1>
+            <p className="text-xs text-muted-foreground">Cora • AI Advisor</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+        {connectionLost && (
+          <div className="sticky top-0 z-10 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2 flex items-center justify-center gap-2 text-sm text-destructive mb-4">
+            <WifiOff className="h-4 w-4" />
+            {retryCountRef.current >= 3 ? "Connection failed. Refresh the page." : "Reconnecting..."}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {messages.length === 0 && (
+          <div className="max-w-xl mx-auto py-16 space-y-8">
+            <div className="space-y-2">
+              <h2 className="text-xl font-medium">Ask Cora anything</h2>
+              <p className="text-sm text-muted-foreground">I've analyzed your validation report and can help you make better decisions.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {STARTER_QUESTIONS.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(q)}
+                  disabled={isSending}
+                  className="text-left text-sm p-3 rounded-lg border border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
             </div>
           </div>
-        </header>
+        )}
 
-        <div className="flex-1 flex overflow-hidden">
-          <main className="flex-1 flex flex-col">
-            {/* ── Messages ── */}
-            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
-              {/* Connection lost banner */}
-              {connectionLost && (
-                <div className="sticky top-0 z-10 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2 flex items-center justify-center gap-2 text-sm text-destructive animate-fade-down">
-                  <WifiOff className="h-4 w-4" />
-                  {retryCountRef.current >= 3
-                    ? "Connection failed. Please refresh the page."
-                    : "Connection lost. Reconnecting..."}
+        {/* Messages */}
+        <div className="max-w-2xl mx-auto space-y-6">
+          {messages.map((message) => (
+            <div key={message.id}>
+              {message.role === 'user' ? (
+                <div className="flex justify-end">
+                  <div className="max-w-[80%] rounded-lg bg-muted px-4 py-3">
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-l-2 border-primary/20 pl-4">
+                  <MarkdownContent
+                    content={message.content}
+                    className="text-sm text-foreground/90 leading-relaxed [&_p]:mb-3 [&_p:last-child]:mb-0"
+                  />
                 </div>
               )}
 
-              {/* ── Empty State ── */}
-              {messages.length === 0 && (
-                <div className="max-w-2xl mx-auto py-12 space-y-8">
-                  {/* Welcome card */}
-                  <div className="relative rounded-2xl p-[1px] overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer opacity-40" />
-                    <div className="relative rounded-2xl bg-card p-8 text-center space-y-4">
-                      <div className="animate-float mx-auto w-fit">
-                        <CoraAvatar size={64} />
-                      </div>
-                      <h2 className="text-2xl font-bold">Ask Cora Anything</h2>
-                      <p className="text-muted-foreground max-w-md mx-auto">
-                        I've analyzed your validation report and I'm here to help you make the best decisions for your business.
-                      </p>
-                      {/* Gradient accent line */}
-                      <div className="w-24 h-[2px] mx-auto rounded-full bg-gradient-to-r from-primary to-secondary" />
-                    </div>
-                  </div>
-
-                  {/* Starter questions grid */}
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-muted-foreground">Suggested questions:</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {STARTER_QUESTIONS.map((question, i) => (
-                        <button
-                          key={i}
-                          onClick={() => sendMessage(question)}
-                          disabled={isSending}
-                          className="group relative rounded-xl p-[1px] text-left transition-all duration-300 hover:scale-[1.01]"
-                        >
-                          {/* Hover gradient border */}
-                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/0 to-secondary/0 group-hover:from-primary/40 group-hover:via-secondary/30 group-hover:to-primary/40 transition-all duration-300" />
-                          <div className="relative rounded-[11px] bg-card border border-border/60 group-hover:border-transparent px-4 py-3 transition-all">
-                            <span className="text-sm">{question}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {/* Follow-ups */}
+              {message.role === 'assistant' && isLastAssistant(message) && !isTyping && !isSending && (
+                <div className="flex flex-wrap gap-1.5 mt-3 pl-4">
+                  {getFollowUps().map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => sendMessage(s)}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/30 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
               )}
-
-              {/* ── Message Bubbles ── */}
-              {messages.map((message) => (
-                <div key={message.id}>
-                  <div
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} ${
-                      newMessageIds.has(message.id)
-                        ? message.role === 'user'
-                          ? 'animate-slide-in-right'
-                          : 'animate-fade-up'
-                        : ''
-                    }`}
-                  >
-                    {message.role === 'user' ? (
-                      <div className="max-w-[80%] lg:max-w-[60%] rounded-3xl rounded-tr-lg px-5 py-3 bg-primary text-primary-foreground shadow-md">
-                        <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
-                      </div>
-                    ) : (
-                      <div className="max-w-[85%] lg:max-w-[70%] rounded-2xl rounded-tl-md px-5 py-4 bg-gradient-to-br from-card to-muted/30 border border-l-[3px] border-l-primary/40 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CoraAvatar size={20} />
-                          <span className="text-xs font-medium text-muted-foreground">Cora</span>
-                        </div>
-                        <MarkdownContent
-                          content={message.content}
-                          className="text-foreground/90 leading-relaxed [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ol]:my-2 [&_li]:text-foreground/90"
-                        />
-                        {/* Thumbs up/down on every 5th assistant message */}
-                        {shouldShowThumbs(message) && (
-                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/30">
-                            <span className="text-[10px] text-muted-foreground mr-1">Helpful?</span>
-                            <button
-                              onClick={() => handleMessageFeedback(message.id, true)}
-                              className={`p-1 rounded transition-colors ${messageFeedback[message.id] === true ? 'text-primary bg-primary/10' : 'text-muted-foreground/40 hover:text-primary'}`}
-                            >
-                              <ThumbsUp className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleMessageFeedback(message.id, false)}
-                              className={`p-1 rounded transition-colors ${messageFeedback[message.id] === false ? 'text-destructive bg-destructive/10' : 'text-muted-foreground/40 hover:text-destructive'}`}
-                            >
-                              <ThumbsDown className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Follow-up suggestions after last Cora message */}
-                  {message.role === 'assistant' && isLastAssistantMessage(message) && !isTyping && !isSending && (
-                    <div className="flex justify-start mt-2 ml-1 animate-fade-up delay-300">
-                      <div className="flex flex-wrap gap-1.5">
-                        {getFollowUps().map((suggestion, i) => (
-                          <button
-                            key={i}
-                            onClick={() => sendMessage(suggestion)}
-                            className="text-xs px-3 py-1.5 rounded-full border border-border/60 bg-card hover:border-primary/30 hover:bg-primary/[0.04] text-muted-foreground hover:text-foreground transition-all duration-200"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-
-                        {/* Calendly CTA chip */}
-                        {shouldShowCalendlyCTA(message) && (
-                          <button
-                            onClick={() => { openCalendly("chat", "cora_chat"); setCalendlyShown(true); }}
-                            className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/30 text-foreground hover:from-primary/20 hover:to-secondary/20 transition-all duration-200"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <CalendarCheck className="h-3 w-3" />
-                              Want to talk this through? Book a free call
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isTyping && <TypingIndicator />}
-              <div ref={messagesEndRef} />
             </div>
+          ))}
 
-            {/* ── Input Area ── */}
-            <div className="border-t p-4 glass" style={{ background: 'hsl(var(--card) / 0.7)', backdropFilter: 'blur(16px)' }}>
-              <div className="container max-w-4xl mx-auto">
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1 relative group">
-                    {/* Gradient focus ring */}
-                    <div className="absolute -inset-[2px] rounded-xl bg-gradient-to-r from-primary to-secondary opacity-0 group-focus-within:opacity-40 transition-opacity duration-300 blur-[1px]" />
-                    <Textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Ask Cora anything about your validation report..."
-                      disabled={isSending}
-                      className="relative resize-none min-h-[52px] max-h-[200px] rounded-xl border-border/60 bg-card focus-visible:ring-0 focus-visible:ring-offset-0"
-                      maxLength={500}
-                    />
-                  </div>
-                  <button
-                    onClick={() => sendMessage(input)}
-                    disabled={!input.trim() || isSending}
-                    className={`shrink-0 h-[52px] w-[52px] rounded-xl flex items-center justify-center text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${
-                      input.trim() && !isSending
-                        ? 'animate-pulse-glow'
-                        : ''
-                    }`}
-                    style={{ background: 'var(--gradient-hero)' }}
-                  >
-                    {isSending ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-                <div className="flex items-center justify-between mt-1.5 text-[10px] text-muted-foreground/60">
-                  <span>Shift + Enter for new line</span>
-                  <span>{input.length}/500</span>
-                </div>
+          {isTyping && (
+            <div className="border-l-2 border-primary/20 pl-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Cora is thinking...
               </div>
             </div>
-          </main>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Input */}
+      <div className="border-t border-border p-4 bg-card">
+        <div className="max-w-2xl mx-auto flex gap-2">
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything..."
+            disabled={isSending}
+            className="flex-1 h-11 px-4 rounded-lg border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+          />
+          <button
+            onClick={() => sendMessage(input)}
+            disabled={!input.trim() || isSending}
+            className="h-11 w-11 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-40 transition-colors"
+          >
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </button>
         </div>
       </div>
     </div>
