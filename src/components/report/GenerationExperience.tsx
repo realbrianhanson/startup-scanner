@@ -184,107 +184,66 @@ export const GenerationExperience = ({
 
   return (
     <div className="space-y-8 animate-fade-up">
-      <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-        {/* ── Section Timeline (left) ── */}
-        <div className="relative">
-          <div className="space-y-0">
-            {SECTIONS.map((section, idx) => {
-              const s = status[section.key] || "pending";
-              const isGenerating = s === "generating";
-              const isDone = s === "complete";
-              const sparked = justCompleted.has(section.key);
+      <div className="flex flex-col items-center text-center space-y-8 py-6 lg:py-12">
+        <RadarScan />
 
-              return (
-                <div key={section.key} className="flex items-center gap-3 relative py-2.5">
-                  {/* Vertical connecting line */}
-                  {idx < SECTIONS.length - 1 && (
-                    <div
-                      className="absolute left-[11px] top-[30px] w-[2px] h-[calc(100%-10px)]"
-                      style={{
-                        background: isDone
-                          ? "hsl(var(--success))"
-                          : "hsl(var(--border))",
-                        transition: "background 0.5s ease",
-                      }}
-                    />
-                  )}
-
-                  {/* Circle indicator */}
-                  <div className="relative shrink-0 z-10">
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                        isDone
-                          ? "bg-success border-success"
-                          : isGenerating
-                          ? "border-primary bg-primary/10 animate-pulse"
-                          : "border-border bg-muted"
-                      }`}
-                    >
-                      {isDone && (
-                        <Check className="h-3.5 w-3.5 text-success-foreground animate-scale-in" />
-                      )}
-                      {isGenerating && (
-                        <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-                      )}
-                    </div>
-                    <SparkleBurst active={sparked} />
-                  </div>
-
-                  {/* Label */}
-                  <span
-                    className={`text-sm transition-all duration-300 ${
-                      isDone
-                        ? "text-foreground font-medium"
-                        : isGenerating
-                        ? "text-primary font-semibold"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {section.label}
-                    {isGenerating && (
-                      <span className="inline-block ml-1.5 w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-                    )}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        {/* Current action */}
+        <div className="space-y-3">
+          <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+            {currentSection?.verb || "Preparing analysis..."}
+          </p>
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {estimatedRemaining}
+          </p>
         </div>
 
-        {/* ── Center Stage (right) ── */}
-        <div className="flex flex-col items-center justify-center text-center space-y-8 py-6 lg:py-12">
-          <RadarScan />
-
-          {/* Current action */}
-          <div className="space-y-3">
-            <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
-              {currentSection?.verb || "Preparing analysis..."}
-            </p>
-            <p className="text-sm text-muted-foreground tabular-nums">
-              {estimatedRemaining}
-            </p>
+        {/* Progress fraction */}
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <div className="w-32 h-1.5 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-700 ease-out"
+              style={{ width: `${(completedCount / SECTIONS.length) * 100}%` }}
+            />
           </div>
+          <span className="tabular-nums font-medium">
+            {completedCount}/{SECTIONS.length}
+          </span>
+        </div>
 
-          {/* Progress fraction */}
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <div className="w-32 h-1.5 rounded-full bg-muted overflow-hidden">
+        {/* Section Timeline — compact horizontal pills */}
+        <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+          {SECTIONS.map((section) => {
+            const s = status[section.key] || "pending";
+            const isGenerating = s === "generating";
+            const isDone = s === "complete";
+            const sparked = justCompleted.has(section.key);
+
+            return (
               <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-700 ease-out"
-                style={{ width: `${(completedCount / SECTIONS.length) * 100}%` }}
-              />
-            </div>
-            <span className="tabular-nums font-medium">
-              {completedCount}/{SECTIONS.length}
-            </span>
-          </div>
+                key={section.key}
+                className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all duration-500 ${
+                  isDone
+                    ? "bg-success/10 text-success border border-success/20"
+                    : isGenerating
+                    ? "bg-primary/10 text-primary border border-primary/30 animate-pulse"
+                    : "bg-muted/50 text-muted-foreground border border-border/30"
+                }`}
+              >
+                {isDone && <Check className="h-3 w-3" />}
+                {isGenerating && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />}
+                <span className="font-medium">{section.label}</span>
+                <SparkleBurst active={sparked} />
+              </div>
+            );
+          })}
+        </div>
 
-          {/* Pro tip */}
-          <div className="max-w-sm mx-auto">
-            <p className="text-xs text-muted-foreground/70 italic">
-              <span className="font-semibold text-muted-foreground not-italic">Pro tip:</span>{" "}
-              {PRO_TIPS[tipIndex.current]}
-            </p>
-          </div>
+        {/* Pro tip */}
+        <div className="max-w-sm mx-auto">
+          <p className="text-xs text-muted-foreground/70 italic">
+            <span className="font-semibold text-muted-foreground not-italic">Pro tip:</span>{" "}
+            {PRO_TIPS[tipIndex.current]}
+          </p>
         </div>
       </div>
     </div>
