@@ -123,6 +123,35 @@ export type Database = {
           },
         ]
       }
+      credit_resets: {
+        Row: {
+          id: string
+          previous_credits_used: number
+          reset_date: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          previous_credits_used: number
+          reset_date?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          previous_credits_used?: number
+          reset_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_resets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ai_credits_monthly: number
