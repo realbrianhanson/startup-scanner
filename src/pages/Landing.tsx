@@ -330,7 +330,7 @@ const Landing = () => {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            © 2025 Validifier. All rights reserved.
+            © 2025-2026 Validifier. All rights reserved.
           </div>
         </div>
       </footer>
