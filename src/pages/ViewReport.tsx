@@ -66,6 +66,7 @@ import { GoToMarketSection } from "@/components/report/GoToMarketSection";
 import { UspAnalysisSection } from "@/components/report/UspAnalysisSection";
 import { GameChangingIdeaSection } from "@/components/report/GameChangingIdeaSection";
 import { FinancialBasicsSection } from "@/components/report/FinancialBasicsSection";
+import { ActionPlanSection } from "@/components/report/ActionPlanSection";
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
 
@@ -340,6 +341,9 @@ const ViewReport = () => {
                 </ReportSectionErrorBoundary>
                 <ReportSectionErrorBoundary sectionName="Financial Basics">
                   <FinancialBasicsSection reportData={reportData} />
+                </ReportSectionErrorBoundary>
+                <ReportSectionErrorBoundary sectionName="Action Plan">
+                  <ActionPlanSection reportData={reportData} />
                 </ReportSectionErrorBoundary>
               </div>
             )}
