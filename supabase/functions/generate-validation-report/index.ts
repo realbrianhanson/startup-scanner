@@ -520,24 +520,40 @@ async function generateExecutiveSummary(project: any, apiKey: string) {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
 Description: ${project.description}
+${project.website_url ? `Website: ${project.website_url}` : ''}
 
-Create a brief executive summary with:
-1. Overall validation score (0-100) with justification
-2. Top 3 strengths
-3. Top 3 concerns
-4. Clear recommendation on whether to pursue this idea
+Create a rigorous executive summary as if you were a senior partner at McKinsey presenting to a client who is about to invest their life savings into this idea. Be honest — their financial future depends on your accuracy.
 
-CRITICAL: Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside the string values.
-Do NOT start the recommendation with "Go:" or "No-Go:" - just write the recommendation directly.
+SCORING CRITERIA (be strict):
+- 80-100: Exceptional opportunity with clear market demand, defensible advantages, and realistic path to profitability. Very rare.
+- 60-79: Solid opportunity with some notable advantages but significant challenges to address. Most good ideas land here.
+- 40-59: Viable but risky. The idea needs substantial pivoting, differentiation, or market validation before investing serious resources.
+- 20-39: Significant concerns outweigh the potential. Would recommend major pivots or exploring alternative ideas.
+- 0-19: Fundamental viability issues. The market, timing, or approach has critical flaws.
 
-Format as JSON with keys: 
-- score (number)
-- strengths (array of plain strings)
-- concerns (array of plain strings)
-- recommendation (plain text string with newlines for paragraphs - no markdown syntax, no "Go:" prefix)
-- reasoning (plain text string with newlines for paragraphs - no markdown syntax)`;
+For the strengths and concerns:
+- Be SPECIFIC to this exact business, not generic. Bad: "Growing market opportunity." Good: "The pet services market in mid-size cities is growing 12% annually, driven by millennials spending 2x more on pets than previous generations."
+- Each strength/concern should be 2-3 sentences with specific reasoning, not just a phrase.
+- Include at least one contrarian insight — something that's not obvious.
 
-  const result = await callAI(prompt, apiKey, 3000);
+For the recommendation:
+- Write 3-4 paragraphs of genuine strategic advice, not a generic "this has potential."
+- If the score is below 50, clearly explain what would need to change to make this viable.
+- If the score is above 70, explain the specific risks that could derail it.
+- Include the single most important thing the founder should do in the next 7 days.
+
+Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside string values.
+{
+  "score": number,
+  "score_justification": "2-3 sentences explaining exactly why you gave this specific score",
+  "strengths": ["detailed strength 1 (2-3 sentences)", "detailed strength 2", "detailed strength 3"],
+  "concerns": ["detailed concern 1 (2-3 sentences)", "detailed concern 2", "detailed concern 3"],
+  "recommendation": "3-4 paragraphs of strategic advice with specific action items",
+  "contrarian_insight": "One non-obvious observation about this business that most people would miss",
+  "seven_day_action": "The single most important thing to do in the next 7 days"
+}`;
+
+  const result = await callAI(prompt, apiKey, 4000);
   try {
     return JSON.parse(result);
   } catch {
