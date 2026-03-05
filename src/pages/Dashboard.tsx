@@ -155,19 +155,22 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Top Navigation */}
-      <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 md:space-x-8">
               <MobileNav user={user} profile={profile} />
-              <div className="flex items-center space-x-2">
+              <div
+                className="flex items-center space-x-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+                onClick={() => navigate("/dashboard")}
+              >
                 <BarChart3 className="h-8 w-8 text-primary" />
-                <span className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                <span className="text-2xl font-bold gradient-text">
                   Validifier
                 </span>
               </div>
               <div className="hidden md:flex items-center space-x-6">
-                <Button variant="ghost" className="font-medium bg-muted/50">
+                <Button variant="ghost" className="font-medium nav-active">
                   Dashboard
                 </Button>
               </div>
@@ -175,10 +178,10 @@ const Dashboard = () => {
 
             <div className="hidden md:flex items-center space-x-4">
               <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/settings")} className="animate-fade-down delay-100">
                 <Settings className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" onClick={handleSignOut}>
+              <Button variant="ghost" onClick={handleSignOut} className="animate-fade-down delay-200">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>

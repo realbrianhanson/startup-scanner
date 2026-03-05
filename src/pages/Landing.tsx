@@ -103,9 +103,12 @@ const Landing = () => {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="border-b border-white/10 bg-[hsl(222,47%,8%)]/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="glass-nav-dark sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <div
+            className="flex items-center space-x-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+            onClick={() => navigate("/")}
+          >
             <BarChart3 className="h-8 w-8 text-[hsl(221,83%,53%)]" />
             <span className="text-2xl font-bold bg-gradient-to-r from-[hsl(221,83%,53%)] to-[hsl(265,71%,57%)] bg-clip-text text-transparent">
               Validifier
@@ -113,10 +116,10 @@ const Landing = () => {
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => navigate("/auth")} className="text-white/70 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" onClick={() => navigate("/auth")} className="text-white/70 hover:text-white hover:bg-white/10 animate-fade-down delay-100">
               Sign In
             </Button>
-            <Button onClick={() => navigate("/auth")} className="shadow-medium">
+            <Button onClick={() => navigate("/auth")} className="shadow-medium animate-fade-down delay-200">
               Get Started
             </Button>
           </div>
