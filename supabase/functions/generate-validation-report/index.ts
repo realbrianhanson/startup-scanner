@@ -576,7 +576,7 @@ function buildContext(previousSections: Record<string, any>, industryCtx?: strin
   return parts.length > 0 ? '\n\nCONTEXT FROM PRIOR ANALYSIS:\n' + parts.join('\n') : '';
 }
 
-const SYSTEM_PROMPT = `You are a world-class business strategist combining McKinsey analytical rigor with Y Combinator startup pragmatism. Your analysis must be:
+const SYSTEM_PROMPT = `You are a world-class business strategist combining deep analytical rigor with Y Combinator startup pragmatism. Your analysis must be:
 
 1. SPECIFIC — Never give generic advice. Every insight must be tailored to THIS exact business, THIS exact industry, THIS exact market. If analyzing a dog-walking app in Austin, mention Austin's pet ownership rates, local competitors by name, and neighborhood-specific strategies.
 
@@ -649,7 +649,7 @@ Description: ${project.description}
 ${project.website_url ? `Website: ${project.website_url}` : ''}
 ${industryContext}
 
-Create a rigorous executive summary as if you were a senior partner at McKinsey presenting to a client who is about to invest their life savings into this idea. Be honest — their financial future depends on your accuracy.
+Create a rigorous executive summary as if you were a senior partner at a top strategy firm presenting to a client who is about to invest their life savings into this idea. Be honest — their financial future depends on your accuracy.
 
 SCORING CRITERIA (be strict):
 - 80-100: Exceptional opportunity with clear market demand, defensible advantages, and realistic path to profitability. Very rare.
