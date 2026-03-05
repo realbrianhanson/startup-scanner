@@ -29,21 +29,22 @@ const Landing = () => {
     {
       name: "Free",
       price: "$0",
-      credits: "5 AI credits/month",
-      features: ["1 project", "Basic validation report", "Email support"],
+      features: ["1 project per month", "5 AI chat messages", "Basic frameworks"],
+      cta: "Start Free",
     },
     {
       name: "Starter",
       price: "$29",
-      credits: "50 AI credits/month",
-      features: ["5 projects", "Full validation reports", "Priority support", "Chat with AI"],
+      features: ["3 active projects", "50 AI chat messages/month", "All strategic frameworks"],
       popular: true,
+      badge: "BEST FOR FIRST IDEA",
+      cta: "Start 14-Day Trial",
     },
     {
       name: "Growth",
       price: "$79",
-      credits: "200 AI credits/month",
-      features: ["Unlimited projects", "Advanced analytics", "Team collaboration", "API access"],
+      features: ["10 active projects", "200 AI chat messages/month", "Team collaboration"],
+      cta: "Start 14-Day Trial",
     },
   ];
 
@@ -215,7 +216,7 @@ const Landing = () => {
                 >
                   {tier.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-hero text-white px-4 py-1 rounded-full text-sm font-medium shadow-medium">
-                      Most Popular
+                      {tier.badge || "Most Popular"}
                     </div>
                   )}
                   <div>
@@ -224,7 +225,6 @@ const Landing = () => {
                       <span className="text-4xl font-bold">{tier.price}</span>
                       <span className="text-muted-foreground">/month</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{tier.credits}</p>
                   </div>
                   <ul className="space-y-3">
                     {tier.features.map((feature, i) => (
@@ -239,11 +239,20 @@ const Landing = () => {
                     variant={tier.popular ? "default" : "outline"}
                     onClick={() => navigate("/auth")}
                   >
-                    Get Started
+                    {tier.cta}
                   </Button>
                 </Card>
               ))}
             </div>
+
+            <p className="text-center mt-8 text-sm text-muted-foreground">
+              <button
+                onClick={() => navigate("/pricing")}
+                className="text-primary hover:underline cursor-pointer"
+              >
+                See all plans including Pro →
+              </button>
+            </p>
           </div>
         </div>
       </section>
