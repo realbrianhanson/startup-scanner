@@ -1,8 +1,9 @@
-import { CheckCircle2, ShieldCheck, Crosshair, Target } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Crosshair } from "lucide-react";
 import { InsightCallout } from "./InsightCallout";
 import { Badge } from "@/components/ui/badge";
-import { safeString, getCompetitiveLandscape } from "@/lib/reportHelpers";
+import { getCompetitiveLandscape } from "@/lib/reportHelpers";
 import { ReportSectionCard } from "./ReportSectionCard";
+import { cn } from "@/lib/utils";
 
 interface Props {
   reportData: any;
@@ -22,6 +23,107 @@ const threatBarColor = (level: string) => {
   return 'bg-amber-500';
 };
 
+/* ── Positioning Spectrum ── */
+
+const estimatePosition = (text: string): number => {
+  const t = (text || "").toLowerCase();
+  if (/premium|luxury|high.?end|enterprise|exclusive/.test(t)) return 85;
+  if (/affordable|budget|cheap|low.?cost|free/.test(t)) return 15;
+  if (/value|mid.?range|balanced|moderate/.test(t)) return 45;
+  if (/disrupt|undercut/.test(t)) return 25;
+  return 55; // default slightly right of center
+};
+
+const estimateCompetitorPosition = (comp: any, idx: number, total: number): number => {
+  const desc = [comp.what_they_do_well, comp.name, comp.vulnerability].filter(Boolean).join(" ");
+  const base = estimatePosition(desc);
+  // Spread competitors so they don't overlap
+  const spread = (idx / Math.max(total - 1, 1)) * 30 + 25; // 25-55 range as default
+  if (base !== 55) return Math.min(95, Math.max(5, base + (idx * 8 - total * 4)));
+  return Math.min(95, Math.max(5, spread + (idx % 2 === 0 ? 10 : -5)));
+};
+
+const PositioningSpectrum = ({
+  competitors,
+  positioning,
+  projectName,
+}: {
+  competitors: any[];
+  positioning: any;
+  projectName?: string;
+}) => {
+  const posText = typeof positioning === "string"
+    ? positioning
+    : positioning?.recommended_position || positioning?.positioning_against || "";
+
+  const userPos = estimatePosition(posText);
+
+  const compPositions = competitors.slice(0, 5).map((c, i) => ({
+    name: c.name || `Competitor ${i + 1}`,
+    pos: estimateCompetitorPosition(c, i, competitors.length),
+    threat: c.threat_level,
+  }));
+
+  return (
+    <div className="mb-2">
+      <h3 className="font-sans text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+        Market Positioning
+      </h3>
+      <div className="relative py-8">
+        {/* Axis labels */}
+        <div className="flex justify-between text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2 px-1">
+          <span>Budget</span>
+          <span>Mid-Market</span>
+          <span>Premium</span>
+        </div>
+
+        {/* Track */}
+        <div className="relative h-[3px] bg-border rounded-full mx-1">
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0 rounded-full opacity-30"
+            style={{
+              background: "linear-gradient(to right, hsl(var(--muted-foreground)/0.2), hsl(var(--primary)/0.4))",
+            }}
+          />
+
+          {/* Competitor dots */}
+          {compPositions.map((c, i) => (
+            <div
+              key={i}
+              className="absolute -translate-x-1/2 flex flex-col items-center"
+              style={{ left: `${c.pos}%`, top: "-28px" }}
+            >
+              <span className="text-[10px] text-muted-foreground font-medium mb-1 whitespace-nowrap max-w-[70px] truncate text-center block">
+                {c.name}
+              </span>
+              <div className={cn(
+                "w-3 h-3 rounded-full border-2 border-background",
+                c.threat?.toLowerCase() === "high" ? "bg-red-500" :
+                c.threat?.toLowerCase() === "low" ? "bg-emerald-500" : "bg-muted-foreground/60"
+              )} />
+            </div>
+          ))}
+
+          {/* User's business dot — larger, below the line */}
+          <div
+            className="absolute -translate-x-1/2 flex flex-col items-center"
+            style={{ left: `${userPos}%`, top: "6px" }}
+          >
+            <div className="w-4 h-4 rounded-full bg-primary border-2 border-background shadow-md shadow-primary/30" />
+            <span className="text-[10px] text-primary font-bold mt-1 whitespace-nowrap">
+              {projectName || "You"}
+            </span>
+          </div>
+        </div>
+
+        {/* Midpoint reference */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-[26px] h-6 border-l border-dashed border-muted-foreground/20" />
+      </div>
+    </div>
+  );
+};
+
 export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
   if (!reportData.competitive_landscape) return null;
 
@@ -29,6 +131,18 @@ export const CompetitiveLandscapeSection = ({ reportData }: Props) => {
 
   return (
     <ReportSectionCard id="competitive-landscape" title="Competitive Landscape">
+      {/* Positioning Spectrum — visual map at top */}
+      {compData.direct_competitors?.length > 0 && (
+        <>
+          <PositioningSpectrum
+            competitors={compData.direct_competitors}
+            positioning={compData.positioning}
+            projectName={reportData._projectName}
+          />
+          <div className="border-t border-border/30" />
+        </>
+      )}
+
       {/* Direct Competitors — card layout */}
       <h3 className="font-sans text-lg font-semibold flex items-center gap-2">Direct Competitors</h3>
       {compData.direct_competitors && compData.direct_competitors.length > 0 ? (
