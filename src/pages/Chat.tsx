@@ -84,10 +84,7 @@ export default function Chat() {
   const loadProjectAndChat = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
+      if (!user) return;
 
       // Load project
       const { data: projectData, error: projectError } = await supabase

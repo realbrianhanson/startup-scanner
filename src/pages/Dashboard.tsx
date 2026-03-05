@@ -25,17 +25,12 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+      if (!session) return;
 
       setUser(session.user);
 
-      // Fetch profile data
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -46,7 +41,6 @@ const Dashboard = () => {
         setProfile(profileData);
       }
 
-      // Fetch user projects
       const { data: projectsData } = await supabase
         .from("projects")
         .select("*")
@@ -61,18 +55,8 @@ const Dashboard = () => {
       setLoading(false);
     };
 
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/auth");
-      } else {
-        setUser(session.user);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    loadData();
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

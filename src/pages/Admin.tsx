@@ -33,11 +33,7 @@ const Admin = () => {
   const checkAdminAccess = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
+      if (!user) return;
 
       // Check if user has admin role
       const { data: roles, error } = await supabase
