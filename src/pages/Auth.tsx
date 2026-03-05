@@ -184,7 +184,7 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="promoCode">Promo Code (Optional)</Label>
                     <Input id="promoCode" type="text" placeholder="Enter promo code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} disabled={loading} />
-                    <p className="text-xs text-muted-foreground">Use code "REAL" to get 100 bonus credits!</p>
+                    <p className="text-xs text-muted-foreground">Have a promo code? Enter it here for bonus credits.</p>
                   </div>
                 )}
                 <Button type="submit" className="w-full" disabled={loading}>
