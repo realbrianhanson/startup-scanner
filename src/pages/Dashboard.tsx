@@ -20,6 +20,8 @@ import {
   MoreVertical,
   Trash2,
   RefreshCw,
+  CalendarCheck,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -110,6 +112,33 @@ const RocketIllustration = () => (
   </svg>
 );
 
+const CALENDLY_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
+
+declare global {
+  interface Window {
+    Calendly?: {
+      initPopupWidget: (opts: { url: string }) => void;
+    };
+  }
+}
+
+function openDashboardCalendly(utm_campaign: string) {
+  const url = `${CALENDLY_URL}?utm_source=validifier&utm_medium=dashboard&utm_campaign=${utm_campaign}`;
+  if (window.Calendly) {
+    window.Calendly.initPopupWidget({ url });
+  } else {
+    window.open(url, "_blank");
+  }
+}
+
+function isDashboardCtaDismissed(): boolean {
+  const dismissed = localStorage.getItem("dashboard_cta_dismissed");
+  if (!dismissed) return false;
+  const dismissedAt = new Date(dismissed).getTime();
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  return Date.now() - dismissedAt < sevenDays;
+}
+
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -120,6 +149,7 @@ const Dashboard = () => {
   const [loadError, setLoadError] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [ctaDismissed, setCtaDismissed] = useState(isDashboardCtaDismissed);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -421,7 +451,42 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* ── Create Project CTA ── */}
+          {/* ── Calendly Strategy Call CTA ── */}
+          {!ctaDismissed && projects.some(p => p.status === "complete") && (() => {
+            const lowScoreProject = projects.find(p => p.status === "complete" && p.validation_score !== null && p.validation_score < 50);
+            return (
+              <Card className="relative p-4 border border-primary/20 bg-gradient-to-r from-primary/[0.04] to-secondary/[0.04] animate-fade-up delay-300">
+                <button
+                  onClick={() => {
+                    localStorage.setItem("dashboard_cta_dismissed", new Date().toISOString());
+                    setCtaDismissed(true);
+                  }}
+                  className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <div className="flex items-center gap-4 pr-8">
+                  <div className="shrink-0 p-3 rounded-full bg-gradient-to-br from-primary to-secondary">
+                    <CalendarCheck className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <p className="flex-1 text-sm text-foreground">
+                    {lowScoreProject
+                      ? `Your "${lowScoreProject.name}" scored ${lowScoreProject.validation_score}/100. Want help improving it? Book a free call to review your results.`
+                      : "Get expert eyes on your validation results. Book a free strategy call."}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => openDashboardCalendly(lowScoreProject ? "low_score_cta" : "dashboard_cta")}
+                  >
+                    Book Now
+                  </Button>
+                </div>
+              </Card>
+            );
+          })()}
           <div className="relative rounded-xl p-[2px] animate-fade-up delay-300">
             {/* Animated gradient border */}
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer opacity-60" />
