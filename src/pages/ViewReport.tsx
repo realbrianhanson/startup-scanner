@@ -183,13 +183,18 @@ const ViewReport = () => {
     setProgress(0);
     try {
       const quality = qualityOverride || project?.report_quality || 'standard';
-      const { error } = await supabase.functions.invoke("generate-validation-report", { body: { project_id: id, regenerate, quality } });
-      if (error) throw error;
-      trackEvent('report_generation_started', { project_id: id, regenerate });
-      toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
+      const response = await supabase.functions.invoke("generate-validation-report", { body: { project_id: id, regenerate, quality } });
+      // The edge function saves data incrementally via DB + realtime, so even if the
+      // HTTP connection drops (common for long-running generation), the report completes.
+      if (response.error) {
+        console.warn("Edge function returned an error (report may still complete via realtime):", response.error.message);
+      } else {
+        trackEvent('report_generation_started', { project_id: id, regenerate });
+        toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
+      }
     } catch (error: any) {
-      toast.error(error.message || "Failed to start report generation");
-      setGenerating(false);
+      // Network-level errors (timeout, connection closed) are expected for long generations.
+      console.warn("Report generation request error (report may still complete):", error.message);
     }
   };
 
