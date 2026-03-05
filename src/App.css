@@ -95,6 +95,14 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.dark .glass-nav {
+  background: hsl(var(--background) / 0.75);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border-bottom: 1px solid hsl(0 0% 100% / 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
 .glass-nav-dark {
   background: hsl(222 47% 8% / 0.7);
   backdrop-filter: blur(16px) saturate(180%);
@@ -111,12 +119,45 @@
   border: 1px solid hsl(var(--border) / 0.5);
 }
 
-/* Gradient text utility */
+.dark .glass {
+  background: hsl(var(--card) / 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(0 0% 100% / 0.06);
+}
+
+/* Gradient text — brighter in dark mode */
 .gradient-text {
   background: var(--gradient-hero);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.dark .gradient-text {
+  filter: brightness(1.15);
+}
+
+/* Dark mode CTA section border */
+.dark .bg-gradient-hero {
+  border: 1px solid hsl(0 0% 100% / 0.08);
+}
+
+/* Dark mode decorative brightness boost */
+.dark .text-muted-foreground svg,
+.dark .opacity-\\[0\\.08\\],
+.dark .opacity-\\[0\\.1\\] {
+  filter: brightness(1.2);
+}
+
+/* Dark mode pulse-glow stronger */
+.dark .animate-pulse-glow {
+  animation: pulse-glow-dark 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow-dark {
+  0%, 100% { box-shadow: 0 0 24px hsl(var(--primary) / 0.25); }
+  50% { box-shadow: 0 0 48px hsl(var(--primary) / 0.45); }
 }
 
 /* Nav active indicator */
