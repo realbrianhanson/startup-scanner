@@ -231,7 +231,7 @@ serve(async (req) => {
     // the limit, then always finalize what we have.
     // ============================================================
     const startTime = Date.now();
-    const MAX_RUNTIME_MS = 240_000; // 240s — leave 60s buffer before hard timeout
+    const MAX_RUNTIME_MS = 200_000; // 200s — leave 100s buffer for finalization + email
 
     function isRunningLow(): boolean {
       return (Date.now() - startTime) > MAX_RUNTIME_MS;
