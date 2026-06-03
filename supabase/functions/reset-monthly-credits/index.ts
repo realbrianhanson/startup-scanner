@@ -12,22 +12,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify this is called by the cron scheduler or an admin
+    // Verify caller: must present either a strong CRON_SECRET via x-cron-secret header
+    // OR the service_role key as a bearer token (used by pg_cron).
+    // The anon key is PUBLIC and must never be accepted here.
     const cronSecret = Deno.env.get("CRON_SECRET");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const authHeader = req.headers.get("Authorization");
     const providedSecret = req.headers.get("x-cron-secret");
+    const bearerToken = authHeader?.replace("Bearer ", "");
 
-    // Allow if CRON_SECRET matches, or if called via service role / anon key from pg_cron
-    if (cronSecret && providedSecret !== cronSecret) {
-      // If no cron secret match, check if it's the standard anon key call from pg_cron
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-      const bearerToken = authHeader?.replace("Bearer ", "");
-      if (bearerToken !== anonKey) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    const validCronSecret = !!cronSecret && providedSecret === cronSecret;
+    const validServiceRole = !!serviceKey && bearerToken === serviceKey;
+
+    if (!validCronSecret && !validServiceRole) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(
