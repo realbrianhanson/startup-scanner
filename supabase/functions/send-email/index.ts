@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const BASE_URL = Deno.env.get("APP_BASE_URL") || "https://validifier.com";
 const corsHeaders = {
@@ -151,17 +152,56 @@ serve(async (req) => {
   }
 
   try {
-    // Only allow server-to-server calls using the service role key
     const authHeader = req.headers.get('Authorization');
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!serviceKey || !authHeader || authHeader !== `Bearer ${serviceKey}`) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const bearerToken = authHeader.replace('Bearer ', '');
+    const isServiceRole = !!serviceKey && bearerToken === serviceKey;
+
+    // If not service role, must be a valid user JWT
+    let authedUserEmail: string | null = null;
+    if (!isServiceRole) {
+      const supabase = createClient(
+        supabaseUrl,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data, error } = await supabase.auth.getUser(bearerToken);
+      if (error || !data?.user?.email) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      authedUserEmail = data.user.email.toLowerCase();
+    }
+
     const { to, subject, html, text, template, template_data } = await req.json();
+
+    // Non-service callers can only email themselves (prevents phishing/spam abuse)
+    if (!isServiceRole) {
+      if (typeof to !== 'string' || to.toLowerCase() !== authedUserEmail) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: can only send email to your own address' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      // Restrict raw HTML sends — templates only for non-service callers
+      if (!template) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: template required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // If using a template, generate email content
     let emailSubject = subject;
