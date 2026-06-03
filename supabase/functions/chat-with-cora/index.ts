@@ -67,6 +67,37 @@ serve(async (req) => {
     }
 
     // Load conversation history (last 20 messages)
+    // Verify project ownership FIRST (service role bypasses RLS)
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', project_id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (projectError || !project) {
+      return new Response(
+        JSON.stringify({ error: 'Project not found or access denied' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify conversation belongs to this project (which user owns)
+    if (conversation_id) {
+      const { data: conv } = await supabase
+        .from('chat_conversations')
+        .select('id, project_id')
+        .eq('id', conversation_id)
+        .eq('project_id', project_id)
+        .single();
+      if (!conv) {
+        return new Response(
+          JSON.stringify({ error: 'Conversation not found or access denied' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const { data: messages, error: messagesError } = await supabase
       .from('chat_messages')
       .select('*')
@@ -76,15 +107,7 @@ serve(async (req) => {
 
     if (messagesError) throw messagesError;
 
-    // Load project and report data
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', project_id)
-      .single();
-
-    if (projectError) throw projectError;
-
+    // Load report data (ownership already verified above)
     const { data: report, error: reportError } = await supabase
       .from('reports')
       .select('*')
