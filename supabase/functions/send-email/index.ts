@@ -151,6 +151,16 @@ serve(async (req) => {
   }
 
   try {
+    // Only allow server-to-server calls using the service role key
+    const authHeader = req.headers.get('Authorization');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!serviceKey || !authHeader || authHeader !== `Bearer ${serviceKey}`) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { to, subject, html, text, template, template_data } = await req.json();
 
     // If using a template, generate email content
