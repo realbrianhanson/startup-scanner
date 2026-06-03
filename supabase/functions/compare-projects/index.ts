@@ -43,10 +43,12 @@ serve(async (req) => {
       throw new Error('Could not find the requested projects');
     }
 
+    // Only fetch reports for projects the user owns (prevent IDOR)
+    const ownedProjectIds = projects.map((p) => p.id);
     const { data: reports, error: repErr } = await supabase
       .from('reports')
       .select('*')
-      .in('project_id', project_ids);
+      .in('project_id', ownedProjectIds);
 
     if (repErr) throw repErr;
 
