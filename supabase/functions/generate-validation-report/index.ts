@@ -1038,21 +1038,7 @@ Return JSON array with this structure:
 CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text. Start your response with [ and end with ].`;
 
   const parsed = await callAndParse(prompt, apiKey, 6000, model, "customer_personas");
-  if (parsed) return Array.isArray(parsed) ? parsed : [parsed];
-  return [{
-    priority: "1st", priority_reason: "Analysis failed - please regenerate report",
-    name: "Target Customer", age: "25-45", job: "Professional in target industry",
-    income: "Varies by market", location: "Primary market areas",
-    values: ["Value proposition alignment", "Problem resolution", "Efficiency"],
-    personality: ["Decision-maker", "Solution-oriented"],
-    pain_points: [{ pain: "Core problem your product solves", impact: "Significant time/money loss" }],
-    current_solution: "Existing alternatives that fall short",
-    dream_outcome: "The ideal state your product enables",
-    objections: [{ objection: "Common concern", root_cause: "Underlying uncertainty" }],
-    closing_angles: [{ angle: "Address with proof and guarantees", addresses: "Main objections" }],
-    proof_needed: "Case studies, testimonials, demos",
-    urgency_trigger: "Limited time offer or growing pain point"
-  }];
+  return Array.isArray(parsed) ? parsed : [parsed];
 }
 
 async function generateFinancialBasics(project: any, apiKey: string, context: string = '', model?: string) {
