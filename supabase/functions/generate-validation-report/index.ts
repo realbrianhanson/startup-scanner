@@ -929,6 +929,8 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
       parsed.positioning = { recommended_position: parsed.positioning, tagline_suggestion: '', positioning_against: '' };
     }
     return parsed;
+  }
+  return parsed;
 }
 
 async function generateStrategicFrameworks(project: any, apiKey: string, context: string = '', model?: string) {
