@@ -753,7 +753,7 @@ async function callAndParse(
   for (let attempt = 1; attempt <= 2; attempt++) {
     const result = await callAI(prompt, apiKey, maxTokens, model);
     const parsed = safeParseJSON(result, sectionName);
-    if (parsed) return parsed;
+    return parsed;
     console.error(`[${sectionName}] Parse failed on attempt ${attempt}${attempt === 1 ? " — retrying" : ""}`);
   }
   throw new Error(`Section ${sectionName} failed to return valid JSON after retry`);
@@ -800,8 +800,7 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "executive_summary");
-  if (parsed) return parsed;
-  return { score: 65, strengths: ["Analysis failed — please regenerate"], concerns: ["Parse error"], recommendation: "Please regenerate this report", reasoning: result?.substring(0, 200) };
+  return parsed;
 }
 
 async function generateMarketAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -953,13 +952,8 @@ Format as JSON with keys:
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "strategic_frameworks");
-  if (parsed) return parsed;
-  return { swot: { strengths: [], weaknesses: [], opportunities: [], threats: [] }, gtm_strategy: ["Analysis pending"] };
+  return parsed;
 }
-
-async function generatePorterFiveForces(project: any, apiKey: string, context: string = '', model?: string) {
-  const prompt = `Analyze "${project.name}" (${project.industry}) using Porter's Five Forces.
-${context}
 
 For each force, give a rating (High/Medium/Low) and 2-3 sentence analysis.
 
@@ -979,7 +973,7 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "porter_five_forces");
-  if (parsed) return parsed;
+  return parsed;
   return { 
     supplier_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
     buyer_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
@@ -1193,7 +1187,7 @@ Include 2-4 risks in each category (critical, moderate, low). Be specific to THI
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "risk_matrix");
-  if (parsed) return parsed;
+  return parsed;
   return { critical_risks: [], moderate_risks: [], low_risks: [], overall_risk_assessment: "Risk analysis pending", biggest_unknown: "Analysis pending" };
 }
 
@@ -1256,7 +1250,7 @@ Format as JSON with keys:
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "catwoe_analysis");
-  if (parsed) return parsed;
+  return parsed;
   return { 
     customers: { description: "Analysis pending", key_points: ["TBD"] },
     actors: { description: "Analysis pending", key_points: ["TBD"] },
@@ -1297,7 +1291,7 @@ Format as JSON with keys:
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "path_to_mvp");
-  if (parsed) return parsed;
+  return parsed;
   return {
     mvp_definition: { description: "Analysis pending", core_value: "TBD" },
     core_features: [{ feature: "Feature analysis pending", priority: "High", effort: "TBD", value: "TBD" }],
@@ -1377,7 +1371,7 @@ Return ONLY a JSON object (no markdown) in this exact structure:
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "usp_analysis");
-  if (parsed) return parsed;
+  return parsed;
   return {
     current_positioning: { summary: "Analysis pending", strengths: ["TBD"], gaps: ["TBD"] },
     recommended_usp: "Analysis pending",
@@ -1459,7 +1453,7 @@ CRITICAL: Return ONLY valid JSON. No markdown, no comments. Start your response 
 Include 2-3 target segments, 3-4 marketing channels, 2-3 pricing tiers, 3-4 launch phases, and 4-5 key metrics.`;
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "go_to_market_strategy");
-  if (parsed) return parsed;
+  return parsed;
   return {
     target_segments: [{ segment: "Primary Segment", description: "Analysis pending", size: "TBD", where_to_find_them: "TBD", messaging_angle: "TBD" }],
     value_proposition: { primary: "Analysis pending", for_segment_1: "", for_segment_2: "" },
@@ -1558,7 +1552,7 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 5000, model, "action_plan");
-  if (parsed) return parsed;
+  return parsed;
   return {
     week_1: { theme: "Getting Started", actions: [{ day: "Day 1-2", action: "Analysis pending — please regenerate", why: "N/A", deliverable: "N/A" }] },
     week_2: { theme: "Discovery", actions: [] },
@@ -1609,26 +1603,8 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "game_changing_idea");
-  if (parsed) return parsed;
-  return {
-    headline: "Analysis pending",
-    description: "Unable to generate game-changing idea. Please try regenerating the report.",
-    why_it_works: "N/A",
-    implementation_steps: ["Regenerate the report to see this section"],
-    risk: "N/A",
-    example_precedent: "N/A",
-    potential_impact: "N/A"
-  };
-}
-
-function calculateValidationScore(sections: any): { overall: number; factors: Array<{ name: string; score: number; weight: string }> } {
-  // Factor 1: AI's initial assessment (weight: 30%)
-  const aiScore = Math.min(Math.max(sections.executiveSummary?.score || 50, 0), 100);
-
-  // Factor 2: Market attractiveness (weight: 20%)
-  let marketScore = 50;
-  const growth = String(sections.marketAnalysis?.growth_rate || '').toLowerCase();
-  if (growth.includes('high') || growth.match(/\d{2,}%/)) marketScore = 75;
+  return parsed;
+}%/)) marketScore = 75;
   if (growth.includes('declining') || growth.includes('shrinking')) marketScore = 20;
   const maturity = String(sections.marketAnalysis?.market_maturity || '').toLowerCase();
   if (maturity.includes('early') || maturity.includes('growing')) marketScore += 10;
