@@ -737,6 +737,28 @@ async function callAI(prompt: string, apiKey: string, maxTokens?: number, model?
   return content;
 }
 
+/**
+ * Calls the AI, parses its JSON output, retries once on parse failure, and
+ * throws if it still can't parse. The caller's per-section try/catch marks the
+ * section as "failed" so the UI can render a clean fallback instead of
+ * placeholder text like "Analysis failed — please regenerate".
+ */
+async function callAndParse(
+  prompt: string,
+  apiKey: string,
+  maxTokens: number | undefined,
+  model: string | undefined,
+  sectionName: string,
+): Promise<any> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const result = await callAI(prompt, apiKey, maxTokens, model);
+    const parsed = safeParseJSON(result, sectionName);
+    if (parsed) return parsed;
+    console.error(`[${sectionName}] Parse failed on attempt ${attempt}${attempt === 1 ? " — retrying" : ""}`);
+  }
+  throw new Error(`Section ${sectionName} failed to return valid JSON after retry`);
+}
+
 async function generateExecutiveSummary(project: any, apiKey: string, industryContext: string = '', model?: string) {
   const prompt = `Business Idea: ${project.name}
 Industry: ${project.industry}
