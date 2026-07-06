@@ -1128,6 +1128,8 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
       parsed.revenue_model = { primary_model: 'See details', pricing_recommendation: parsed.revenue_model, revenue_streams: [] };
     }
     return parsed;
+  }
+  return parsed;
 }
 
 async function generateRiskMatrix(project: any, apiKey: string, allSections: Record<string, any>, model?: string) {
