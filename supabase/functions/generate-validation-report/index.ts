@@ -1536,7 +1536,15 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "game_changing_idea");
   return parsed;
-}%/)) marketScore = 75;
+
+function calculateValidationScore(sections: any): { overall: number; factors: { name: string; score: number; weight: string }[] } {
+  // Factor 1: AI Assessment (weight: 30%)
+  const aiScore = Math.min(Math.max(sections.executiveSummary?.score || 50, 0), 100);
+
+  // Factor 2: Market Opportunity (weight: 20%)
+  let marketScore = 50;
+  const growth = String(sections.marketAnalysis?.growth_rate || '').toLowerCase();
+  if (growth.includes('rapid') || growth.includes('high')) marketScore = 75;
   if (growth.includes('declining') || growth.includes('shrinking')) marketScore = 20;
   const maturity = String(sections.marketAnalysis?.market_maturity || '').toLowerCase();
   if (maturity.includes('early') || maturity.includes('growing')) marketScore += 10;
