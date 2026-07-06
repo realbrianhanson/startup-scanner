@@ -799,8 +799,7 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 4000, model);
-  const parsed = safeParseJSON(result, "executive_summary");
+  const parsed = await callAndParse(prompt, apiKey, 4000, model, "executive_summary");
   if (parsed) return parsed;
   return { score: 65, strengths: ["Analysis failed — please regenerate"], concerns: ["Parse error"], recommendation: "Please regenerate this report", reasoning: result?.substring(0, 200) };
 }
@@ -843,8 +842,7 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 4000, model);
-  const parsed = safeParseJSON(result, "market_analysis");
+  const parsed = await callAndParse(prompt, apiKey, 4000, model, "market_analysis");
   if (parsed) {
     // Ensure trends is an array of strings
     if (parsed.trends && Array.isArray(parsed.trends)) {
@@ -920,8 +918,7 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 4000, model);
-  const parsed = safeParseJSON(result, "competitive_landscape");
+  const parsed = await callAndParse(prompt, apiKey, 4000, model, "competitive_landscape");
   if (parsed) {
     if (parsed.direct_competitors && Array.isArray(parsed.direct_competitors)) {
       parsed.direct_competitors = parsed.direct_competitors.map((c: any) =>
@@ -964,8 +961,7 @@ Format as JSON with keys:
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 3000, model);
-  const parsed = safeParseJSON(result, "strategic_frameworks");
+  const parsed = await callAndParse(prompt, apiKey, 3000, model, "strategic_frameworks");
   if (parsed) return parsed;
   return { swot: { strengths: [], weaknesses: [], opportunities: [], threats: [] }, gtm_strategy: ["Analysis pending"] };
 }
@@ -991,8 +987,7 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no extra text.
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 3000, model);
-  const parsed = safeParseJSON(result, "porter_five_forces");
+  const parsed = await callAndParse(prompt, apiKey, 3000, model, "porter_five_forces");
   if (parsed) return parsed;
   return { 
     supplier_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
@@ -1059,8 +1054,7 @@ Return JSON array with this structure:
 
 CRITICAL: Return ONLY a valid JSON array. No markdown, no extra text. Start your response with [ and end with ].`;
 
-  const result = await callAI(prompt, apiKey, 6000, model);
-  const parsed = safeParseJSON(result, "customer_personas");
+  const parsed = await callAndParse(prompt, apiKey, 6000, model, "customer_personas");
   if (parsed) return Array.isArray(parsed) ? parsed : [parsed];
   return [{
     priority: "1st", priority_reason: "Analysis failed - please regenerate report",
@@ -1156,8 +1150,7 @@ CRITICAL: Return ONLY valid JSON. No markdown, no comments. Start your response 
   "break_even_estimate": "When the business is projected to become profitable and what needs to happen to get there"
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 5000, model);
-  const parsed = safeParseJSON(result, "financial_basics");
+  const parsed = await callAndParse(prompt, apiKey, 5000, model, "financial_basics");
   if (parsed) {
     // Backwards compat normalizations
     for (const tier of ['conservative', 'moderate', 'aggressive']) {
@@ -1215,8 +1208,7 @@ Include 2-4 risks in each category (critical, moderate, low). Be specific to THI
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 4000, model);
-  const parsed = safeParseJSON(result, "risk_matrix");
+  const parsed = await callAndParse(prompt, apiKey, 4000, model, "risk_matrix");
   if (parsed) return parsed;
   return { critical_risks: [], moderate_risks: [], low_risks: [], overall_risk_assessment: "Risk analysis pending", biggest_unknown: "Analysis pending" };
 }
@@ -1242,8 +1234,7 @@ CRITICAL: Return ONLY valid JSON with these exact 6 keys. Each value must be a p
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 3000, model);
-  const parsed = safeParseJSON(result, "pestel_analysis");
+  const parsed = await callAndParse(prompt, apiKey, 3000, model, "pestel_analysis");
   if (parsed) {
     const requiredKeys = ['political', 'economic', 'social', 'technological', 'environmental', 'legal'];
     const hasAllKeys = requiredKeys.every(key => parsed[key] && typeof parsed[key] === 'string' && parsed[key].length > 20);
@@ -1288,8 +1279,7 @@ Format as JSON with keys:
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 3000, model);
-  const parsed = safeParseJSON(result, "catwoe_analysis");
+  const parsed = await callAndParse(prompt, apiKey, 3000, model, "catwoe_analysis");
   if (parsed) return parsed;
   return { 
     customers: { description: "Analysis pending", key_points: ["TBD"] },
@@ -1330,8 +1320,7 @@ Format as JSON with keys:
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 3000, model);
-  const parsed = safeParseJSON(result, "path_to_mvp");
+  const parsed = await callAndParse(prompt, apiKey, 3000, model, "path_to_mvp");
   if (parsed) return parsed;
   return {
     mvp_definition: { description: "Analysis pending", core_value: "TBD" },
@@ -1411,8 +1400,7 @@ Return ONLY a JSON object (no markdown) in this exact structure:
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 3000, model);
-  const parsed = safeParseJSON(result, "usp_analysis");
+  const parsed = await callAndParse(prompt, apiKey, 3000, model, "usp_analysis");
   if (parsed) return parsed;
   return {
     current_positioning: { summary: "Analysis pending", strengths: ["TBD"], gaps: ["TBD"] },
@@ -1494,8 +1482,7 @@ CRITICAL: Return ONLY valid JSON. No markdown, no comments. Start your response 
 
 Include 2-3 target segments, 3-4 marketing channels, 2-3 pricing tiers, 3-4 launch phases, and 4-5 key metrics.`;
 
-  const result = await callAI(prompt, apiKey, 4000, model);
-  const parsed = safeParseJSON(result, "go_to_market_strategy");
+  const parsed = await callAndParse(prompt, apiKey, 4000, model, "go_to_market_strategy");
   if (parsed) return parsed;
   return {
     target_segments: [{ segment: "Primary Segment", description: "Analysis pending", size: "TBD", where_to_find_them: "TBD", messaging_angle: "TBD" }],
@@ -1594,8 +1581,7 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 5000, model);
-  const parsed = safeParseJSON(result, "action_plan");
+  const parsed = await callAndParse(prompt, apiKey, 5000, model, "action_plan");
   if (parsed) return parsed;
   return {
     week_1: { theme: "Getting Started", actions: [{ day: "Day 1-2", action: "Analysis pending — please regenerate", why: "N/A", deliverable: "N/A" }] },
@@ -1646,8 +1632,7 @@ Return ONLY valid JSON. Do NOT use markdown formatting (no **, no #) inside stri
 
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
-  const result = await callAI(prompt, apiKey, 4000, model);
-  const parsed = safeParseJSON(result, "game_changing_idea");
+  const parsed = await callAndParse(prompt, apiKey, 4000, model, "game_changing_idea");
   if (parsed) return parsed;
   return {
     headline: "Analysis pending",
