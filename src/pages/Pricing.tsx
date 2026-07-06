@@ -106,15 +106,28 @@ const FaqItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
   );
 };
 
-const STRIPE_PRICE_IDS: Record<string, string> = {
-  Pro: "price_pro_monthly_placeholder",
+// ─────────────────────────────────────────────────────────────
+// 💳 STRIPE CONFIG — REMIXER: SET THIS
+// Paste your real Stripe price IDs here after connecting Stripe.
+// While a value is still the placeholder (or empty) the checkout
+// button is disabled and shows "Billing isn't configured yet".
+// ─────────────────────────────────────────────────────────────
+export const STRIPE_PRICE_PLACEHOLDER = "price_pro_monthly_placeholder";
+export const STRIPE_PRICE_IDS: Record<string, string> = {
+  Pro: STRIPE_PRICE_PLACEHOLDER,
 };
+
+function isPriceConfigured(planName: string): boolean {
+  const id = STRIPE_PRICE_IDS[planName];
+  return !!id && id !== STRIPE_PRICE_PLACEHOLDER;
+}
 
 const Pricing = () => {
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     document.title = "Pricing | Validifier";
@@ -132,6 +145,13 @@ const Pricing = () => {
           .eq("id", u.id)
           .single();
         if (data) setProfile(data);
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", u.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        setIsAdmin(!!roleRow);
       }
     };
     loadUser();
@@ -148,8 +168,11 @@ const Pricing = () => {
       return;
     }
 
+    if (!isPriceConfigured(plan.name)) {
+      toast.error("Billing isn't configured yet.");
+      return;
+    }
     const priceId = STRIPE_PRICE_IDS[plan.name];
-    if (!priceId) return;
 
     setLoadingPlan(plan.name);
     try {
@@ -269,6 +292,18 @@ const Pricing = () => {
                       <Button className="w-full" variant="secondary" disabled>
                         Current Plan
                       </Button>
+                    ) : plan.name !== "Free" && !isPriceConfigured(plan.name) ? (
+                      <div className="space-y-2">
+                        <Button className="w-full" variant="outline" disabled>
+                          Billing isn&apos;t configured yet
+                        </Button>
+                        {isAdmin && (
+                          <p className="text-[11px] text-muted-foreground text-center">
+                            Admin: set <code className="font-mono">STRIPE_PRICE_IDS.{plan.name}</code>{" "}
+                            in <code className="font-mono">src/pages/Pricing.tsx</code>.
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <Button
                         className={`w-full transition-all duration-300 ${
