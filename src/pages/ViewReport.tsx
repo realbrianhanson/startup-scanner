@@ -642,14 +642,16 @@ const ViewReport = () => {
             </p>
           </div>
           <div className="space-y-3">
-            <Button
-              size="lg"
-              className="w-full animate-pulse-glow"
-              onClick={() => { openCompletionCalendly("report", "completion_cta"); setShowCompletionCTA(false); }}
-            >
-              <CalendarCheck className="mr-2 h-5 w-5" />
-              Book a Free Strategy Call
-            </Button>
+            {completionCtaConfigured && (
+              <Button
+                size="lg"
+                className="w-full animate-pulse-glow"
+                onClick={() => { openCompletionCalendly("report", "completion_cta"); setShowCompletionCTA(false); }}
+              >
+                <CalendarCheck className="mr-2 h-5 w-5" />
+                Book a Free Strategy Call
+              </Button>
+            )}
             <button
               onClick={() => setShowCompletionCTA(false)}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
