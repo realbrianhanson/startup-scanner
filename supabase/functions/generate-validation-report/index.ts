@@ -1536,6 +1536,7 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "game_changing_idea");
   return parsed;
+}
 
 function calculateValidationScore(sections: any): { overall: number; factors: { name: string; score: number; weight: string }[] } {
   // Factor 1: AI Assessment (weight: 30%)
