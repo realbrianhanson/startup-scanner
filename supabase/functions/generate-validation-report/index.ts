@@ -858,14 +858,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
     }
     return parsed;
   }
-  return { 
-    tam: "Market size analysis pending", sam: "Serviceable market pending", som: "Obtainable market pending", 
-    growth_rate: "Growth analysis pending", market_maturity: "Analysis pending",
-    trends: ["Market trend analysis in progress"], 
-    barriers: [{ barrier: "Entry barrier analysis in progress", difficulty: "Medium", how_to_overcome: "TBD" }], 
-    timing_assessment: "Market timing assessment in progress",
-    market_risks: ["Risk analysis pending"], adjacent_opportunities: "Adjacent opportunity analysis pending"
-  };
 }
 
 async function generateCompetitiveLandscape(project: any, apiKey: string, context: string = '', model?: string) {
@@ -940,7 +932,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
     }
     return parsed;
   }
-  return { direct_competitors: [], indirect_competitors: [], competitive_advantages: [{ advantage: "Analysis pending", why_defensible: "", duration: "" }], positioning: { recommended_position: "Analysis pending", tagline_suggestion: "", positioning_against: "" } };
 }
 
 async function generateStrategicFrameworks(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1163,13 +1154,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
     }
     return parsed;
   }
-  return {
-    startup_costs: { conservative: { total: "$10K", breakdown: [] }, moderate: { total: "$25K", breakdown: [] }, aggressive: { total: "$50K", breakdown: [] } },
-    revenue_model: { primary_model: "Analysis pending", pricing_recommendation: "", revenue_streams: [] },
-    unit_economics: null,
-    projections: { year1: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year2: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" }, year3: { revenue: "TBD", customers: "TBD", expenses: "TBD", net: "TBD", assumptions: "" } },
-    funding_recommendation: "Analysis pending", break_even_estimate: "Analysis pending"
-  };
 }
 
 async function generateRiskMatrix(project: any, apiKey: string, allSections: Record<string, any>, model?: string) {
@@ -1240,14 +1224,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
     const hasAllKeys = requiredKeys.every(key => parsed[key] && typeof parsed[key] === 'string' && parsed[key].length > 20);
     if (hasAllKeys) return parsed;
   }
-  return { 
-    political: "Political factors impact this business through regulatory oversight and government policy changes that may affect operations and market access.",
-    economic: "Economic conditions including inflation, interest rates, and consumer purchasing power directly influence market demand and operational costs.",
-    social: "Social and demographic trends shape customer preferences, workforce availability, and market opportunities for this business.",
-    technological: "Technological advancements create opportunities for innovation, automation, and competitive differentiation in this industry.",
-    environmental: "Environmental considerations including sustainability requirements and climate-related regulations increasingly affect business operations.",
-    legal: "Legal frameworks governing employment, consumer protection, and industry-specific regulations establish compliance requirements."
-  };
 }
 
 async function generateCatwoeAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
