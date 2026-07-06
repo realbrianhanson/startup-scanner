@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface CalendlyConfig {
   calendlyUrl: string;
   ctaEnabled: boolean;
+  ctaConfigured: boolean;
   ctaHeadline: string;
   loading: boolean;
   openCalendly: (utm_medium: string, utm_campaign: string) => void;
@@ -27,9 +28,14 @@ declare global {
   }
 }
 
+// Placeholder URL shipped with the template. When the stored URL still matches
+// this (or is empty) we treat Calendly as "not configured" and hide all CTAs
+// instead of opening a broken link. Remixers change it in Admin → CTA Settings.
+export const CALENDLY_PLACEHOLDER_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
+
 export function useCalendly(): CalendlyConfig {
   const [config, setConfig] = useState<{ calendly_url: string; cta_enabled: string; cta_headline: string }>({
-    calendly_url: "https://calendly.com/REPLACE_WITH_YOUR_LINK",
+    calendly_url: CALENDLY_PLACEHOLDER_URL,
     cta_enabled: "true",
     cta_headline: "Ready to Turn This Report Into Reality?",
   });
@@ -74,6 +80,11 @@ export function useCalendly(): CalendlyConfig {
 
   const openCalendly = useCallback(
     (utm_medium: string, utm_campaign: string) => {
+      // Never open the placeholder link
+      if (!config.calendly_url || config.calendly_url === CALENDLY_PLACEHOLDER_URL) {
+        console.warn("Calendly URL is not configured — CTA click ignored.");
+        return;
+      }
       const url = `${config.calendly_url}?utm_source=validifier&utm_medium=${utm_medium}&utm_campaign=${utm_campaign}`;
       if (window.Calendly) {
         window.Calendly.initPopupWidget({ url });
@@ -84,9 +95,13 @@ export function useCalendly(): CalendlyConfig {
     [config.calendly_url]
   );
 
+  const ctaConfigured =
+    !!config.calendly_url && config.calendly_url !== CALENDLY_PLACEHOLDER_URL;
+
   return {
     calendlyUrl: config.calendly_url,
-    ctaEnabled: config.cta_enabled === "true",
+    ctaEnabled: config.cta_enabled === "true" && ctaConfigured,
+    ctaConfigured,
     ctaHeadline: config.cta_headline,
     loading,
     openCalendly,

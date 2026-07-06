@@ -84,6 +84,27 @@ import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBound
 import { ReportFeedback } from "@/components/ReportFeedback";
 import { useCalendly } from "@/hooks/useCalendly";
 
+/**
+ * Fallback shown when a report section failed to generate. Users can retry by
+ * clicking "Regenerate Report" above.
+ */
+function FailedSectionCard({ title }: { title: string }) {
+  return (
+    <section className="scroll-mt-28 mb-16 md:mb-20">
+      <div className="h-px bg-border mb-8" />
+      <h2 className="font-serif text-2xl tracking-tight mb-3">{title}</h2>
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+        <p className="text-sm text-muted-foreground">
+          Couldn&apos;t generate this section. Click{" "}
+          <span className="font-medium text-foreground">Regenerate Report</span>{" "}
+          below to retry.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function getScoreMessage(score: number) {
   if (score >= 70) return "Great potential! Want to discuss how to capitalize on your strengths?";
   if (score >= 40) return "Solid foundation with room to improve. Want expert guidance on your next steps?";
@@ -105,7 +126,7 @@ const ViewReport = () => {
   const [celebrationPhase, setCelebrationPhase] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
   const wasGeneratingRef = useRef(false);
-  const { openCalendly: openCompletionCalendly } = useCalendly();
+  const { openCalendly: openCompletionCalendly, ctaConfigured: completionCtaConfigured } = useCalendly();
 
   useEffect(() => {
     const fetchTier = async () => {
@@ -410,14 +431,22 @@ const ViewReport = () => {
             )}
 
             {/* Executive Summary (always visible when available) */}
-            <ReportSectionErrorBoundary sectionName="Executive Summary">
-              <ExecutiveSummarySection reportData={reportData} />
-            </ReportSectionErrorBoundary>
+            {(report?.generation_status as Record<string, string> | null)?.executive_summary === "failed" ? (
+              <FailedSectionCard title="Executive Summary" />
+            ) : (
+              <ReportSectionErrorBoundary sectionName="Executive Summary">
+                <ExecutiveSummarySection reportData={reportData} />
+              </ReportSectionErrorBoundary>
+            )}
 
             {/* Game-Changing Idea — right after executive summary for maximum impact */}
-            <ReportSectionErrorBoundary sectionName="Game-Changing Idea">
-              <GameChangingIdeaSection reportData={reportData} />
-            </ReportSectionErrorBoundary>
+            {(report?.generation_status as Record<string, string> | null)?.game_changing_idea === "failed" ? (
+              <FailedSectionCard title="Game-Changing Idea" />
+            ) : (
+              <ReportSectionErrorBoundary sectionName="Game-Changing Idea">
+                <GameChangingIdeaSection reportData={reportData} />
+              </ReportSectionErrorBoundary>
+            )}
 
             {/* Inline CTA — after game-changing idea for peak excitement */}
             {project?.status === "complete" && reportData.game_changing_idea && (
@@ -427,45 +456,33 @@ const ViewReport = () => {
             {/* Report Sections — continuous document */}
             {project?.status === "complete" && (
               <div>
-                <ReportSectionErrorBoundary sectionName="Market Analysis">
-                  <MarketAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Customer Personas">
-                  <CustomerPersonasSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Competitive Landscape">
-                  <CompetitiveLandscapeSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Strategic Frameworks">
-                  <StrategicFrameworksSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Porter's Five Forces">
-                  <PorterFiveForcesSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="PESTEL Analysis">
-                  <PestelAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="CATWOE Analysis">
-                  <CatwoeAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Path to MVP">
-                  <PathToMvpSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Go-to-Market">
-                  <GoToMarketSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="USP Analysis">
-                  <UspAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Financial Basics">
-                  <FinancialBasicsSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Risk Matrix">
-                  <RiskMatrixSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Action Plan">
-                  <ActionPlanSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
+                {(() => {
+                  const status = (report?.generation_status as Record<string, string> | null) || {};
+                  const sections: Array<[string, string, React.ComponentType<any>]> = [
+                    ["market_analysis", "Market Analysis", MarketAnalysisSection],
+                    ["customer_personas", "Customer Personas", CustomerPersonasSection],
+                    ["competitive_landscape", "Competitive Landscape", CompetitiveLandscapeSection],
+                    ["strategic_frameworks", "Strategic Frameworks", StrategicFrameworksSection],
+                    ["porter_five_forces", "Porter's Five Forces", PorterFiveForcesSection],
+                    ["pestel_analysis", "PESTEL Analysis", PestelAnalysisSection],
+                    ["catwoe_analysis", "CATWOE Analysis", CatwoeAnalysisSection],
+                    ["path_to_mvp", "Path to MVP", PathToMvpSection],
+                    ["go_to_market_strategy", "Go-to-Market", GoToMarketSection],
+                    ["usp_analysis", "USP Analysis", UspAnalysisSection],
+                    ["financial_basics", "Financial Basics", FinancialBasicsSection],
+                    ["risk_matrix", "Risk Matrix", RiskMatrixSection],
+                    ["action_plan", "Action Plan", ActionPlanSection],
+                  ];
+                  return sections.map(([key, title, Component]) =>
+                    status[key] === "failed" ? (
+                      <FailedSectionCard key={key} title={title} />
+                    ) : (
+                      <ReportSectionErrorBoundary key={key} sectionName={title}>
+                        <Component reportData={reportData} />
+                      </ReportSectionErrorBoundary>
+                    )
+                  );
+                })()}
 
                 {/* End-of-Report CTA */}
                 <EndOfReportCTA />
@@ -642,14 +659,16 @@ const ViewReport = () => {
             </p>
           </div>
           <div className="space-y-3">
-            <Button
-              size="lg"
-              className="w-full animate-pulse-glow"
-              onClick={() => { openCompletionCalendly("report", "completion_cta"); setShowCompletionCTA(false); }}
-            >
-              <CalendarCheck className="mr-2 h-5 w-5" />
-              Book a Free Strategy Call
-            </Button>
+            {completionCtaConfigured && (
+              <Button
+                size="lg"
+                className="w-full animate-pulse-glow"
+                onClick={() => { openCompletionCalendly("report", "completion_cta"); setShowCompletionCTA(false); }}
+              >
+                <CalendarCheck className="mr-2 h-5 w-5" />
+                Book a Free Strategy Call
+              </Button>
+            )}
             <button
               onClick={() => setShowCompletionCTA(false)}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"

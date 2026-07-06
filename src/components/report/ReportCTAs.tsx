@@ -148,29 +148,9 @@ export const EndOfReportCTA = () => {
           Schedule Your Free Strategy Session
         </Button>
 
-        <div className="flex flex-col items-center gap-3 pt-2">
-          <div className="flex items-center -space-x-2">
-            {[
-              "bg-primary/70",
-              "bg-secondary/70",
-              "bg-primary/50",
-              "bg-secondary/50",
-            ].map((bg, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "w-8 h-8 rounded-full border-2 border-card flex items-center justify-center text-[10px] font-bold text-primary-foreground",
-                  bg
-                )}
-              >
-                {String.fromCharCode(65 + i)}
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Trusted by 500+ founders who validated with Validifier
-          </p>
-        </div>
+        <p className="text-xs text-muted-foreground pt-2">
+          Free 15-minute call. No obligation.
+        </p>
       </div>
     </div>
   );
