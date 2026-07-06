@@ -1192,10 +1192,7 @@ CRITICAL: Return ONLY valid JSON with these exact 6 keys. Each value must be a p
 CRITICAL: Start your response with { and end with }. No markdown, no code blocks, no text before or after the JSON.`;
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "pestel_analysis");
-  if (parsed) {
-    const requiredKeys = ['political', 'economic', 'social', 'technological', 'environmental', 'legal'];
-    const hasAllKeys = requiredKeys.every(key => parsed[key] && typeof parsed[key] === 'string' && parsed[key].length > 20);
-    if (hasAllKeys) return parsed;
+  return parsed;
 }
 
 async function generateCatwoeAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
