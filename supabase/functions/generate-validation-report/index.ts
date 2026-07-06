@@ -953,6 +953,10 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
   return parsed;
 }
 
+async function generatePorterFiveForces(project: any, apiKey: string, context: string = '', model?: string) {
+  const prompt = `Analyze "${project.name}" (${project.industry}) using Porter's Five Forces.
+${context}
+
 For each force, give a rating (High/Medium/Low) and 2-3 sentence analysis.
 
 Return JSON:
@@ -972,13 +976,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "porter_five_forces");
   return parsed;
-  return { 
-    supplier_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
-    buyer_power: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
-    competitive_rivalry: { rating: "High", analysis: "Unable to generate analysis. Please try regenerating the report." },
-    threat_of_substitution: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." },
-    threat_of_new_entry: { rating: "Medium", analysis: "Unable to generate analysis. Please try regenerating the report." }
-  };
 }
 
 async function generateCustomerPersonas(project: any, apiKey: string, context: string = '', model?: string) {
