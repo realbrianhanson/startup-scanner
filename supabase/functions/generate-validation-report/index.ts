@@ -856,7 +856,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
       );
     }
     return parsed;
-  }
 }
 
 async function generateCompetitiveLandscape(project: any, apiKey: string, context: string = '', model?: string) {
@@ -930,7 +929,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
       parsed.positioning = { recommended_position: parsed.positioning, tagline_suggestion: '', positioning_against: '' };
     }
     return parsed;
-  }
 }
 
 async function generateStrategicFrameworks(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1147,7 +1145,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
       parsed.revenue_model = { primary_model: 'See details', pricing_recommendation: parsed.revenue_model, revenue_streams: [] };
     }
     return parsed;
-  }
 }
 
 async function generateRiskMatrix(project: any, apiKey: string, allSections: Record<string, any>, model?: string) {
@@ -1188,7 +1185,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "risk_matrix");
   return parsed;
-  return { critical_risks: [], moderate_risks: [], low_risks: [], overall_risk_assessment: "Risk analysis pending", biggest_unknown: "Analysis pending" };
 }
 
 async function generatePestelAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1217,7 +1213,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
     const requiredKeys = ['political', 'economic', 'social', 'technological', 'environmental', 'legal'];
     const hasAllKeys = requiredKeys.every(key => parsed[key] && typeof parsed[key] === 'string' && parsed[key].length > 20);
     if (hasAllKeys) return parsed;
-  }
 }
 
 async function generateCatwoeAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1251,14 +1246,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "catwoe_analysis");
   return parsed;
-  return { 
-    customers: { description: "Analysis pending", key_points: ["TBD"] },
-    actors: { description: "Analysis pending", key_points: ["TBD"] },
-    transformation: { description: "Analysis pending", inputs: ["TBD"], outputs: ["TBD"] },
-    world_view: { description: "Analysis pending", assumptions: ["TBD"] },
-    owners: { description: "Analysis pending", stakeholders: ["TBD"] },
-    environmental_constraints: { description: "Analysis pending", constraints: ["TBD"] }
-  };
 }
 
 async function generatePathToMvp(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1292,15 +1279,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "path_to_mvp");
   return parsed;
-  return {
-    mvp_definition: { description: "Analysis pending", core_value: "TBD" },
-    core_features: [{ feature: "Feature analysis pending", priority: "High", effort: "TBD", value: "TBD" }],
-    development_phases: [{ phase: "Phase 1", duration: "TBD", deliverables: ["TBD"], milestones: ["TBD"] }],
-    resource_requirements: { team: ["TBD"], tools: ["TBD"], estimated_budget: "TBD", timeline: "TBD" },
-    launch_strategy: { target_audience: "TBD", channels: ["TBD"], approach: "TBD", timeline: "TBD" },
-    success_metrics: [{ metric: "TBD", target: "TBD", measurement: "TBD" }],
-    iteration_plan: { feedback_channels: ["TBD"], review_frequency: "TBD", improvement_process: "TBD" }
-  };
 }
 
 async function generateUSPAnalysis(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1372,16 +1350,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 3000, model, "usp_analysis");
   return parsed;
-  return {
-    current_positioning: { summary: "Analysis pending", strengths: ["TBD"], gaps: ["TBD"] },
-    recommended_usp: "Analysis pending",
-    key_differentiators: [{ differentiator: "TBD", description: "TBD", impact: "TBD" }],
-    competitive_advantages: [{ advantage: "TBD", description: "TBD", quantifiable_benefit: "TBD" }],
-    value_proposition: { what: "TBD", how: "TBD", why: "TBD" },
-    target_alignment: { primary_audience: "TBD", emotional_triggers: ["TBD"], rational_benefits: ["TBD"] },
-    proof_points: [{ claim: "TBD", evidence: "TBD", credibility: "TBD" }],
-    communication_guidelines: { elevator_pitch: "TBD", tagline_options: ["TBD"], key_messages: ["TBD"], tone: "TBD" }
-  };
 }
 
 async function generateGoToMarketStrategy(project: any, apiKey: string, context: string = '', model?: string) {
@@ -1454,16 +1422,6 @@ Include 2-3 target segments, 3-4 marketing channels, 2-3 pricing tiers, 3-4 laun
 
   const parsed = await callAndParse(prompt, apiKey, 4000, model, "go_to_market_strategy");
   return parsed;
-  return {
-    target_segments: [{ segment: "Primary Segment", description: "Analysis pending", size: "TBD", where_to_find_them: "TBD", messaging_angle: "TBD" }],
-    value_proposition: { primary: "Analysis pending", for_segment_1: "", for_segment_2: "" },
-    marketing_channels: [{ channel: "Digital Marketing", strategy: "Analysis pending", budget_allocation: "TBD", expected_roi: "TBD", timeline_to_results: "TBD" }],
-    pricing_strategy: { model: "TBD", tiers: [], competitive_position: "Analysis pending", psychological_reasoning: "" },
-    launch_phases: [{ phase: "Pre-Launch", duration: "4 weeks", activities: ["Market research"], goals: ["Build awareness"], budget: "TBD" }],
-    unconventional_tactic: { tactic: "Analysis pending", why_it_works: "", how_to_execute: "", example: "" },
-    key_metrics: [{ metric: "CAC", target: "TBD", measurement: "Monthly", tool: "Analytics" }],
-    first_10_customers: "Analysis pending"
-  };
 }
 function buildFullContext(sections: Record<string, any>): string {
   const parts: string[] = [];
@@ -1553,15 +1511,6 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
 
   const parsed = await callAndParse(prompt, apiKey, 5000, model, "action_plan");
   return parsed;
-  return {
-    week_1: { theme: "Getting Started", actions: [{ day: "Day 1-2", action: "Analysis pending — please regenerate", why: "N/A", deliverable: "N/A" }] },
-    week_2: { theme: "Discovery", actions: [] },
-    week_3: { theme: "Planning", actions: [] },
-    week_4: { theme: "Execution", actions: [] },
-    quick_wins: ["Regenerate the report to see this section"],
-    critical_milestones: [],
-    resources_needed: { budget_estimate: "TBD", tools: [], people: "TBD" }
-  };
 }
 
 async function generateGameChangingIdea(project: any, apiKey: string, previousSections: Record<string, any>, model?: string) {
