@@ -105,7 +105,7 @@ const ViewReport = () => {
   const [celebrationPhase, setCelebrationPhase] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
   const wasGeneratingRef = useRef(false);
-  const { openCalendly: openCompletionCalendly } = useCalendly();
+  const { openCalendly: openCompletionCalendly, ctaConfigured: completionCtaConfigured } = useCalendly();
 
   useEffect(() => {
     const fetchTier = async () => {
