@@ -1600,4 +1600,3 @@ function calculateValidationScore(sections: any): { overall: number; factors: { 
     ],
   };
 }
-}
