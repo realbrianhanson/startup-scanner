@@ -856,6 +856,8 @@ CRITICAL: Start your response with { and end with }. No markdown, no code blocks
       );
     }
     return parsed;
+  }
+  return parsed;
 }
 
 async function generateCompetitiveLandscape(project: any, apiKey: string, context: string = '', model?: string) {
