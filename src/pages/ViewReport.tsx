@@ -431,14 +431,22 @@ const ViewReport = () => {
             )}
 
             {/* Executive Summary (always visible when available) */}
-            <ReportSectionErrorBoundary sectionName="Executive Summary">
-              <ExecutiveSummarySection reportData={reportData} />
-            </ReportSectionErrorBoundary>
+            {(report?.generation_status as Record<string, string> | null)?.executive_summary === "failed" ? (
+              <FailedSectionCard title="Executive Summary" />
+            ) : (
+              <ReportSectionErrorBoundary sectionName="Executive Summary">
+                <ExecutiveSummarySection reportData={reportData} />
+              </ReportSectionErrorBoundary>
+            )}
 
             {/* Game-Changing Idea — right after executive summary for maximum impact */}
-            <ReportSectionErrorBoundary sectionName="Game-Changing Idea">
-              <GameChangingIdeaSection reportData={reportData} />
-            </ReportSectionErrorBoundary>
+            {(report?.generation_status as Record<string, string> | null)?.game_changing_idea === "failed" ? (
+              <FailedSectionCard title="Game-Changing Idea" />
+            ) : (
+              <ReportSectionErrorBoundary sectionName="Game-Changing Idea">
+                <GameChangingIdeaSection reportData={reportData} />
+              </ReportSectionErrorBoundary>
+            )}
 
             {/* Inline CTA — after game-changing idea for peak excitement */}
             {project?.status === "complete" && reportData.game_changing_idea && (
@@ -448,45 +456,33 @@ const ViewReport = () => {
             {/* Report Sections — continuous document */}
             {project?.status === "complete" && (
               <div>
-                <ReportSectionErrorBoundary sectionName="Market Analysis">
-                  <MarketAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Customer Personas">
-                  <CustomerPersonasSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Competitive Landscape">
-                  <CompetitiveLandscapeSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Strategic Frameworks">
-                  <StrategicFrameworksSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Porter's Five Forces">
-                  <PorterFiveForcesSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="PESTEL Analysis">
-                  <PestelAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="CATWOE Analysis">
-                  <CatwoeAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Path to MVP">
-                  <PathToMvpSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Go-to-Market">
-                  <GoToMarketSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="USP Analysis">
-                  <UspAnalysisSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Financial Basics">
-                  <FinancialBasicsSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Risk Matrix">
-                  <RiskMatrixSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
-                <ReportSectionErrorBoundary sectionName="Action Plan">
-                  <ActionPlanSection reportData={reportData} />
-                </ReportSectionErrorBoundary>
+                {(() => {
+                  const status = (report?.generation_status as Record<string, string> | null) || {};
+                  const sections: Array<[string, string, React.ComponentType<any>]> = [
+                    ["market_analysis", "Market Analysis", MarketAnalysisSection],
+                    ["customer_personas", "Customer Personas", CustomerPersonasSection],
+                    ["competitive_landscape", "Competitive Landscape", CompetitiveLandscapeSection],
+                    ["strategic_frameworks", "Strategic Frameworks", StrategicFrameworksSection],
+                    ["porter_five_forces", "Porter's Five Forces", PorterFiveForcesSection],
+                    ["pestel_analysis", "PESTEL Analysis", PestelAnalysisSection],
+                    ["catwoe_analysis", "CATWOE Analysis", CatwoeAnalysisSection],
+                    ["path_to_mvp", "Path to MVP", PathToMvpSection],
+                    ["go_to_market_strategy", "Go-to-Market", GoToMarketSection],
+                    ["usp_analysis", "USP Analysis", UspAnalysisSection],
+                    ["financial_basics", "Financial Basics", FinancialBasicsSection],
+                    ["risk_matrix", "Risk Matrix", RiskMatrixSection],
+                    ["action_plan", "Action Plan", ActionPlanSection],
+                  ];
+                  return sections.map(([key, title, Component]) =>
+                    status[key] === "failed" ? (
+                      <FailedSectionCard key={key} title={title} />
+                    ) : (
+                      <ReportSectionErrorBoundary key={key} sectionName={title}>
+                        <Component reportData={reportData} />
+                      </ReportSectionErrorBoundary>
+                    )
+                  );
+                })()}
 
                 {/* End-of-Report CTA */}
                 <EndOfReportCTA />
