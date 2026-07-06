@@ -84,6 +84,27 @@ import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBound
 import { ReportFeedback } from "@/components/ReportFeedback";
 import { useCalendly } from "@/hooks/useCalendly";
 
+/**
+ * Fallback shown when a report section failed to generate. Users can retry by
+ * clicking "Regenerate Report" above.
+ */
+function FailedSectionCard({ title }: { title: string }) {
+  return (
+    <section className="scroll-mt-28 mb-16 md:mb-20">
+      <div className="h-px bg-border mb-8" />
+      <h2 className="font-serif text-2xl tracking-tight mb-3">{title}</h2>
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+        <p className="text-sm text-muted-foreground">
+          Couldn&apos;t generate this section. Click{" "}
+          <span className="font-medium text-foreground">Regenerate Report</span>{" "}
+          below to retry.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function getScoreMessage(score: number) {
   if (score >= 70) return "Great potential! Want to discuss how to capitalize on your strengths?";
   if (score >= 40) return "Solid foundation with room to improve. Want expert guidance on your next steps?";
