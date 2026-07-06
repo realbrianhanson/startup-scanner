@@ -354,7 +354,7 @@ const Landing = () => {
                   </div>
                 </div>
                 <ul className="space-y-3">
-                  {["1 validation report per month", "Standard AI analysis", "All 12 report sections", "AI advisor chat (10 messages)", "PDF export"].map((f, i) => (
+                  {["1 validation report per month", "Standard AI analysis", "All 12 report sections", "10 AI advisor chat messages per month", "PDF export"].map((f, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                       <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
                       {f}
@@ -386,7 +386,7 @@ const Landing = () => {
                     "5 validation reports per month",
                     "Premium AI analysis (Gemini 3.1 Pro)",
                     "All sections + Game-Changing Idea + Action Plan",
-                    "AI advisor chat (unlimited)",
+                    "40 AI advisor chat messages per month",
                     "Real competitor names and market data",
                     "Detailed financial projections",
                     "PDF + Markdown export",
