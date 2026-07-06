@@ -6,10 +6,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─────────────────────────────────────────────────────────────
+// 💳 PLAN CONFIG — REMIXER: KEEP IN SYNC WITH src/pages/Pricing.tsx
+//
+// credits math (change these together with the pricing copy):
+//   standard report = 5 credits, premium report = 12 credits, chat msg = 1 credit
+//   Free  → 15 credits  (1 standard report + 10 chat msgs)
+//   Pro   → 100 credits (5 premium reports + 40 chat msgs)
+// ─────────────────────────────────────────────────────────────
+const FREE_MONTHLY_CREDITS = 15;
 const PLAN_CONFIG: Record<string, { tier: string; credits: number }> = {
-  starter: { tier: "starter", credits: 50 },
-  growth: { tier: "growth", credits: 200 },
-  pro: { tier: "pro", credits: 999 },
+  pro: { tier: "pro", credits: 100 },
 };
 
 async function verifyStripeSignature(payload: string, signature: string, secret: string): Promise<boolean> {
@@ -138,7 +145,7 @@ Deno.serve(async (req) => {
           .from("profiles")
           .update({
             subscription_tier: "free",
-            ai_credits_monthly: 20,
+            ai_credits_monthly: FREE_MONTHLY_CREDITS,
             ai_credits_used: 0,
           })
           .eq("id", profile.id);
