@@ -333,7 +333,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing */}
-      <section className="py-32 md:py-40 relative">
+      <section className="py-24 md:py-28 relative">
         <div className="absolute inset-0 dot-grid opacity-[0.03]" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto">
@@ -417,7 +417,7 @@ const Landing = () => {
       </section>
 
       {/* See what a report looks like */}
-      <section className="py-32 md:py-40">
+      <section className="py-20 md:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto space-y-10">
             <div className="text-center space-y-4">
@@ -498,7 +498,7 @@ const Landing = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-32 md:py-40 relative">
+      <section className="py-24 md:py-32 relative">
         <div className="absolute inset-0 dot-grid opacity-[0.04]" />
         <div className="container mx-auto px-4 text-center space-y-8 max-w-3xl relative z-10">
           <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl tracking-[-0.03em] text-foreground">
