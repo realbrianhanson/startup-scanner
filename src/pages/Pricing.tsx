@@ -1,12 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Check, BarChart3, ChevronDown, Sparkles, Loader2, ArrowRight, Star } from "lucide-react";
+import { Check, ChevronDown, Loader2, ArrowRight, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const PLANS = [
   {
@@ -79,14 +78,15 @@ const FaqItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
 
   return (
     <div
-      className="border border-border rounded-lg overflow-hidden transition-all duration-300 hover:border-primary/30"
+      className="border border-border rounded-lg overflow-hidden bg-card transition-colors duration-200 hover:border-foreground/20"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between p-5 text-left group"
       >
-        <span className="font-semibold text-foreground pr-4">{q}</span>
+        <span className="font-medium text-foreground pr-4">{q}</span>
         <ChevronDown
           className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
@@ -96,10 +96,7 @@ const FaqItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
         <div className="overflow-hidden">
-          <div className="flex">
-            <div className={`w-1 shrink-0 rounded-full transition-all duration-300 ${open ? "bg-gradient-to-b from-primary to-secondary" : "bg-transparent"}`} />
-            <p className="text-sm text-muted-foreground p-5 pt-0 pl-4">{a}</p>
-          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground px-5 pb-5">{a}</p>
         </div>
       </div>
     </div>
