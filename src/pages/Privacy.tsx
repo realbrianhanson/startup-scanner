@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BarChart3, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Privacy = () => {
@@ -12,10 +12,12 @@ const Privacy = () => {
     <div className="min-h-screen bg-background">
       <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate("/")}>
-            <BarChart3 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Validifier</span>
-          </div>
+          <span
+            className="text-2xl font-serif cursor-pointer tracking-tight text-foreground"
+            onClick={() => navigate("/")}
+          >
+            Validifier
+          </span>
           <div className="flex items-center space-x-2">
             <ThemeToggle />
             <Button variant="ghost" onClick={() => navigate(-1 as any)}>

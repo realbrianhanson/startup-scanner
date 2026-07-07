@@ -1,12 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Check, BarChart3, ChevronDown, Sparkles, Loader2, ArrowRight, Star } from "lucide-react";
+import { Check, ChevronDown, Loader2, ArrowRight, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const PLANS = [
   {
@@ -79,14 +78,15 @@ const FaqItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
 
   return (
     <div
-      className="border border-border rounded-lg overflow-hidden transition-all duration-300 hover:border-primary/30"
+      className="border border-border rounded-lg overflow-hidden bg-card transition-colors duration-200 hover:border-foreground/20"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between p-5 text-left group"
       >
-        <span className="font-semibold text-foreground pr-4">{q}</span>
+        <span className="font-medium text-foreground pr-4">{q}</span>
         <ChevronDown
           className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
@@ -96,10 +96,7 @@ const FaqItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
         <div className="overflow-hidden">
-          <div className="flex">
-            <div className={`w-1 shrink-0 rounded-full transition-all duration-300 ${open ? "bg-gradient-to-b from-primary to-secondary" : "bg-transparent"}`} />
-            <p className="text-sm text-muted-foreground p-5 pt-0 pl-4">{a}</p>
-          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground px-5 pb-5">{a}</p>
         </div>
       </div>
     </div>
@@ -198,37 +195,43 @@ const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in" style={{ opacity: 1 }}>
-      {/* Navigation */}
-      <nav className="glass-nav sticky top-0 z-50">
+    <div className="min-h-screen grain bg-background text-foreground animate-fade-in">
+      {/* Navigation — matches Landing */}
+      <nav className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div
-            className="flex items-center space-x-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
+          <span
+            className="text-2xl font-serif cursor-pointer tracking-tight text-foreground"
             onClick={() => navigate("/")}
           >
-            <BarChart3 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold gradient-text">Validifier</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>Dashboard</Button>
-            <Button onClick={() => navigate("/auth")}>Start Analyzing</Button>
+            Validifier
+          </span>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => navigate("/auth")}
+              className="text-sm font-medium px-5 py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground"
+            >
+              Start Analyzing
+            </button>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-20 pb-16">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-primary/10 blur-[120px]" />
-          <div className="absolute top-10 right-1/4 w-80 h-80 rounded-full bg-secondary/10 blur-[100px]" />
-        </div>
-
-        <div className="container mx-auto px-4">
+      <section className="relative pt-24 pb-16">
+        <div className="absolute inset-0 dot-grid opacity-[0.04]" />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tighter">
-              Straightforward <span className="gradient-text">pricing</span>
+            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl tracking-[-0.03em] text-foreground">
+              Straightforward pricing
             </h1>
-            <p className="text-xl text-muted-foreground max-w-xl mx-auto">
+            <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
               Start free with a full validation report. Upgrade to Pro for deeper, more specific analysis.
             </p>
           </div>
@@ -236,93 +239,86 @@ const Pricing = () => {
       </section>
 
       {/* Pricing Cards */}
-      <section className="pb-20">
+      <section className="pb-24">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-start">
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
             {PLANS.map((plan, index) => {
               const isPopular = plan.popular;
+              const isCurrent = user && profile?.subscription_tier === plan.name.toLowerCase();
+              const notConfigured = plan.name !== "Free" && !isPriceConfigured(plan.name);
               return (
                 <div
                   key={index}
-                  className={`relative group transition-all duration-500 ${isPopular ? "md:scale-105 md:z-10" : ""}`}
+                  className={`relative rounded-xl border p-8 space-y-6 flex flex-col bg-card transition-all duration-200 hover:-translate-y-px ${
+                    isPopular ? "border-primary/30" : "border-border"
+                  }`}
                 >
-                  {isPopular && (
-                    <div className="absolute -inset-[2px] rounded-xl bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient opacity-80" />
+                  {plan.badge && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded text-xs font-medium bg-primary text-primary-foreground whitespace-nowrap">
+                      {plan.badge}
+                    </div>
                   )}
 
-                  <Card
-                    className={`relative p-8 space-y-6 flex flex-col h-full transition-all duration-300 hover:-translate-y-1 ${
-                      isPopular
-                        ? "border-0 shadow-glow"
-                        : "border border-border hover:border-primary/30 hover:shadow-medium"
-                    }`}
-                  >
-                    {plan.badge && (
-                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold tracking-wide whitespace-nowrap shadow-medium bg-gradient-to-r from-primary to-secondary text-primary-foreground">
-                        {plan.badge}
-                      </div>
-                    )}
-
-                    <div className="pt-2">
-                      <h3 className="text-2xl font-bold text-foreground">{plan.name}</h3>
-                      <div className="mt-4 mb-1">
-                        <span className="text-5xl font-extrabold font-mono tabular-nums text-foreground">
-                          {plan.price}
-                        </span>
-                        {plan.price !== "$0" && (
-                          <span className="text-muted-foreground text-sm ml-1">/month</span>
-                        )}
-                      </div>
+                  <div>
+                    <h3 className="text-xl font-medium text-foreground/90">{plan.name}</h3>
+                    <div className="mt-3">
+                      <span className="text-4xl font-mono font-bold text-foreground tabular-nums">
+                        {plan.price}
+                      </span>
+                      {plan.price !== "$0" && (
+                        <span className="text-sm ml-1 text-muted-foreground">/month</span>
+                      )}
                     </div>
+                  </div>
 
-                    <div className="h-px bg-border" />
+                  <ul className="space-y-3 flex-grow">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-                    <ul className="space-y-3 flex-grow">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <div className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <Check className="h-3 w-3 text-primary" />
-                          </div>
-                          <span className="text-sm text-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {user && profile?.subscription_tier === plan.name.toLowerCase() ? (
-                      <Button className="w-full" variant="secondary" disabled>
-                        Current Plan
-                      </Button>
-                    ) : plan.name !== "Free" && !isPriceConfigured(plan.name) ? (
-                      <div className="space-y-2">
-                        <Button className="w-full" variant="outline" disabled>
-                          Billing isn&apos;t configured yet
-                        </Button>
-                        {isAdmin && (
-                          <p className="text-[11px] text-muted-foreground text-center">
-                            Admin: set <code className="font-mono">STRIPE_PRICE_IDS.{plan.name}</code>{" "}
-                            in <code className="font-mono">src/pages/Pricing.tsx</code>.
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <Button
-                        className={`w-full transition-all duration-300 ${
-                          isPopular
-                            ? "bg-gradient-to-r from-primary to-secondary hover:shadow-glow text-primary-foreground border-0"
-                            : ""
-                        }`}
-                        variant={isPopular ? "default" : "outline"}
-                        onClick={() => handleSubscribe(plan)}
-                        disabled={loadingPlan === plan.name}
+                  {isCurrent ? (
+                    <button
+                      disabled
+                      className="w-full py-3 rounded-lg text-sm font-medium border border-border text-muted-foreground bg-transparent"
+                    >
+                      Current Plan
+                    </button>
+                  ) : notConfigured ? (
+                    <div className="space-y-2">
+                      <button
+                        disabled
+                        className="w-full py-3 rounded-lg text-sm font-medium border border-border text-muted-foreground bg-transparent"
                       >
-                        {loadingPlan === plan.name ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          plan.cta
-                        )}
-                      </Button>
-                    )}
-                  </Card>
+                        Billing isn&apos;t configured yet
+                      </button>
+                      {isAdmin && (
+                        <p className="text-[11px] text-muted-foreground text-center">
+                          Admin: set <code className="font-mono">STRIPE_PRICE_IDS.{plan.name}</code>{" "}
+                          in <code className="font-mono">src/pages/Pricing.tsx</code>.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleSubscribe(plan)}
+                      disabled={loadingPlan === plan.name}
+                      className={`w-full py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:-translate-y-px flex items-center justify-center ${
+                        isPopular
+                          ? "bg-primary text-primary-foreground hover:brightness-110"
+                          : "border border-border text-foreground/80 bg-transparent hover:border-foreground/30"
+                      }`}
+                    >
+                      {loadingPlan === plan.name ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        plan.cta
+                      )}
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -332,43 +328,51 @@ const Pricing = () => {
 
       {/* Feature Comparison Table */}
       <ScrollReveal>
-        <section className="py-16 bg-muted/30">
+        <section className="py-20 border-t border-border">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-extrabold tracking-tight text-center mb-2">Compare plans</h2>
-            <p className="text-muted-foreground text-center mb-10 max-w-lg mx-auto">See exactly what's included</p>
+            <div className="max-w-3xl mx-auto">
+              <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-[-0.03em] text-center mb-4 text-foreground">
+                Compare plans
+              </h2>
+              <p className="text-muted-foreground text-center mb-12 text-base">
+                See exactly what's included
+              </p>
 
-            <div className="max-w-3xl mx-auto overflow-x-auto rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="sticky top-0 bg-card z-10 border-b border-border">
-                    <th className="text-left p-4 font-semibold text-foreground min-w-[200px]">Feature</th>
-                    {PLANS.map((p, i) => (
-                      <th key={i} className={`p-4 text-center font-semibold min-w-[140px] ${p.popular ? "text-primary" : "text-foreground"}`}>
-                        {p.name}
-                        {p.popular && <Sparkles className="inline h-3.5 w-3.5 ml-1 text-primary" />}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {FEATURE_ROWS.map((row, i) => (
-                    <tr key={i} className={`border-b border-border/50 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
-                      <td className="p-4 text-foreground">{row.label}</td>
-                      {row.values.map((val, j) => (
-                        <td key={j} className="p-4 text-center">
-                          {val === true ? (
-                            <Check className="h-4 w-4 text-primary mx-auto" />
-                          ) : val === false ? (
-                            <span className="text-muted-foreground/40">—</span>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">{val}</span>
-                          )}
-                        </td>
+              <div className="overflow-x-auto rounded-xl border border-border bg-card">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-4 font-medium text-foreground/80 min-w-[200px]">Feature</th>
+                      {PLANS.map((p, i) => (
+                        <th
+                          key={i}
+                          className="p-4 text-center font-medium text-foreground min-w-[140px]"
+                        >
+                          {p.name}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {FEATURE_ROWS.map((row, i) => (
+                      <tr key={i} className="border-b border-border/60 last:border-0">
+                        <td className="p-4 text-foreground/80">{row.label}</td>
+                        {row.values.map((val, j) => (
+                          <td key={j} className="p-4 text-center">
+                            {val === true ? (
+                              <Check className="h-4 w-4 text-primary mx-auto" />
+                            ) : val === false ? (
+                              <span className="text-muted-foreground/40">—</span>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">{val}</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>
@@ -376,11 +380,15 @@ const Pricing = () => {
 
       {/* FAQ Section */}
       <ScrollReveal>
-        <section className="py-16 bg-muted/20">
+        <section className="py-20 border-t border-border">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
-              <h2 className="text-3xl font-extrabold tracking-tight text-center mb-2">Frequently Asked Questions</h2>
-              <p className="text-muted-foreground text-center mb-10">Everything you need to know about our plans</p>
+              <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl tracking-[-0.03em] text-center mb-4 text-foreground">
+                Frequently asked questions
+              </h2>
+              <p className="text-muted-foreground text-center mb-12 text-base">
+                Everything you need to know about our plans
+              </p>
 
               <div className="space-y-3">
                 {FAQS.map((faq, i) => (
@@ -392,39 +400,31 @@ const Pricing = () => {
         </section>
       </ScrollReveal>
 
-      {/* CTA Section */}
-      <section className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary" />
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-primary-foreground/20 blur-[60px]" />
-          <div className="absolute bottom-10 right-10 w-60 h-60 rounded-full bg-primary-foreground/10 blur-[80px]" />
-        </div>
-        <div className="container mx-auto px-4 text-center space-y-6 relative z-10">
-          <h2 className="text-4xl font-extrabold tracking-tight text-primary-foreground">
+      {/* Final CTA — editorial, calm */}
+      <section className="py-24 md:py-32 relative border-t border-border">
+        <div className="absolute inset-0 dot-grid opacity-[0.04]" />
+        <div className="container mx-auto px-4 text-center space-y-8 max-w-3xl relative z-10">
+          <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl tracking-[-0.03em] text-foreground">
             Your idea deserves real analysis.
           </h2>
-          <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto">
+          <p className="text-base leading-relaxed max-w-xl mx-auto text-muted-foreground">
             Get a full validation report in 90 seconds — for free.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              variant="secondary"
+            <button
               onClick={() => navigate("/auth")}
-              className="shadow-large"
+              className="text-base font-medium px-7 py-3.5 rounded-lg transition-all duration-200 hover:-translate-y-px hover:brightness-110 inline-flex items-center gap-2 bg-primary text-primary-foreground"
             >
               Start Free
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button
-              size="lg"
-              variant="ghost"
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => navigate("/sample-report")}
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+              className="text-sm font-medium px-6 py-3.5 rounded-lg border border-border text-muted-foreground transition-all duration-200 hover:-translate-y-px inline-flex items-center gap-2"
             >
-              <Star className="mr-2 h-4 w-4" />
+              <Star className="h-4 w-4" />
               View Sample Report
-            </Button>
+            </button>
           </div>
         </div>
       </section>

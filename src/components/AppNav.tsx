@@ -70,6 +70,7 @@ export function AppNav({ user, profile, showNewReport = true }: AppNavProps) {
             <ThemeToggle />
             <button
               onClick={() => navigate("/settings")}
+              aria-label="Settings"
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <Settings className="h-4 w-4" />
@@ -79,6 +80,7 @@ export function AppNav({ user, profile, showNewReport = true }: AppNavProps) {
             </div>
             <button
               onClick={handleSignOut}
+              aria-label="Sign out"
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <LogOut className="h-4 w-4" />
@@ -88,6 +90,7 @@ export function AppNav({ user, profile, showNewReport = true }: AppNavProps) {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
             className="md:hidden p-2 text-muted-foreground"
           >
             <Menu className="h-5 w-5" />
@@ -100,7 +103,7 @@ export function AppNav({ user, profile, showNewReport = true }: AppNavProps) {
         <div className="fixed inset-0 z-[100] bg-background flex flex-col">
           <div className="flex items-center justify-between px-4 h-14 border-b border-border">
             <span className="font-serif text-lg">Validifier</span>
-            <button onClick={() => setMobileOpen(false)} className="p-2 text-muted-foreground">
+            <button onClick={() => setMobileOpen(false)} aria-label="Close menu" className="p-2 text-muted-foreground">
               <X className="h-5 w-5" />
             </button>
           </div>
