@@ -106,7 +106,7 @@ const CompletionCelebration = ({ score }: { score: number }) => (
       <ValidationScoreRing score={score} size="lg" />
     </div>
     <div className="text-center space-y-2">
-      <h2 className="text-3xl font-bold gradient-text">Your report is ready</h2>
+      <h2 className="font-serif text-3xl tracking-tight text-foreground">Your report is ready</h2>
       <p className="text-muted-foreground">Scroll down to explore your analysis</p>
     </div>
   </div>
