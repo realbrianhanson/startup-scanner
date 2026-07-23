@@ -34,8 +34,6 @@ const Settings = () => {
   const [notifPrefs, setNotifPrefs] = useState({
     report_completion: true,
     credit_alerts: true,
-    weekly_digest: false,
-    product_updates: false,
   });
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -56,7 +54,13 @@ const Settings = () => {
         setProfile(profileData);
         setFullName(profileData.full_name || "");
         setEmail(profileData.email);
-        if (profileData.notification_preferences) setNotifPrefs(profileData.notification_preferences as typeof notifPrefs);
+      if (profileData.notification_preferences) {
+        const raw = profileData.notification_preferences as Record<string, unknown>;
+        setNotifPrefs({
+          report_completion: raw.report_completion !== false,
+          credit_alerts: raw.credit_alerts !== false,
+        });
+      }
       }
 
       const { data: logs } = await supabase.from("ai_usage_logs").select("*").eq("user_id", userData.id).order("created_at", { ascending: false }).limit(50);
@@ -123,6 +127,20 @@ const Settings = () => {
 
   const creditsUsedPct = profile ? (profile.ai_credits_used / profile.ai_credits_monthly) * 100 : 0;
 
+  const OPERATION_LABELS: Record<string, string> = {
+    report_generation: "Report generation",
+    chat: "Advisor message",
+    website_analysis: "Website analysis",
+    project_comparison: "Project comparison",
+    analysis: "Analysis",
+  };
+  const formatOperation = (op: string): string => {
+    if (OPERATION_LABELS[op]) return OPERATION_LABELS[op];
+    const words = String(op || "").replace(/[_-]+/g, " ").trim();
+    if (!words) return "Activity";
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -143,12 +161,15 @@ const Settings = () => {
         <h1 className="font-serif text-3xl tracking-tight mb-8">Settings</h1>
 
         <Tabs defaultValue="account" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 bg-muted">
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="subscription">Plan</TabsTrigger>
-            <TabsTrigger value="usage">Usage</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          </TabsList>
+          {/* Horizontally scrollable at small viewports; each trigger keeps a 44px touch target. */}
+          <div className="-mx-4 sm:mx-0 overflow-x-auto">
+            <TabsList className="inline-flex w-max sm:w-full sm:grid sm:grid-cols-4 gap-1 bg-muted px-4 sm:px-1 h-auto">
+              <TabsTrigger value="account" className="min-h-[44px] px-4 whitespace-nowrap">Account</TabsTrigger>
+              <TabsTrigger value="subscription" className="min-h-[44px] px-4 whitespace-nowrap">Plan</TabsTrigger>
+              <TabsTrigger value="usage" className="min-h-[44px] px-4 whitespace-nowrap">Usage</TabsTrigger>
+              <TabsTrigger value="notifications" className="min-h-[44px] px-4 whitespace-nowrap">Notifications</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Account */}
           <TabsContent value="account" className="space-y-8">
@@ -156,12 +177,12 @@ const Settings = () => {
               <h3 className="text-lg font-medium">Profile</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Full Name</Label>
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-11 bg-transparent border-border" />
+                  <Label htmlFor="settings-full-name" className="text-sm text-muted-foreground">Full Name</Label>
+                  <Input id="settings-full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-11 bg-transparent border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Email</Label>
-                  <Input value={email} disabled className="h-11 bg-muted border-border" />
+                  <Label htmlFor="settings-email" className="text-sm text-muted-foreground">Email</Label>
+                  <Input id="settings-email" value={email} disabled className="h-11 bg-muted border-border" />
                 </div>
                 <Button onClick={handleUpdateProfile} size="sm">Save</Button>
               </div>
@@ -173,9 +194,20 @@ const Settings = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Refer & Earn</h3>
               <p className="text-sm text-muted-foreground">Earn 20 bonus credits for each friend who signs up.</p>
+              <Label htmlFor="settings-referral-link" className="sr-only">Your referral link</Label>
               <div className="flex gap-2">
-                <Input readOnly value={`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`} className="bg-muted text-sm font-mono" />
-                <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`); toast.success("Copied!"); }}>
+                <Input
+                  id="settings-referral-link"
+                  readOnly
+                  value={`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`}
+                  className="bg-muted text-sm font-mono"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Copy referral link"
+                  onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/auth?ref=${(profile as any)?.referral_code || ''}`); toast.success("Copied!"); }}
+                >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
@@ -202,10 +234,18 @@ const Settings = () => {
                     This permanently deletes your account, projects, and data. Type <span className="font-mono font-bold">DELETE</span> to confirm.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <Input value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="Type DELETE" className="font-mono" />
+                <Label htmlFor="settings-delete-confirm" className="sr-only">Type DELETE to confirm</Label>
+                <Input
+                  id="settings-delete-confirm"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type DELETE"
+                  className="font-mono"
+                  aria-label="Type DELETE to confirm account deletion"
+                />
                 <AlertDialogFooter>
                   <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-                  <Button variant="destructive" disabled={deleteConfirmText !== "DELETE" || deleting} onClick={handleDeleteAccount}>
+                  <Button variant="destructive" aria-label="Confirm delete account" disabled={deleteConfirmText !== "DELETE" || deleting} onClick={handleDeleteAccount}>
                     {deleting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Deleting...</> : "Delete"}
                   </Button>
                 </AlertDialogFooter>
@@ -272,7 +312,7 @@ const Settings = () => {
                 <div className="space-y-1">
                   {usageLogs.slice(0, 10).map((log) => (
                     <div key={log.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-sm">
-                      <span className="text-muted-foreground">{log.operation_type}</span>
+                      <span className="text-muted-foreground">{formatOperation(log.operation_type)}</span>
                       <span className="font-mono text-xs text-muted-foreground">
                         {new Date(log.created_at).toLocaleDateString()}
                       </span>
@@ -290,21 +330,26 @@ const Settings = () => {
               {[
                 { key: "report_completion" as const, label: "Report completion", desc: "Get notified when your report is ready" },
                 { key: "credit_alerts" as const, label: "Credit alerts", desc: "When you're running low on credits" },
-                { key: "weekly_digest" as const, label: "Weekly digest", desc: "Summary of your activity" },
-                { key: "product_updates" as const, label: "Product updates", desc: "New features and improvements" },
-              ].map((item) => (
-                <div key={item.key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+              ].map((item) => {
+                const controlId = `notif-${item.key}`;
+                return (
+                  <div key={item.key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                    <div>
+                      <Label htmlFor={controlId} className="text-sm font-medium cursor-pointer">
+                        {item.label}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                    <Switch
+                      id={controlId}
+                      aria-label={item.label}
+                      checked={notifPrefs[item.key]}
+                      onCheckedChange={(val) => handleToggleNotif(item.key, val)}
+                      disabled={savingPrefs}
+                    />
                   </div>
-                  <Switch
-                    checked={notifPrefs[item.key]}
-                    onCheckedChange={(val) => handleToggleNotif(item.key, val)}
-                    disabled={savingPrefs}
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
         </Tabs>
