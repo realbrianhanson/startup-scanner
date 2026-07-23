@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { trackEvent } from "@/lib/analytics";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -83,6 +83,7 @@ import { InlineReportCTA, StickyReportCTA, EndOfReportCTA } from "@/components/r
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
 import { useCalendly } from "@/hooks/useCalendly";
+import { PRODUCT_FACTS } from "@/lib/productFacts";
 
 /**
  * Fallback shown when a report section failed to generate. Users can retry by
@@ -114,6 +115,8 @@ function getScoreMessage(score: number) {
 const ViewReport = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isSample = searchParams.get("sample") === "1";
   const [project, setProject] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -154,11 +157,13 @@ const ViewReport = () => {
 
   useEffect(() => {
     if (project) {
-      document.title = `${project.name} - Validation Report | Validifier`;
+      document.title = isSample
+        ? `Sample Report — ${project.name} | Validifier`
+        : `${project.name} - Validation Report | Validifier`;
     } else {
       document.title = "Validation Report | Validifier";
     }
-  }, [project]);
+  }, [project, isSample]);
 
   useEffect(() => {
     loadProjectAndReport();
@@ -328,7 +333,7 @@ const ViewReport = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4" role="status" aria-live="polite">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-muted-foreground">Loading project...</p>
         </div>
@@ -368,13 +373,18 @@ const ViewReport = () => {
           <div className="flex items-center justify-between">
             <div
               className="flex items-center space-x-2 cursor-pointer"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate(isSample ? "/" : "/dashboard")}
             >
               <span className="font-serif text-xl">Validifier</span>
+              {isSample && (
+                <span className="ml-2 text-[11px] uppercase tracking-wider text-muted-foreground border border-border rounded-full px-2 py-0.5">
+                  Sample report
+                </span>
+              )}
             </div>
             <div className="flex items-center space-x-2">
-              <ThemeToggle />
-              {isOwner && (
+              {!isSample && <ThemeToggle />}
+              {!isSample && isOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" aria-label="Report options">
@@ -397,14 +407,50 @@ const ViewReport = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
-              </Button>
+              {isSample ? (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    trackEvent("sample_cta_click", { location: "nav" });
+                    navigate("/auth?mode=signup&next=%2Fdashboard");
+                  }}
+                >
+                  Create my report — free
+                </Button>
+              ) : (
+                <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </nav>
+
+      {isSample && project?.status === "complete" && (
+        <div className="border-b border-border/60 bg-muted/30">
+          <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">You&apos;re viewing a complete sample report.</p>
+              <p className="text-xs text-muted-foreground">
+                This illustrates the depth and structure of a Validifier analysis. AI-generated findings should be verified before making business decisions.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              onClick={() => {
+                trackEvent("sample_cta_click", { location: "banner" });
+                navigate("/auth?mode=signup&next=%2Fdashboard");
+              }}
+            >
+              Create yours free
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-8">
         <div className={`flex gap-8 ${isGenerating ? 'justify-center' : ''}`}>
@@ -564,7 +610,7 @@ const ViewReport = () => {
             )}
 
             {/* Inline CTA — after game-changing idea for peak excitement */}
-            {project?.status === "complete" && reportData.game_changing_idea && (
+            {!isSample && project?.status === "complete" && reportData.game_changing_idea && (
               <InlineReportCTA />
             )}
 
@@ -600,12 +646,36 @@ const ViewReport = () => {
                 })()}
 
                 {/* End-of-Report CTA */}
-                <EndOfReportCTA />
+                {!isSample && <EndOfReportCTA />}
+
+                {isSample && (
+                  <div className="mt-12 rounded-2xl border border-border bg-card p-8 md:p-10 text-center space-y-5">
+                    <h3 className="font-serif text-2xl md:text-3xl tracking-tight">
+                      Ready to pressure-test your idea?
+                    </h3>
+                    <p className="text-muted-foreground max-w-xl mx-auto">
+                      Get the same 15-section decision brief for your business idea {PRODUCT_FACTS.reportTimeCopy}.
+                    </p>
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        trackEvent("sample_cta_click", { location: "end_of_report" });
+                        navigate("/auth?mode=signup&next=%2Fdashboard");
+                      }}
+                    >
+                      Create my free report
+                      <ArrowUpRight className="ml-2 h-4 w-4" />
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Full report on the free plan · No credit card.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Action Buttons */}
-            {project?.status === "complete" && (
+            {!isSample && project?.status === "complete" && (
               <div className="flex flex-wrap items-center justify-center gap-4 pt-8">
                 <Button variant="default" size="lg" onClick={() => navigate(`/projects/${id}/chat`)}>
                   <MessageSquare className="mr-2 h-5 w-5" />
@@ -732,7 +802,7 @@ const ViewReport = () => {
                     This report was generated by AI and is intended for informational purposes only. It should not replace professional business, financial, or legal advice.
                   </p>
                 </div>
-                <ReportFeedback projectId={id!} isOwner={isOwner} />
+                {!isSample && <ReportFeedback projectId={id!} isOwner={isOwner} />}
               </>
             )}
           </div>
@@ -761,10 +831,10 @@ const ViewReport = () => {
       </AlertDialog>
 
       {/* Sticky bottom CTA bar — only when report is complete */}
-      {project?.status === "complete" && <StickyReportCTA />}
+      {!isSample && project?.status === "complete" && <StickyReportCTA />}
 
       {/* Celebration overlay */}
-      {celebrationPhase && (
+      {!isSample && celebrationPhase && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in">
           <div className="text-center space-y-4 animate-scale-in">
             <Trophy className="h-16 w-16 text-primary mx-auto animate-bounce" />
@@ -775,7 +845,7 @@ const ViewReport = () => {
       )}
 
       {/* Completion CTA modal */}
-      <Dialog open={showCompletionCTA} onOpenChange={setShowCompletionCTA}>
+      <Dialog open={!isSample && showCompletionCTA} onOpenChange={setShowCompletionCTA}>
         <DialogContent className="sm:max-w-md text-center space-y-6">
           <div className="space-y-2">
             <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
