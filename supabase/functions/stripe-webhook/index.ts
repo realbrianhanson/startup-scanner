@@ -90,6 +90,7 @@ Deno.serve(async (req) => {
 
   let eventIdForFailure: string | null = null;
   let supabaseForFailure: ReturnType<typeof createClient> | null = null;
+  let ownedLeaseAt: string | null = null;
 
   try {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
