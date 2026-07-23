@@ -344,7 +344,7 @@ serve(async (req) => {
         const { data: cur, error: curErr } = await supabase
           .from("reports").select("report_data,generation_attempt_id")
           .eq("id", report.id).maybeSingle();
-        if (curErr || !cur) { console.error("read for merge", curErr); resumable = true; currentStatus[section.key] = "pending"; break; }
+        if (curErr || !cur) { console.error("read for merge failed", { code: (curErr as any)?.code }); resumable = true; currentStatus[section.key] = "pending"; break; }
         if (cur.generation_attempt_id !== attemptId) {
           return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
         }
@@ -361,7 +361,7 @@ serve(async (req) => {
         if (upd === "error") { resumable = true; currentStatus[section.key] = "pending"; break; }
         sectionsCompleted++;
       } catch (err) {
-        console.error(`❌ Section ${section.key} failed:`, err);
+        console.error(`section failed`, { section: section.key });
         currentStatus = { ...currentStatus, [section.key]: "failed" };
         await ownedUpdate({
           generation_status: currentStatus,
@@ -499,7 +499,7 @@ serve(async (req) => {
         }
       }
     } catch (emailErr) {
-      console.error('Failed to send report email:', emailErr);
+      console.error('Failed to send report email');
     }
 
     // Low-credit alert — only when this claim actually charged credits AND crossed the 75% threshold
@@ -549,7 +549,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error generating report:", error);
+    console.error("Unhandled error in report generation");
     return new Response(
       JSON.stringify({ error: "Failed to generate report" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
