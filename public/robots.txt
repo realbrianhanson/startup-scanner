@@ -1,3 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /admin
+Disallow: /projects/new
+
+Sitemap: https://validifier.com/sitemap.xml
 User-agent: Googlebot
 Allow: /
 
