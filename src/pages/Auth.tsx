@@ -9,12 +9,26 @@ import { trackEvent } from "@/lib/analytics";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
 
+const ALLOWED_NEXT = new Set(["/pricing", "/dashboard", "/projects/new"]);
+
+function safeNext(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  // Only accept internal paths from our allowlist. Reject external URLs and unknown paths.
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  const path = raw.split("?")[0].split("#")[0];
+  return ALLOWED_NEXT.has(path) ? raw : "/dashboard";
+}
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const isReset = searchParams.get("reset") === "true";
   const refCode = searchParams.get("ref") || "";
+  const mode = searchParams.get("mode");
+  const nextDest = safeNext(searchParams.get("next"));
 
-  const [view, setView] = useState<AuthView>(isReset ? "reset" : "login");
+  const [view, setView] = useState<AuthView>(
+    isReset ? "reset" : mode === "signup" ? "signup" : "login"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -23,8 +37,8 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (refCode && !isReset) setView("signup");
-  }, [refCode, isReset]);
+    if ((refCode || mode === "signup") && !isReset) setView("signup");
+  }, [refCode, isReset, mode]);
 
   useEffect(() => { document.title = "Sign In | Validifier"; }, []);
 
@@ -32,16 +46,16 @@ const Auth = () => {
     if (isReset) { setView("reset"); return; }
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) navigate("/dashboard");
+      if (session) navigate(nextDest);
     };
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") { setView("reset"); return; }
-      if (session && view !== "reset") navigate("/dashboard");
+      if (session && view !== "reset") navigate(nextDest);
     });
     return () => subscription.unsubscribe();
-  }, [navigate, isReset]);
+  }, [navigate, isReset, nextDest]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +70,7 @@ const Auth = () => {
         const { data, error } = await supabase.auth.signUp({
           email, password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}${nextDest}`,
             data: { full_name: fullName, referral_code: refCode.trim().toUpperCase() },
           },
         });
@@ -102,7 +116,7 @@ const Auth = () => {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success("Password updated!");
-      navigate("/dashboard");
+      navigate(nextDest);
     } catch (error: any) {
       toast.error(error.message || "Failed to update password.");
     } finally {
