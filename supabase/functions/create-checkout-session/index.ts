@@ -30,6 +30,12 @@ function jsonError(status: number, error: string) {
   });
 }
 
+// 10-minute UTC bucket — same bucket dedupes rapid double-clicks,
+// while later legitimate retries land in a new bucket.
+function tenMinuteBucket(): string {
+  return String(Math.floor(Date.now() / (10 * 60 * 1000)));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,7 +54,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -68,14 +74,19 @@ Deno.serve(async (req) => {
 
     const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: profile } = await adminSupabase
+    const { data: profile, error: profileErr } = await adminSupabase
       .from("profiles")
       .select("stripe_customer_id, email")
       .eq("id", user.id)
       .single();
+
+    if (profileErr) {
+      console.error("profile read failed", { code: profileErr.code });
+      return jsonError(500, "Could not load billing profile");
+    }
 
     let customerId = profile?.stripe_customer_id as string | null | undefined;
 
@@ -92,17 +103,24 @@ Deno.serve(async (req) => {
           "metadata[supabase_user_id]": user.id,
         }),
       });
-      const customer = await customerRes.json();
-      if (!customerRes.ok || !customer?.id || typeof customer.id !== "string" || !customer.id.startsWith("cus_")) {
+      const customer = await customerRes.json().catch(() => ({}));
+      if (
+        !customerRes.ok || !customer?.id ||
+        typeof customer.id !== "string" || !customer.id.startsWith("cus_")
+      ) {
         console.error("Stripe customer creation failed", { status: customerRes.status });
         return jsonError(502, "Could not create billing customer");
       }
       customerId = customer.id;
 
-      await adminSupabase
+      const { error: updateErr } = await adminSupabase
         .from("profiles")
         .update({ stripe_customer_id: customerId })
         .eq("id", user.id);
+      if (updateErr) {
+        console.error("profile update failed", { code: updateErr.code });
+        return jsonError(500, "Could not save billing profile");
+      }
     }
 
     const origin = resolveOrigin(req);
@@ -125,12 +143,12 @@ Deno.serve(async (req) => {
       headers: {
         Authorization: `Bearer ${stripeKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
-        "Idempotency-Key": `checkout:${user.id}:${planName}:${priceId}`,
+        "Idempotency-Key": `checkout:${user.id}:${planName}:${priceId}:${tenMinuteBucket()}`,
       },
       body: params,
     });
 
-    const session = await sessionRes.json();
+    const session = await sessionRes.json().catch(() => ({}));
 
     if (!sessionRes.ok || session.error || !session.url) {
       console.error("Stripe checkout creation failed", { status: sessionRes.status });

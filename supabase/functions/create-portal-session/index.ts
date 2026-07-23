@@ -23,6 +23,13 @@ function resolveOrigin(req: Request): string {
   }
 }
 
+function jsonError(status: number, error: string) {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,52 +37,37 @@ Deno.serve(async (req) => {
 
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      return new Response(JSON.stringify({ error: "Stripe not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!stripeKey) return jsonError(503, "Billing is not configured");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!authHeader) return jsonError(401, "Not authenticated");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (authError || !user) return jsonError(401, "Invalid token");
 
     const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: profile } = await adminSupabase
+    const { data: profile, error: profileErr } = await adminSupabase
       .from("profiles")
       .select("stripe_customer_id")
       .eq("id", user.id)
       .single();
 
-    if (!profile?.stripe_customer_id) {
-      return new Response(JSON.stringify({ error: "No billing account found" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (profileErr) {
+      console.error("portal profile read failed", { code: profileErr.code });
+      return jsonError(500, "Could not load billing profile");
     }
+
+    if (!profile?.stripe_customer_id) return jsonError(400, "No billing account found");
 
     const origin = resolveOrigin(req);
     const portalRes = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
@@ -90,22 +82,18 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const portal = await portalRes.json();
+    const portal = await portalRes.json().catch(() => ({}));
 
-    if (portal.error) {
-      return new Response(JSON.stringify({ error: portal.error.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!portalRes.ok || portal.error || !portal.url) {
+      console.error("Stripe portal creation failed", { status: portalRes.status });
+      return jsonError(502, "Could not open billing portal");
     }
 
     return new Response(JSON.stringify({ url: portal.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("create-portal-session error:", (error as Error).message);
+    return jsonError(500, "Internal error");
   }
 });
