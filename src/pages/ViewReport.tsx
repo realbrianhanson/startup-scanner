@@ -190,6 +190,16 @@ const ViewReport = () => {
         setReport(reportData);
         if (projectData.status === "complete") setProgress(100);
         else updateProgress(reportData.generation_status);
+        // Stale-heartbeat recovery detection
+        if (projectData.status === "analyzing") {
+          const hb = (reportData as any).generation_heartbeat_at
+            ? new Date((reportData as any).generation_heartbeat_at).getTime()
+            : 0;
+          const ageMs = Date.now() - hb;
+          if (!hb || ageMs > 5 * 60 * 1000) {
+            setStaleRecoveryAvailable(ownerCheck);
+          }
+        }
       } else if (ownerCheck) {
         startReportGeneration();
       }
