@@ -83,6 +83,7 @@ import { InlineReportCTA, StickyReportCTA, EndOfReportCTA } from "@/components/r
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
 import { useCalendly } from "@/hooks/useCalendly";
+import { PRODUCT_FACTS } from "@/lib/productFacts";
 
 /**
  * Fallback shown when a report section failed to generate. Users can retry by
