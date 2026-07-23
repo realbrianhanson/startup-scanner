@@ -119,6 +119,7 @@ const ViewReport = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [staleRecoveryAvailable, setStaleRecoveryAvailable] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -202,20 +203,36 @@ const ViewReport = () => {
   const startReportGeneration = async (regenerate = false, qualityOverride?: string) => {
     setGenerating(true);
     setProgress(0);
+    setStaleRecoveryAvailable(false);
     try {
       const quality = qualityOverride || project?.report_quality || 'standard';
-      const response = await supabase.functions.invoke("generate-validation-report", { body: { project_id: id, regenerate, quality } });
-      // The edge function saves data incrementally via DB + realtime, so even if the
-      // HTTP connection drops (common for long-running generation), the report completes.
+      const response = await supabase.functions.invoke("generate-validation-report", {
+        body: { project_id: id, regenerate: !!regenerate, quality },
+      });
+      const data: any = response.data;
       if (response.error) {
-        console.warn("Edge function returned an error (report may still complete via realtime):", response.error.message);
-      } else {
-        trackEvent('report_generation_started', { project_id: id, regenerate });
-        toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
+        console.warn("Edge function error:", response.error.message);
+        toast.error("Couldn't reach the generator. Please try again.");
+        setGenerating(false);
+        return;
       }
+      if (data?.resumable || data?.in_progress) {
+        // Partial progress saved; UI can offer resume
+        setStaleRecoveryAvailable(false);
+        setGenerating(false);
+        toast.success("Progress saved — you can resume anytime.");
+        return;
+      }
+      if (data?.superseded) {
+        setGenerating(false);
+        return;
+      }
+      trackEvent('report_generation_started', { project_id: id, regenerate });
+      toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
+      if (data?.success) setGenerating(false);
     } catch (error: any) {
-      // Network-level errors (timeout, connection closed) are expected for long generations.
-      console.warn("Report generation request error (report may still complete):", error.message);
+      console.warn("Report generation request error:", error?.message);
+      setGenerating(false);
     }
   };
 
@@ -225,7 +242,10 @@ const ViewReport = () => {
     const total = sections.length;
     const newProgress = total > 0 ? (completed / total) * 100 : 0;
     setProgress(newProgress);
-    if (completed === total && total > 0) setGenerating(false);
+    if (completed === total && total > 0) {
+      setGenerating(false);
+      setStaleRecoveryAvailable(false);
+    }
   };
 
   const togglePublic = async (newValue: boolean) => {
