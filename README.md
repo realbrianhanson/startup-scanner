@@ -23,13 +23,19 @@ bun run build        # production build
 
 ## Required environment variables
 
-Frontend (`.env`, auto-managed by Lovable Cloud):
+Frontend (`.env`, auto-managed by Lovable Cloud — do not edit):
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_PROJECT_ID`
 
-Edge function secrets (set in Project Settings → Secrets):
+Edge function runtime values (provided automatically by Lovable Cloud / Supabase, no action needed):
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Edge function secrets (set manually in Project Settings → Secrets):
 
 - `LOVABLE_API_KEY`
 - `STRIPE_SECRET_KEY`
@@ -37,6 +43,13 @@ Edge function secrets (set in Project Settings → Secrets):
 - `STRIPE_PRO_PRICE_ID`
 - `RESEND_API_KEY`
 - `CRON_SECRET`
+- `FIRECRAWL_API_KEY`
+
+Optional edge function overrides (defaults apply when unset):
+
+- `APP_BASE_URL` — public site URL used in transactional email links (defaults to `https://validifier.com`).
+- `PREMIUM_MODEL` — Lovable AI Gateway model for premium reports (defaults to `google/gemini-3.1-pro-preview`).
+- `FAST_MODEL` — Lovable AI Gateway model for standard reports and chat (defaults to `google/gemini-3-flash-preview`).
 
 ## Supabase
 
