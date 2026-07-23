@@ -424,45 +424,53 @@ serve(async (req) => {
     const { data: finalRead, error: finalReadErr } = await supabase
       .from("reports").select("report_data,generation_attempt_id")
       .eq("id", report.id).maybeSingle();
-    if (finalReadErr || !finalRead) { console.error("final read", finalReadErr); return genericError(500, "Failed to finalize"); }
+    if (finalReadErr || !finalRead) { console.error("final read failed"); return genericError(500, "Failed to finalize"); }
     if (finalRead.generation_attempt_id !== attemptId) {
       return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
     }
 
     const finalData = { ...((finalRead.report_data as Record<string, any>) || {}), validation_score: scoreResult };
-    const finalize = await ownedUpdate({
-      report_data: finalData,
-      generation_status: currentStatus,
-      generation_completed_at: new Date().toISOString(),
-      generation_heartbeat_at: new Date().toISOString(),
-      generation_error: null,
+
+    // Atomic finalization RPC (locks report+project, verifies ownership, prevents stale overwrite)
+    const { data: finalizeRes, error: finalizeErr } = await supabase.rpc("finalize_report_generation", {
+      p_report_id: report.id,
+      p_attempt_id: attemptId,
+      p_report_data: finalData,
+      p_generation_status: currentStatus,
+      p_score: validationScore,
     });
-    if (finalize === "superseded") {
+    if (finalizeErr) { console.error("finalize rpc failed", { code: (finalizeErr as any)?.code }); return genericError(500, "Failed to finalize"); }
+    const finalizeOut = finalizeRes as any;
+    if (finalizeOut?.superseded) {
       return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
     }
-    if (finalize === "error") return genericError(500, "Failed to finalize");
+    if (finalizeOut?.already_finalized) {
+      return new Response(
+        JSON.stringify({ success: true, already_complete: true, report_id: report.id, validation_score: validationScore }),
+        { headers: JSON_HEADERS },
+      );
+    }
+    if (!finalizeOut?.finalized) {
+      console.error("finalize returned unexpected result");
+      return genericError(500, "Failed to finalize");
+    }
 
-    const { error: projUpdErr } = await supabase.from("projects")
-      .update({ validation_score: validationScore, status: "complete" }).eq("id", project_id);
-    if (projUpdErr) { console.error("project finalize", projUpdErr); return genericError(500, "Failed to finalize"); }
-
-    // Credits already charged by claim RPC — do NOT modify ai_credits_used here.
-
-    // Log AI usage (once per successful finalization)
-    const estimatedPremiumTokens = quality === 'premium' ? 25000 : 0;
-    const estimatedFastTokens = quality === 'premium' ? 15000 : 40000;
+    // Only after successful finalization: log AI usage + send emails
+    const estimatedPremiumTokens = effectiveQuality === 'premium' ? 25000 : 0;
+    const estimatedFastTokens = effectiveQuality === 'premium' ? 15000 : 40000;
     const estimatedTotalCost = estimateCost(sectionPremiumModel, estimatedPremiumTokens) + estimateCost(sectionFastModel, estimatedFastTokens);
 
-    await supabase.from("ai_usage_logs").insert({
+    const { error: usageErr } = await supabase.from("ai_usage_logs").insert({
       user_id: project.user_id,
       project_id: project_id,
       operation_type: "report_generation",
-      model_used: quality === 'premium' ? "gemini-3.1-pro + gemini-3-flash (hybrid)" : "gemini-3-flash (standard)",
+      model_used: effectiveQuality === 'premium' ? "gemini-3.1-pro + gemini-3-flash (hybrid)" : "gemini-3-flash (standard)",
       model_name: `Premium: ${sectionPremiumModel}, Fast: ${sectionFastModel}`,
       tokens_used: estimatedPremiumTokens + estimatedFastTokens,
       cost_cents: Math.ceil(estimatedTotalCost * 100),
       estimated_cost_usd: estimatedTotalCost,
     });
+    if (usageErr) { console.error("ai_usage_logs insert failed", { code: (usageErr as any)?.code }); }
 
     // Send report-complete email
     try {
@@ -494,13 +502,18 @@ serve(async (req) => {
       console.error('Failed to send report email:', emailErr);
     }
 
-    // Low-credit alert based on freshly-read profile
+    // Low-credit alert — only when this claim actually charged credits AND crossed the 75% threshold
     try {
-      const { data: freshProfile } = await supabase.from("profiles")
-        .select("ai_credits_used,ai_credits_monthly,email_notifications_enabled,notification_preferences,email,full_name")
-        .eq("id", authUser.id).maybeSingle();
-      const usagePercent = freshProfile ? (freshProfile.ai_credits_used / freshProfile.ai_credits_monthly) * 100 : 0;
-      if (freshProfile && usagePercent >= 75 && freshProfile.email_notifications_enabled !== false) {
+      if (claimChargedCredits > 0) {
+        const { data: freshProfile } = await supabase.from("profiles")
+          .select("ai_credits_used,ai_credits_monthly,email_notifications_enabled,notification_preferences,email,full_name")
+          .eq("id", authUser.id).maybeSingle();
+        const currentUsed = freshProfile?.ai_credits_used ?? 0;
+        const monthly = freshProfile?.ai_credits_monthly ?? 0;
+        const priorUsed = currentUsed - claimChargedCredits;
+        const priorPct = monthly > 0 ? (priorUsed / monthly) * 100 : 0;
+        const currentPct = monthly > 0 ? (currentUsed / monthly) * 100 : 0;
+        if (freshProfile && currentPct >= 75 && priorPct < 75 && freshProfile.email_notifications_enabled !== false) {
         const notifPrefs = freshProfile.notification_preferences as Record<string, boolean> | null;
         if (!notifPrefs || notifPrefs.credit_alerts !== false) {
           const sendEmailUrl = `${SUPABASE_URL}/functions/v1/send-email`;
@@ -518,9 +531,10 @@ serve(async (req) => {
             }),
           });
         }
+        }
       }
     } catch (emailErr) {
-      console.error('Failed to send credits email:', emailErr);
+      console.error('Failed to send credits email');
     }
 
     return new Response(
