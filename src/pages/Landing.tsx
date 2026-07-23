@@ -264,7 +264,7 @@ const Landing = () => {
           {/* Product proof */}
           <div className="mt-20 text-center">
             <span className="font-mono text-sm tracking-wide text-muted-foreground/50">
-              14 frameworks · 90 seconds · 0 fluff
+              {F.reportSectionCount} sections · {F.reportTimeShort} · 0 fluff
             </span>
           </div>
         </div>
@@ -315,8 +315,8 @@ const Landing = () => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0">
               {[
                 "Describe your idea in a few sentences",
-                "Validifier analyzes it across 14 frameworks",
-                "Get your full report in ~90 seconds",
+                `Validifier analyzes it across ${F.reportSectionCount} sections`,
+                `Most reports are ready ${F.reportTimeCopy}`,
               ].map((step, i) => (
                 <div key={i} className="flex items-center gap-4 md:gap-0">
                   <p className="text-center text-base font-medium max-w-[220px] text-foreground/80">
@@ -357,7 +357,13 @@ const Landing = () => {
                   </div>
                 </div>
                 <ul className="space-y-3">
-                  {["1 validation report per month", "Standard AI analysis", "All 12 report sections", "10 AI advisor chat messages per month", "PDF export"].map((f, i) => (
+                  {[
+                    `${F.free.monthlyCredits} credits/mo (about ${F.free.includedStandardReports} Standard report + ${F.free.includedChatMessages} advisor messages)`,
+                    "Standard AI analysis (Gemini 3 Flash)",
+                    `All ${F.reportSectionCount} report sections, including Game-Changing Idea and 30-Day Action Plan`,
+                    "AI advisor chat",
+                    "PDF export",
+                  ].map((f, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                       <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
                       {f}
@@ -365,7 +371,7 @@ const Landing = () => {
                   ))}
                 </ul>
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
                   className="w-full py-3 rounded-lg text-sm font-medium border border-border text-foreground/80 bg-transparent transition-all duration-200 hover:-translate-y-px"
                 >
                   Start Free
@@ -386,12 +392,10 @@ const Landing = () => {
                 </div>
                 <ul className="space-y-3">
                   {[
-                    "5 validation reports per month",
-                    "Premium AI analysis (Gemini 3.1 Pro)",
-                    "All sections + Game-Changing Idea + Action Plan",
-                    "40 AI advisor chat messages per month",
-                    "Real competitor names and market data",
-                    "Detailed financial projections",
+                    `${F.pro.monthlyCredits} credits/mo (about ${F.pro.includedPremiumReports} Premium reports + ${F.pro.includedChatMessages} advisor messages)`,
+                    "Premium AI analysis (Gemini 3.1 Pro — deeper, more specific)",
+                    `All ${F.reportSectionCount} report sections with deeper competitive and financial reasoning`,
+                    "AI advisor chat with higher monthly volume",
                     "PDF + Markdown export",
                     "Priority email support",
                   ].map((f, i) => (
@@ -402,10 +406,10 @@ const Landing = () => {
                   ))}
                 </ul>
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/pricing?plan=pro")}
                   className="w-full py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:brightness-110 bg-primary text-primary-foreground"
                 >
-                  Start 7-Day Free Trial
+                  Start {F.proTrialDays}-Day Free Trial
                 </button>
               </div>
             </div>
@@ -509,12 +513,12 @@ const Landing = () => {
           </h2>
           <p className="text-base leading-relaxed max-w-xl mx-auto text-muted-foreground">
             Most startups fail because the founder didn't validate first. Validifier gives you the analysis
-            in 90 seconds that used to take a consulting firm 3 weeks.
+            {" "}{F.reportTimeCopy} that used to take a consulting firm weeks.
           </p>
           <button
             onClick={() => {
               trackEvent("cta_click", { button: "final_cta", page: "landing" });
-              navigate("/auth");
+              navigate("/auth?mode=signup&next=%2Fdashboard");
             }}
             className="text-base font-medium px-7 py-3.5 rounded-lg transition-all duration-200 hover:-translate-y-px hover:brightness-110 inline-flex items-center gap-2 bg-primary text-primary-foreground"
           >
