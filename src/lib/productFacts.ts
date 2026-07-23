@@ -3,8 +3,12 @@
 
 export const PRODUCT_FACTS = {
   reportSectionCount: 15,
-  reportTimeCopy: "typically 2–3 minutes",
-  reportTimeShort: "typically 2–3 min",
+  // Neutral timing range, safe to drop into any sentence structure.
+  reportTimeRange: "2–3 minutes",
+  // Grammatical inline phrase for sentences like "Report ready {copy}."
+  reportTimeCopy: "in about 2–3 minutes",
+  // Concise UI label for compact chips/badges.
+  reportTimeShort: "2–3 min",
   proPriceMonthly: 29,
   proTrialDays: 7,
   free: {

@@ -69,7 +69,7 @@ const FAQS = [
   },
   {
     q: "How long does a report take?",
-    a: `${F.reportTimeCopy[0].toUpperCase()}${F.reportTimeCopy.slice(1)} from submission to a finished report.`,
+    a: `A report is typically ready ${F.reportTimeRange} after submission.`,
   },
   {
     q: "Can I see a sample report before buying?",
@@ -408,7 +408,7 @@ const Pricing = () => {
             Your idea deserves real analysis.
           </h2>
           <p className="text-base leading-relaxed max-w-xl mx-auto text-muted-foreground">
-            Get a full {F.reportSectionCount}-section validation report — {F.reportTimeCopy}. Free to start.
+            Get a full {F.reportSectionCount}-section validation report {F.reportTimeCopy}. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
