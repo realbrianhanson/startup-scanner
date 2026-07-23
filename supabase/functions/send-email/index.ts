@@ -189,7 +189,7 @@ export function creditsLowEmail(
   const upgradeUrl = escapeHtml(`${BASE_URL}/pricing`);
 
   const body = `
-    <h2>You're running low on report credits ⚡</h2>
+    <h2>You're running low on credits ⚡</h2>
     <p>Hey ${firstName}, you've used ${used} of your ${total} monthly credits. You have <strong>${remaining} credits</strong> remaining.</p>
     <div class="highlight-box" style="text-align:center">
       <p style="font-size:13px;color:#71717a;margin-bottom:8px">CREDITS REMAINING</p>
@@ -200,9 +200,9 @@ export function creditsLowEmail(
     <p style="color:#71717a;font-size:13px">Credits reset on the 1st of each month.</p>
   `;
   return {
-    subject: "You're running low on report credits",
+    subject: "You're running low on credits",
     html: buildEmailHtml(body, `${remaining} credits remaining — upgrade to keep running reports.`),
-    text: `You're running low on report credits.\n\nYou've used ${used} of ${total} credits. ${remaining} remaining.\n\nUpgrade at ${BASE_URL}/pricing\n\nCredits reset on the 1st of each month.\n\n— The Validifier Team`,
+    text: `You're running low on credits.\n\nYou've used ${used} of ${total} credits. ${remaining} remaining.\n\nUpgrade at ${BASE_URL}/pricing\n\nCredits reset on the 1st of each month.\n\n— The Validifier Team`,
   };
 }
 
