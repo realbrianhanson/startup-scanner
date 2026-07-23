@@ -243,7 +243,7 @@ export const FinancialBasicsSection = ({ reportData }: Props) => {
   const unitEcon = fin.unit_economics;
 
   return (
-    <ReportSectionCard title="Financial Basics">
+    <ReportSectionCard id="financial-basics" title="Financial Basics">
       {/* Startup Cost Scenarios */}
       <div>
         <h3 className="font-sans text-lg font-semibold flex items-center gap-2 mb-3">Startup Cost Scenarios</h3>
