@@ -597,6 +597,16 @@ export type Database = {
         }
         Returns: Json
       }
+      finalize_report_generation: {
+        Args: {
+          p_attempt_id: string
+          p_generation_status: Json
+          p_report_data: Json
+          p_report_id: string
+          p_score: number
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
