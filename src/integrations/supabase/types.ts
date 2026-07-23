@@ -466,6 +466,7 @@ export type Database = {
           created_at: string
           event_id: string
           event_type: string
+          last_attempt_at: string
           last_error: string | null
           processed_at: string | null
           status: string
@@ -475,6 +476,7 @@ export type Database = {
           created_at?: string
           event_id: string
           event_type: string
+          last_attempt_at?: string
           last_error?: string | null
           processed_at?: string | null
           status: string
@@ -484,6 +486,7 @@ export type Database = {
           created_at?: string
           event_id?: string
           event_type?: string
+          last_attempt_at?: string
           last_error?: string | null
           processed_at?: string | null
           status?: string
