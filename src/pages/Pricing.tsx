@@ -69,7 +69,7 @@ const FAQS = [
   },
   {
     q: "How long does a report take?",
-    a: `${F.reportTimeCopy[0].toUpperCase()}${F.reportTimeCopy.slice(1)} from submission to a finished report.`,
+    a: `A report is typically ready ${F.reportTimeRange} after submission.`,
   },
   {
     q: "Can I see a sample report before buying?",
