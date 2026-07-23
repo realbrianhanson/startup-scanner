@@ -116,6 +116,7 @@ const Pricing = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     document.title = "Pricing | Validifier";
@@ -124,15 +125,19 @@ const Pricing = () => {
 
   useEffect(() => {
     const loadUser = async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
-      if (u) {
-        setUser(u);
-        const { data } = await supabase
-          .from("profiles")
-          .select("subscription_tier")
-          .eq("id", u.id)
-          .single();
-        if (data) setProfile(data);
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (u) {
+          setUser(u);
+          const { data } = await supabase
+            .from("profiles")
+            .select("subscription_tier")
+            .eq("id", u.id)
+            .single();
+          if (data) setProfile(data);
+        }
+      } finally {
+        setAuthLoading(false);
       }
     };
     loadUser();
@@ -190,18 +195,42 @@ const Pricing = () => {
           </span>
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <ThemeToggle />
-            <button
-              onClick={() => navigate("/auth")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-            >
-              Log in
-            </button>
-            <button
-              onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
-              className="text-sm font-medium px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground whitespace-nowrap"
-            >
-              Start free
-            </button>
+            {authLoading ? (
+              <div
+                aria-hidden="true"
+                className="h-9 w-24 sm:w-40 rounded-lg bg-muted/40 animate-pulse"
+              />
+            ) : user ? (
+              <>
+                <button
+                  onClick={() => navigate("/projects/new")}
+                  className="hidden sm:inline text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                >
+                  New report
+                </button>
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="text-sm font-medium px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground whitespace-nowrap"
+                >
+                  Dashboard
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate("/auth")}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                >
+                  Log in
+                </button>
+                <button
+                  onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
+                  className="text-sm font-medium px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground whitespace-nowrap"
+                >
+                  Start free
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>
