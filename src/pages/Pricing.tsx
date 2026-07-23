@@ -16,7 +16,7 @@ const PLANS = [
     price: "$0",
     features: [
       `${F.free.monthlyCredits} credits per month (about ${F.free.includedStandardReports} Standard report + ${F.free.includedChatMessages} advisor messages)`,
-      "Standard AI analysis (Gemini 3 Flash)",
+      "Standard analysis — fast, complete screening of your idea",
       `All ${F.reportSectionCount} report sections, including Game-Changing Idea and 30-Day Action Plan`,
       "AI advisor chat",
       "PDF export",
@@ -30,7 +30,7 @@ const PLANS = [
     badge: "Most popular",
     features: [
       `${F.pro.monthlyCredits} credits per month (about ${F.pro.includedPremiumReports} Premium reports + ${F.pro.includedChatMessages} advisor messages)`,
-      "Premium AI analysis (Gemini 3.1 Pro — deeper, more specific)",
+      "Premium analysis — deeper, more specific competitive and financial reasoning",
       `All ${F.reportSectionCount} report sections with deeper competitive and financial reasoning`,
       "AI advisor chat with higher monthly volume",
       "PDF + Markdown export",
@@ -44,7 +44,7 @@ const PLANS = [
 const FEATURE_ROWS: { label: string; values: (string | boolean)[] }[] = [
   { label: "Monthly credits", values: [`${F.free.monthlyCredits}`, `${F.pro.monthlyCredits}`] },
   { label: "Typical monthly usage", values: [`~${F.free.includedStandardReports} Standard report + ${F.free.includedChatMessages} chats`, `~${F.pro.includedPremiumReports} Premium reports + ${F.pro.includedChatMessages} chats`] },
-  { label: "AI analysis quality", values: ["Standard (Gemini 3 Flash)", "Premium (Gemini 3.1 Pro)"] },
+  { label: "Analysis depth", values: ["Standard — fast screening", "Premium — deeper reasoning"] },
   { label: "Report sections", values: [`All ${F.reportSectionCount}`, `All ${F.reportSectionCount}`] },
   { label: "Game-Changing Idea", values: [true, true] },
   { label: "30-Day Action Plan", values: [true, true] },
@@ -65,7 +65,7 @@ const FAQS = [
   },
   {
     q: "What's the difference between Standard and Premium?",
-    a: "Both produce a complete report. Standard uses Gemini 3 Flash — fast and great for screening ideas. Premium uses Gemini 3.1 Pro for deeper, more specific competitive analysis and financial reasoning.",
+    a: "Both produce a complete 15-section report. Standard is a fast, complete screening analysis — ideal for quickly pressure-testing an idea. Premium goes deeper, with more specific competitive analysis and financial reasoning.",
   },
   {
     q: "How long does a report take?",
@@ -76,8 +76,14 @@ const FAQS = [
     a: "Yes — you can view a complete sample report with every section from the landing page. No sign-up required.",
   },
   { q: "Can I upgrade or downgrade anytime?", a: "Yes. Upgrades take effect immediately, downgrades at the next billing cycle." },
-  { q: "Do you offer refunds?", a: `Yes, ${F.proTrialDays}-day money-back guarantee on Pro, no questions asked.` },
-  { q: "Is my data secure?", a: "Yes. We use enterprise-grade encryption and never share your data. Your business ideas remain 100% yours." },
+  {
+    q: "How does the free trial and cancellation work?",
+    a: `Pro starts with a ${F.proTrialDays}-day free trial. You can manage or cancel your subscription anytime in the billing portal — cancel before the trial ends to avoid the first charge. For any billing issue, email support@validifier.com and we'll help.`,
+  },
+  {
+    q: "Is my data secure?",
+    a: "Your account and reports are stored in our managed database with row-level access controls, so your projects are private to your account unless you explicitly enable sharing. Your ideas remain yours. See our Privacy Policy for details.",
+  },
 ];
 
 /* FAQ Accordion Item */
