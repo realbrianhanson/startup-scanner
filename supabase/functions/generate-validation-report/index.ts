@@ -79,10 +79,24 @@ serve(async (req) => {
     let body: any;
     try { body = await req.json(); } catch { return genericError(400, "Invalid JSON body"); }
     const project_id = body?.project_id;
-    const quality = body?.quality === "premium" ? "premium" : "standard";
-    const regenerate = body?.regenerate === true;
     if (typeof project_id !== "string" || !UUID_RE.test(project_id)) {
       return genericError(400, "Invalid project_id");
+    }
+    // quality may be omitted; if present must be exactly "standard" | "premium"
+    let quality: "standard" | "premium" = "standard";
+    if (body?.quality !== undefined) {
+      if (body.quality !== "standard" && body.quality !== "premium") {
+        return genericError(400, "Invalid quality");
+      }
+      quality = body.quality;
+    }
+    // regenerate may be omitted; if present must be boolean
+    let regenerate = false;
+    if (body?.regenerate !== undefined) {
+      if (typeof body.regenerate !== "boolean") {
+        return genericError(400, "Invalid regenerate");
+      }
+      regenerate = body.regenerate;
     }
 
     const authHeader = req.headers.get("Authorization");
@@ -108,7 +122,7 @@ serve(async (req) => {
 
     const { data: project, error: projectErr } = await supabase
       .from("projects").select("*").eq("id", project_id).maybeSingle();
-    if (projectErr) { console.error("project fetch", projectErr); return genericError(500, "Failed to load project"); }
+    if (projectErr) { console.error("project fetch failed"); return genericError(500, "Failed to load project"); }
     if (!project) return genericError(404, "Project not found");
     if (project.user_id !== authUser.id) return genericError(403, "Forbidden");
 
@@ -120,19 +134,35 @@ serve(async (req) => {
       p_regenerate: regenerate,
     });
     if (claimErr) {
-      console.error("claim rpc", claimErr);
-      const msg = (claimErr as any)?.message?.includes("insufficient credits")
-        ? "Insufficient AI credits"
-        : "Failed to start report generation";
+      const rawMsg = (claimErr as any)?.message ?? "";
+      const isInsufficient = typeof rawMsg === "string" && rawMsg.includes("insufficient credits");
+      console.error("claim rpc failed", { code: (claimErr as any)?.code });
+      const msg = isInsufficient ? "Insufficient AI credits" : "Failed to start report generation";
       const status = msg === "Insufficient AI credits" ? 402 : 500;
       return genericError(status, msg);
     }
     const claim = claimData as any;
     if (!claim) return genericError(500, "Failed to start report generation");
 
+    // Already complete — return existing report, no side effects
+    if (claim.already_complete) {
+      const existing = claim.report as any;
+      return new Response(
+        JSON.stringify({
+          success: true,
+          already_complete: true,
+          report_id: existing?.id,
+          validation_score: existing?.report_data?.validation_score?.overall
+            ?? existing?.report_data?.validation_score
+            ?? null,
+        }),
+        { headers: JSON_HEADERS },
+      );
+    }
+
     if (claim.already_in_progress) {
       return new Response(
-        JSON.stringify({ resumable: true, in_progress: true, report_id: claim.report_id }),
+        JSON.stringify({ in_progress: true, report_id: claim.report_id }),
         { status: 202, headers: JSON_HEADERS },
       );
     }
@@ -140,15 +170,18 @@ serve(async (req) => {
     const report = claim.report as any;
     const attemptId: string = claim.attempt_id;
     const wasResumed: boolean = !!claim.resumed;
+    const claimChargedCredits: number = Number(claim.credits_charged || 0);
+    const effectiveQuality: "standard" | "premium" =
+      (claim.effective_quality === "premium" ? "premium" : "standard");
 
     // Fetch profile for email prefs (post-claim; credits already updated by RPC if needed)
     const { data: profile, error: profileErr } = await supabase
       .from("profiles").select("*").eq("id", authUser.id).maybeSingle();
-    if (profileErr || !profile) { console.error("profile fetch", profileErr); return genericError(500, "Failed to load profile"); }
+    if (profileErr || !profile) { console.error("profile fetch failed"); return genericError(500, "Failed to load profile"); }
 
     let sectionPremiumModel: string;
     let sectionFastModel: string;
-    if (quality === "premium") {
+    if (effectiveQuality === "premium") {
       sectionPremiumModel = PREMIUM_MODEL;
       sectionFastModel = FAST_MODEL;
     } else {
@@ -172,7 +205,7 @@ serve(async (req) => {
       const { data, error } = await supabase.from("reports").update(patch)
         .eq("id", report.id).eq("generation_attempt_id", attemptId)
         .select("id");
-      if (error) { console.error("owned update", error); return "error"; }
+      if (error) { console.error("owned update failed", { code: (error as any)?.code }); return "error"; }
       if (!data || data.length === 0) return "superseded";
       return "ok";
     }
@@ -194,8 +227,7 @@ serve(async (req) => {
       return (Date.now() - startTime) > MAX_RUNTIME_MS;
     }
 
-    // Generate sections sequentially with context chaining
-    const ctx: Record<string, any> = {};
+    // Generate sections sequentially with context chaining (ctx already hydrated above)
     const industryCtx = getIndustryContext(project.industry);
 
     // Define all sections in generation order
