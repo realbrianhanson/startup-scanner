@@ -11,14 +11,29 @@ import { PRODUCT_FACTS } from "@/lib/productFacts";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
 
-const ALLOWED_NEXT = new Set(["/pricing", "/dashboard", "/projects/new"]);
+const ALLOWED_NEXT = new Set([
+  "/pricing",
+  "/dashboard",
+  "/projects/new",
+  "/settings",
+  "/admin",
+]);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DYNAMIC_NEXT_RE = /^\/projects\/([^/]+)\/(chat|report)$/;
 const MIN_PASSWORD = 8;
 
 function safeNext(raw: string | null, fallback: string): string {
   if (!raw) return fallback;
   if (!raw.startsWith("/") || raw.startsWith("//")) return fallback;
-  const path = raw.split("?")[0].split("#")[0];
-  return ALLOWED_NEXT.has(path) ? path : fallback;
+  const [pathOnly, queryOnly] = raw.split("#")[0].split("?");
+  if (ALLOWED_NEXT.has(pathOnly)) {
+    return queryOnly ? `${pathOnly}?${queryOnly}` : pathOnly;
+  }
+  const m = pathOnly.match(DYNAMIC_NEXT_RE);
+  if (m && UUID_RE.test(m[1])) {
+    return queryOnly ? `${pathOnly}?${queryOnly}` : pathOnly;
+  }
+  return fallback;
 }
 
 const Auth = () => {

@@ -92,7 +92,12 @@ function metaFor(pathname: string, search: string): Meta {
         robots: "noindex,nofollow",
         ogUrl: `${SITE}${pathname}`,
       };
-      if (pathname === "/auth") return { ...base, title: "Sign in — Validifier" };
+      if (pathname === "/auth") {
+        const params = new URLSearchParams(search);
+        if (params.get("reset") === "true") return { ...base, title: "Set a new password — Validifier" };
+        if (params.get("mode") === "signup") return { ...base, title: "Create account — Validifier" };
+        return { ...base, title: "Sign in — Validifier" };
+      }
       if (pathname === "/dashboard") return { ...base, title: "Dashboard — Validifier" };
       if (pathname === "/projects/new") return { ...base, title: "New Report — Validifier" };
       if (pathname.startsWith("/projects/") && pathname.endsWith("/chat"))
