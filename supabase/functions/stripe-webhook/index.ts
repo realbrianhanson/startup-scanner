@@ -199,6 +199,7 @@ Deno.serve(async (req) => {
           last_attempt_at: nowIso,
         })
         .eq("event_id", eventId)
+        .eq("status", existing.status)
         .eq("last_attempt_at", existing.last_attempt_at as string)
         .select("event_id");
 
