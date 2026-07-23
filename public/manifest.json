@@ -1,13 +1,12 @@
 {
   "name": "Validifier",
   "short_name": "Validifier",
-  "description": "AI-powered business idea validation",
-  "start_url": "/dashboard",
+  "description": "Turn a business idea into a go / no-go decision with a 15-section evidence-backed validation brief in about 2–3 minutes.",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#1e40af",
+  "background_color": "#0f1318",
+  "theme_color": "#0f1318",
   "icons": [
-    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/favicon.png", "sizes": "any", "type": "image/png" }
   ]
 }
