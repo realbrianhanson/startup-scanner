@@ -282,40 +282,97 @@ serve(async (req) => {
     ];
 
     let sectionsCompleted = 0;
-    let timedOut = false;
+    let resumable = false;
 
     for (const section of sectionGenerators) {
+      // Skip already-complete sections (resume)
+      if (currentStatus[section.key] === "complete") continue;
+
       if (isRunningLow()) {
-        console.log(`⏱️ Timeout approaching after ${sectionsCompleted} sections (${Math.round((Date.now() - startTime) / 1000)}s elapsed) — skipping remaining sections`);
-        timedOut = true;
+        resumable = true;
         break;
       }
 
+      // Mark generating + heartbeat (owned)
+      currentStatus = { ...currentStatus, [section.key]: "generating" };
+      const markGen = await ownedUpdate({
+        generation_status: currentStatus,
+        generation_heartbeat_at: new Date().toISOString(),
+      });
+      if (markGen === "superseded") {
+        return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
+      }
+      if (markGen === "error") { resumable = true; currentStatus[section.key] = "pending"; break; }
+
       try {
         const data = await section.gen();
-        if (section.ctxKey) {
-          ctx[section.ctxKey] = data;
+        if (section.ctxKey) ctx[section.ctxKey] = data;
+
+        // Merge into report_data + mark complete + heartbeat, guarded by attempt id
+        const { data: cur, error: curErr } = await supabase
+          .from("reports").select("report_data,generation_attempt_id")
+          .eq("id", report.id).maybeSingle();
+        if (curErr || !cur) { console.error("read for merge", curErr); resumable = true; currentStatus[section.key] = "pending"; break; }
+        if (cur.generation_attempt_id !== attemptId) {
+          return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
         }
-        currentStatus = await updateSectionStatus(section.key, data, currentStatus);
+        const mergedData = { ...((cur.report_data as Record<string, any>) || {}), [section.key]: data };
+        currentStatus = { ...currentStatus, [section.key]: "complete" };
+        const upd = await ownedUpdate({
+          report_data: mergedData,
+          generation_status: currentStatus,
+          generation_heartbeat_at: new Date().toISOString(),
+        });
+        if (upd === "superseded") {
+          return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
+        }
+        if (upd === "error") { resumable = true; currentStatus[section.key] = "pending"; break; }
         sectionsCompleted++;
-        console.log(`✅ Section ${section.key} complete (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
       } catch (err) {
         console.error(`❌ Section ${section.key} failed:`, err);
-        // Mark as failed but continue to next section
         currentStatus = { ...currentStatus, [section.key]: "failed" };
-        await supabase
-          .from("reports")
-          .update({ generation_status: currentStatus })
-          .eq("id", report.id);
+        await ownedUpdate({
+          generation_status: currentStatus,
+          generation_error: "One or more sections could not be generated. Try regenerating.",
+          generation_heartbeat_at: new Date().toISOString(),
+        });
       }
     }
 
-    // ============================================================
-    // FINALIZATION — Always runs, even if some sections were skipped
-    // ============================================================
-    console.log(`📊 Finalizing report: ${sectionsCompleted}/${sectionGenerators.length} sections completed${timedOut ? ' (timed out)' : ''}`);
+    // If we broke out early due to timeout/error, flip any lingering "generating" back to "pending"
+    if (resumable) {
+      let flipped = false;
+      for (const k of SECTION_KEYS) {
+        if (currentStatus[k] === "generating") { currentStatus[k] = "pending"; flipped = true; }
+      }
+      if (flipped) {
+        await ownedUpdate({ generation_status: currentStatus, generation_heartbeat_at: new Date().toISOString() });
+      }
+      return new Response(
+        JSON.stringify({ resumable: true, report_id: report.id }),
+        { status: 202, headers: JSON_HEADERS },
+      );
+    }
 
-    // Calculate validation score from whatever sections we have
+    // If any sections still not complete (pending/failed/generating remain), don't finalize
+    const hasIncomplete = SECTION_KEYS.some((k) => currentStatus[k] !== "complete" && currentStatus[k] !== "failed");
+    if (hasIncomplete) {
+      // Ensure "generating" residues become "pending"
+      let flipped = false;
+      for (const k of SECTION_KEYS) {
+        if (currentStatus[k] === "generating") { currentStatus[k] = "pending"; flipped = true; }
+      }
+      if (flipped) await ownedUpdate({ generation_status: currentStatus, generation_heartbeat_at: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ resumable: true, report_id: report.id }),
+        { status: 202, headers: JSON_HEADERS },
+      );
+    }
+
+    // ============================================================
+    // FINALIZATION — no pending sections remain
+    // ============================================================
+    // Calculate validation score from preserved + newly-generated context
     const scoreResult = calculateValidationScore({
       executiveSummary: ctx.executiveSummary,
       marketAnalysis: ctx.marketAnalysis,
@@ -332,41 +389,34 @@ serve(async (req) => {
     });
     const validationScore = scoreResult.overall;
 
-    // Final update: add validation_score to report_data
-    const { data: finalReport } = await supabase
-      .from("reports")
-      .select("report_data")
-      .eq("id", report.id)
-      .single();
+    const { data: finalRead, error: finalReadErr } = await supabase
+      .from("reports").select("report_data,generation_attempt_id")
+      .eq("id", report.id).maybeSingle();
+    if (finalReadErr || !finalRead) { console.error("final read", finalReadErr); return genericError(500, "Failed to finalize"); }
+    if (finalRead.generation_attempt_id !== attemptId) {
+      return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
+    }
 
-    await supabase
-      .from("reports")
-      .update({
-        report_data: {
-          ...(finalReport?.report_data as Record<string, any> || {}),
-          validation_score: scoreResult,
-        },
-      })
-      .eq("id", report.id);
+    const finalData = { ...((finalRead.report_data as Record<string, any>) || {}), validation_score: scoreResult };
+    const finalize = await ownedUpdate({
+      report_data: finalData,
+      generation_status: currentStatus,
+      generation_completed_at: new Date().toISOString(),
+      generation_heartbeat_at: new Date().toISOString(),
+      generation_error: null,
+    });
+    if (finalize === "superseded") {
+      return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
+    }
+    if (finalize === "error") return genericError(500, "Failed to finalize");
 
-    // Update project with validation score (overall number for backward compat)
-    await supabase
-      .from("projects")
-      .update({
-        validation_score: validationScore,
-        status: "complete",
-      })
-      .eq("id", project_id);
+    const { error: projUpdErr } = await supabase.from("projects")
+      .update({ validation_score: validationScore, status: "complete" }).eq("id", project_id);
+    if (projUpdErr) { console.error("project finalize", projUpdErr); return genericError(500, "Failed to finalize"); }
 
-    // Update user credits
-    await supabase
-      .from("profiles")
-      .update({
-        ai_credits_used: profile.ai_credits_used + creditsNeeded,
-      })
-      .eq("id", project.user_id);
+    // Credits already charged by claim RPC — do NOT modify ai_credits_used here.
 
-    // Log AI usage with cost tracking
+    // Log AI usage (once per successful finalization)
     const estimatedPremiumTokens = quality === 'premium' ? 25000 : 0;
     const estimatedFastTokens = quality === 'premium' ? 15000 : 40000;
     const estimatedTotalCost = estimateCost(sectionPremiumModel, estimatedPremiumTokens) + estimateCost(sectionFastModel, estimatedFastTokens);
@@ -402,7 +452,7 @@ serve(async (req) => {
                 project_name: project.name,
                 validation_score: validationScore,
                 top_insights: topInsights,
-                report_url: `${req.headers.get("origin") || "https://validifier.com"}/projects/${project_id}/report`,
+                report_url: `${REPORT_URL_BASE}/projects/${project_id}/report`,
               },
             }),
           });
@@ -412,26 +462,26 @@ serve(async (req) => {
       console.error('Failed to send report email:', emailErr);
     }
 
-    // Check if credits are running low (75%+) and send alert
+    // Low-credit alert based on freshly-read profile
     try {
-      const newCreditsUsed = profile.ai_credits_used + creditsNeeded;
-      const usagePercent = (newCreditsUsed / profile.ai_credits_monthly) * 100;
-      const prevPercent = (profile.ai_credits_used / profile.ai_credits_monthly) * 100;
-
-      if (usagePercent >= 75 && prevPercent < 75 && profile.email_notifications_enabled !== false) {
-        const notifPrefs = profile.notification_preferences as Record<string, boolean> | null;
+      const { data: freshProfile } = await supabase.from("profiles")
+        .select("ai_credits_used,ai_credits_monthly,email_notifications_enabled,notification_preferences,email,full_name")
+        .eq("id", authUser.id).maybeSingle();
+      const usagePercent = freshProfile ? (freshProfile.ai_credits_used / freshProfile.ai_credits_monthly) * 100 : 0;
+      if (freshProfile && usagePercent >= 75 && freshProfile.email_notifications_enabled !== false) {
+        const notifPrefs = freshProfile.notification_preferences as Record<string, boolean> | null;
         if (!notifPrefs || notifPrefs.credit_alerts !== false) {
           const sendEmailUrl = `${SUPABASE_URL}/functions/v1/send-email`;
           await fetch(sendEmailUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
             body: JSON.stringify({
-              to: profile.email,
+              to: freshProfile.email,
               template: 'credits_low',
               template_data: {
-                name: profile.full_name || profile.email,
-                credits_used: newCreditsUsed,
-                credits_total: profile.ai_credits_monthly,
+                name: freshProfile.full_name || freshProfile.email,
+                credits_used: freshProfile.ai_credits_used,
+                credits_total: freshProfile.ai_credits_monthly,
               },
             }),
           });
@@ -448,15 +498,14 @@ serve(async (req) => {
         validation_score: validationScore,
         sections_completed: sectionsCompleted,
         total_sections: sectionGenerators.length,
-        timed_out: timedOut,
+        resumed: wasResumed,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error generating report:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to generate report";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "Failed to generate report" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
