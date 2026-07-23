@@ -114,7 +114,13 @@ serve(async (req) => {
 
     const releaseCredits = async () => {
       try {
-        await supabase.rpc('release_ai_credits', { p_user_id: user.id, p_amount: creditsNeeded });
+        const { error: releaseErr } = await supabase.rpc('release_ai_credits', {
+          p_user_id: user.id,
+          p_amount: creditsNeeded,
+        });
+        if (releaseErr) {
+          console.error('release_ai_credits refund failed:', releaseErr);
+        }
       } catch (e) {
         console.error('release_ai_credits failed:', e);
       }
@@ -266,7 +272,14 @@ RESPONSE:`;
       return jsonResponse({ error: 'AI service error. Please try again.' }, 502);
     }
 
-    const aiData = await aiResponse.json();
+    let aiData: any;
+    try {
+      aiData = await aiResponse.json();
+    } catch (parseErr) {
+      console.error('AI response JSON parse failed:', parseErr);
+      await releaseCredits();
+      return jsonResponse({ error: 'AI service error. Please try again.' }, 502);
+    }
     const assistantMessage: string = aiData?.choices?.[0]?.message?.content ?? '';
     if (!assistantMessage || !assistantMessage.trim()) {
       await releaseCredits();
