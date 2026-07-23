@@ -192,7 +192,8 @@ const ViewReport = () => {
         if (projectData.status === "complete") setProgress(100);
         else updateProgress(reportData.generation_status);
       } else if (ownerCheck) {
-        startReportGeneration();
+        // Pass quality explicitly — don't rely on the async project state.
+        startReportGeneration(false, projectData.report_quality || 'standard');
       }
       setLoading(false);
     } catch (error: any) {
@@ -203,13 +204,24 @@ const ViewReport = () => {
 
   // Recompute stale-heartbeat recovery visibility on a 30-second timer while analyzing,
   // so a worker that dies after page load becomes recoverable without a refresh.
+  // Also drops the "another worker" banner whenever the project is no longer analyzing
+  // or the heartbeat has gone stale, so the two banners can never coexist.
   useEffect(() => {
-    if (!isOwner) { setStaleRecoveryAvailable(false); return; }
-    if (project?.status !== "analyzing") { setStaleRecoveryAvailable(false); return; }
+    if (!isOwner) {
+      setStaleRecoveryAvailable(false);
+      setAnotherGenerationActive(false);
+      return;
+    }
+    if (project?.status !== "analyzing") {
+      setStaleRecoveryAvailable(false);
+      setAnotherGenerationActive(false);
+      return;
+    }
     const evaluate = () => {
       const hb = report?.generation_heartbeat_at ? new Date(report.generation_heartbeat_at).getTime() : 0;
       const stale = !hb || Date.now() - hb > 5 * 60 * 1000;
       setStaleRecoveryAvailable(stale);
+      if (stale) setAnotherGenerationActive(false);
     };
     evaluate();
     const t = setInterval(evaluate, 30_000);
@@ -229,7 +241,7 @@ const ViewReport = () => {
       });
       const data: any = response.data;
       if (response.error) {
-        console.warn("Edge function error:", response.error.message);
+        console.warn("Edge function error");
         toast.error("Couldn't reach the generator. Please try again.");
         setGenerating(false);
         return;
@@ -249,6 +261,11 @@ const ViewReport = () => {
       }
       if (data?.superseded) {
         setGenerating(false);
+        // Only treat as another active worker if the latest heartbeat is fresh.
+        const hb = report?.generation_heartbeat_at ? new Date(report.generation_heartbeat_at).getTime() : 0;
+        const fresh = hb && Date.now() - hb <= 5 * 60 * 1000;
+        if (fresh) setAnotherGenerationActive(true);
+        // Otherwise leave the 30s stale evaluator to expose recovery.
         return;
       }
       if (data?.already_complete) {
@@ -259,7 +276,7 @@ const ViewReport = () => {
       toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
       if (data?.success) setGenerating(false);
     } catch (error: any) {
-      console.warn("Report generation request error:", error?.message);
+      console.warn("Report generation request error");
       setGenerating(false);
     }
   };
@@ -273,6 +290,7 @@ const ViewReport = () => {
     if (completed === total && total > 0) {
       setGenerating(false);
       setStaleRecoveryAvailable(false);
+      setAnotherGenerationActive(false);
     }
   };
 
