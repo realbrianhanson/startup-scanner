@@ -597,6 +597,13 @@ export type Database = {
         }
         Returns: Json
       }
+      consume_ai_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: {
+          ai_credits_monthly: number
+          ai_credits_used: number
+        }[]
+      }
       finalize_report_generation: {
         Args: {
           p_attempt_id: string
@@ -613,6 +620,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      release_ai_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: undefined
       }
       reset_monthly_credits_cron: { Args: never; Returns: number }
     }
