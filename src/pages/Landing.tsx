@@ -315,7 +315,7 @@ const Landing = () => {
         </section>
 
         {/* Final CTA */}
-        <section className="container mx-auto px-4 py-24 sm:py-28 text-center">
+        <section className="container mx-auto px-4 py-20 sm:py-24 text-center">
           <div className="mx-auto max-w-3xl space-y-6">
             <Sparkles className="h-6 w-6 text-sky-300 mx-auto" aria-hidden />
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-white">
