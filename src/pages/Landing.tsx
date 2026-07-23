@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Sparkles, MessageSquare, FileText } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ArrowRight, ShieldCheck, Sparkles, MessageSquare, FileText, Gauge, Users, Swords, LineChart, ListChecks } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { PRODUCT_FACTS } from "@/lib/productFacts";
 import { DecisionCockpit } from "@/components/landing/DecisionCockpit";
@@ -26,7 +25,7 @@ const Landing = () => {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        `Turn a business idea into a go/no-go decision. A ${F.reportSectionCount}-section decision brief ${F.reportTimeCopy}, covering demand, competition, economics, and your next 30 days.`,
+        `A ${F.reportSectionCount}-section decision brief delivered ${F.reportTimeCopy}, covering demand, competition, economics, and your next 30 days so founders can make a confident go/no-go call.`,
       url: "https://validifier.com",
       offers: [
         { "@type": "Offer", price: "0", priceCurrency: "USD", name: "Free" },
@@ -81,7 +80,6 @@ const Landing = () => {
             >
               Pricing
             </button>
-            <div className="hidden sm:block"><ThemeToggle /></div>
             <button
               onClick={() => navigate("/auth")}
               className="text-sm text-slate-300 hover:text-white transition-colors whitespace-nowrap"
