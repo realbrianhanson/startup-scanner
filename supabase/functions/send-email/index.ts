@@ -7,8 +7,58 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ---------- Safety helpers ----------
+
+function escapeHtml(input: unknown): string {
+  const s = input == null ? "" : String(input);
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function clampInt(input: unknown, min: number, max: number, fallback = 0): number {
+  const n = typeof input === "number" ? input : Number(input);
+  if (!Number.isFinite(n)) return fallback;
+  const clamped = Math.max(min, Math.min(max, Math.trunc(n)));
+  return clamped;
+}
+
+function safeReportUrl(input: unknown): string {
+  const fallback = `${BASE_URL}/dashboard`;
+  if (typeof input !== "string") return fallback;
+  const trimmed = input.trim();
+  if (trimmed.length === 0 || trimmed.length > 2048) return fallback;
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return fallback;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return fallback;
+  if (parsed.username || parsed.password) return fallback;
+  return parsed.toString();
+}
+
+function sanitizeSubject(input: unknown): string {
+  const raw = typeof input === "string" ? input : "";
+  const cleaned = raw
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.length > 200 ? cleaned.slice(0, 200) : cleaned;
+}
+
+function firstNameOf(name: unknown): string {
+  const raw = typeof name === "string" ? name.trim() : "";
+  return raw.split(/\s+/)[0] || "there";
+}
+
 // Branded HTML email template
 function buildEmailHtml(body: string, preheader?: string): string {
+  const safePreheader = preheader ? escapeHtml(preheader) : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,7 +87,7 @@ function buildEmailHtml(body: string, preheader?: string): string {
 </style>
 </head>
 <body>
-${preheader ? `<div style="display:none;max-height:0;overflow:hidden">${preheader}</div>` : ''}
+${safePreheader ? `<div style="display:none;max-height:0;overflow:hidden">${safePreheader}</div>` : ''}
 <div class="wrapper">
 <div class="container">
   <div class="header">
@@ -68,23 +118,24 @@ function stripHtml(html: string): string {
 
 // Email templates
 export function welcomeEmail(name: string): { subject: string; html: string; text: string } {
-  const firstName = name?.split(' ')[0] || 'there';
+  const firstName = escapeHtml(firstNameOf(name));
+  const startUrl = escapeHtml(`${BASE_URL}/projects/new`);
   const body = `
     <h2>Welcome to Validifier, ${firstName}! 🎉</h2>
-    <p>You've just joined thousands of founders who validate their business ideas before investing time and money.</p>
+    <p>Validifier turns a business idea into a complete 15-section decision brief — typically in about 2–3 minutes.</p>
     <div class="highlight-box">
-      <p>✅ <strong>AI-powered validation</strong> in 60 seconds</p>
-      <p>✅ <strong>12 strategic frameworks</strong> including SWOT, Porter's 5 Forces & more</p>
-      <p>✅ <strong>Actionable insights</strong> to help you decide whether to pursue your idea</p>
+      <p>✅ <strong>Market and competitive analysis</strong> grounded in specific reasoning</p>
+      <p>✅ <strong>Financial basics</strong> — startup costs, unit economics, business model</p>
+      <p>✅ <strong>A 30-day action plan</strong> so you know what to do next</p>
     </div>
-    <p>Ready to validate your first idea?</p>
-    <a href="${BASE_URL}/projects/new" class="cta">Validate Your Idea →</a>
+    <p>Ready to run your first report?</p>
+    <a href="${startUrl}" class="cta">Start your first report →</a>
     <p style="color:#71717a;font-size:13px">Need help getting started? Just reply to this email — we're here to help.</p>
   `;
   return {
-    subject: "Welcome to Validifier — Let's validate your first idea",
-    html: buildEmailHtml(body, "Welcome! Let's validate your first business idea."),
-    text: `Welcome to Validifier, ${firstName}!\n\nYou've joined thousands of founders who validate their business ideas before investing time and money.\n\n- AI-powered validation in 60 seconds\n- 12 strategic frameworks\n- Actionable insights\n\nReady? Visit ${BASE_URL}/projects/new to validate your first idea.\n\n— The Validifier Team`,
+    subject: "Welcome to Validifier — Let's turn your idea into a decision",
+    html: buildEmailHtml(body, "Welcome! Turn your first idea into a decision brief."),
+    text: `Welcome to Validifier, ${firstNameOf(name)}!\n\nValidifier turns a business idea into a complete 15-section decision brief, typically in about 2–3 minutes.\n\n- Market and competitive analysis with specific reasoning\n- Financial basics: startup costs, unit economics, business model\n- A 30-day action plan for what to do next\n\nReady? Visit ${BASE_URL}/projects/new to start your first report.\n\n— The Validifier Team`,
   };
 }
 
@@ -95,28 +146,33 @@ export function reportCompleteEmail(
   topInsights: string[],
   reportUrl: string
 ): { subject: string; html: string; text: string } {
-  const firstName = name?.split(' ')[0] || 'there';
-  const scoreColor = validationScore >= 70 ? '#16a34a' : validationScore >= 40 ? '#ca8a04' : '#dc2626';
-  const insightsHtml = topInsights.map(i => `<p>• ${i}</p>`).join('');
-  
+  const firstNameRaw = firstNameOf(name);
+  const firstName = escapeHtml(firstNameRaw);
+  const projectNameRaw = typeof projectName === "string" && projectName.trim().length > 0 ? projectName.trim().slice(0, 200) : "your idea";
+  const projectNameSafe = escapeHtml(projectNameRaw);
+  const scoreNum = clampInt(validationScore, 0, 100, 0);
+  const scoreColor = scoreNum >= 70 ? '#16a34a' : scoreNum >= 40 ? '#ca8a04' : '#dc2626';
+  const insightsList = Array.isArray(topInsights) ? topInsights.slice(0, 5) : [];
+  const insightsHtml = insightsList
+    .map((i) => `<p>• ${escapeHtml(typeof i === "string" ? i.slice(0, 500) : "")}</p>`)
+    .join('');
+  const safeUrl = escapeHtml(safeReportUrl(reportUrl));
+
   const body = `
-    <h2>Your report for "${projectName}" is ready! 📊</h2>
-    <p>Hey ${firstName}, your validation report has been generated. Here's a quick look:</p>
+    <h2>Your report for "${projectNameSafe}" is ready! 📊</h2>
+    <p>Hey ${firstName}, your 15-section decision brief is generated. Here's a quick look:</p>
     <div class="highlight-box" style="text-align:center">
       <p style="font-size:13px;color:#71717a;margin-bottom:8px">VALIDATION SCORE</p>
-      <p style="font-size:42px;font-weight:700;color:${scoreColor};margin:0">${validationScore}/100</p>
+      <p style="font-size:42px;font-weight:700;color:${scoreColor};margin:0">${scoreNum}/100</p>
     </div>
-    <h2>Top Insights</h2>
-    <div class="highlight-box">
-      ${insightsHtml}
-    </div>
-    <a href="${reportUrl}" class="cta">View Full Report →</a>
-    <p style="color:#71717a;font-size:13px">Your report includes market analysis, competitive landscape, strategic frameworks, and more.</p>
+    ${insightsHtml ? `<h2>Top Insights</h2><div class="highlight-box">${insightsHtml}</div>` : ""}
+    <a href="${safeUrl}" class="cta">View full report →</a>
+    <p style="color:#71717a;font-size:13px">Your report includes market analysis, competitive landscape, financial basics, and a 30-day action plan.</p>
   `;
   return {
-    subject: `Your validation report for "${projectName}" is ready!`,
-    html: buildEmailHtml(body, `Score: ${validationScore}/100 — View your full report.`),
-    text: `Your report for "${projectName}" is ready!\n\nValidation Score: ${validationScore}/100\n\nTop Insights:\n${topInsights.map(i => `- ${i}`).join('\n')}\n\nView full report: ${reportUrl}\n\n— The Validifier Team`,
+    subject: `Your report for "${projectNameRaw}" is ready`,
+    html: buildEmailHtml(body, `Score: ${scoreNum}/100 — view your full report.`),
+    text: `Your report for "${projectNameRaw}" is ready.\n\nValidation Score: ${scoreNum}/100\n\n${insightsList.length ? `Top Insights:\n${insightsList.map((i) => `- ${typeof i === "string" ? i : ""}`).join('\n')}\n\n` : ""}View full report: ${safeReportUrl(reportUrl)}\n\n— The Validifier Team`,
   };
 }
 
@@ -125,24 +181,28 @@ export function creditsLowEmail(
   creditsUsed: number,
   creditsTotal: number
 ): { subject: string; html: string; text: string } {
-  const firstName = name?.split(' ')[0] || 'there';
-  const remaining = creditsTotal - creditsUsed;
-  
+  const firstNameRaw = firstNameOf(name);
+  const firstName = escapeHtml(firstNameRaw);
+  const total = clampInt(creditsTotal, 0, 1_000_000, 0);
+  const used = clampInt(creditsUsed, 0, total, 0);
+  const remaining = Math.max(0, total - used);
+  const upgradeUrl = escapeHtml(`${BASE_URL}/pricing`);
+
   const body = `
-    <h2>You're running low on AI credits ⚡</h2>
-    <p>Hey ${firstName}, you've used ${creditsUsed} of your ${creditsTotal} monthly AI credits. You have <strong>${remaining} credits</strong> remaining.</p>
+    <h2>You're running low on report credits ⚡</h2>
+    <p>Hey ${firstName}, you've used ${used} of your ${total} monthly credits. You have <strong>${remaining} credits</strong> remaining.</p>
     <div class="highlight-box" style="text-align:center">
       <p style="font-size:13px;color:#71717a;margin-bottom:8px">CREDITS REMAINING</p>
-      <p style="font-size:42px;font-weight:700;color:#ca8a04;margin:0">${remaining} / ${creditsTotal}</p>
+      <p style="font-size:42px;font-weight:700;color:#ca8a04;margin:0">${remaining} / ${total}</p>
     </div>
-    <p>Upgrade your plan to get more credits and keep validating ideas without interruption.</p>
-    <a href="${BASE_URL}/pricing" class="cta">Upgrade Plan →</a>
+    <p>Upgrade your plan to keep running full 15-section reports without interruption.</p>
+    <a href="${upgradeUrl}" class="cta">Upgrade plan →</a>
     <p style="color:#71717a;font-size:13px">Credits reset on the 1st of each month.</p>
   `;
   return {
-    subject: "You're running low on AI credits",
-    html: buildEmailHtml(body, `${remaining} credits remaining — upgrade to keep validating.`),
-    text: `You're running low on AI credits.\n\nYou've used ${creditsUsed} of ${creditsTotal} credits. ${remaining} remaining.\n\nUpgrade at ${BASE_URL}/pricing\n\nCredits reset on the 1st of each month.\n\n— The Validifier Team`,
+    subject: "You're running low on report credits",
+    html: buildEmailHtml(body, `${remaining} credits remaining — upgrade to keep running reports.`),
+    text: `You're running low on report credits.\n\nYou've used ${used} of ${total} credits. ${remaining} remaining.\n\nUpgrade at ${BASE_URL}/pricing\n\nCredits reset on the 1st of each month.\n\n— The Validifier Team`,
   };
 }
 
@@ -242,6 +302,12 @@ serve(async (req) => {
       throw new Error('Missing required fields: to, subject, html (or template)');
     }
 
+    // Sanitize final subject regardless of source (template or service-role raw).
+    const finalSubject = sanitizeSubject(emailSubject);
+    if (!finalSubject) {
+      throw new Error('Invalid subject after sanitization');
+    }
+
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     if (!RESEND_API_KEY) {
       console.warn('RESEND_API_KEY not configured — email not sent');
@@ -260,7 +326,8 @@ serve(async (req) => {
       body: JSON.stringify({
         from: 'Validifier <noreply@validifier.com>',
         to: [to],
-        subject: emailSubject,
+        reply_to: 'support@validifier.com',
+        subject: finalSubject,
         html: emailHtml,
         text: emailText || stripHtml(emailHtml),
       }),
@@ -281,7 +348,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in send-email:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'Failed to send email' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
