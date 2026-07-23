@@ -4,10 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Plus, MoreVertical, Trash2, RefreshCw, ArrowRight } from "lucide-react";
+import { Plus, MoreVertical, Trash2, RefreshCw, ArrowRight, Sparkles, FileText, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AppNav } from "@/components/AppNav";
-import OnboardingOverlay from "@/components/OnboardingOverlay";
 import { CompareProjects } from "@/components/CompareProjects";
 import {
   DropdownMenu,
@@ -35,7 +34,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { document.title = "Dashboard | Validifier"; }, []);
@@ -53,7 +51,6 @@ const Dashboard = () => {
       if (profileError) throw profileError;
       if (profileData) {
         setProfile(profileData);
-        if (!(profileData as any).onboarding_completed) setShowOnboarding(true);
       }
 
       const { count } = await supabase
@@ -62,9 +59,20 @@ const Dashboard = () => {
 
       const { data: projectsData, error: projectsError } = await supabase
         .from("projects").select("*").eq("user_id", session.user.id)
-        .order("created_at", { ascending: false }).limit(20);
+        .order("created_at", { ascending: false });
       if (projectsError) throw projectsError;
-      if (projectsData) setProjects(projectsData);
+      if (projectsData) {
+        setProjects(projectsData);
+        if (projectsData.length > 0 && profileData && !(profileData as any).onboarding_completed) {
+          supabase
+            .from("profiles")
+            .update({ onboarding_completed: true } as any)
+            .eq("id", session.user.id)
+            .then(({ error }) => {
+              if (!error) setProfile((p: any) => (p ? { ...p, onboarding_completed: true } : p));
+            });
+        }
+      }
     } catch (error: any) {
       console.error("Dashboard load error:", error);
       setLoadError(true);
@@ -96,6 +104,32 @@ const Dashboard = () => {
     return "text-red-500";
   };
 
+  const getStatusLabel = (status: string) => {
+    const s = (status || "").toLowerCase();
+    if (s === "complete" || s === "scored") return "Ready";
+    if (s === "analyzing" || s === "generating") return "Analyzing";
+    if (s === "draft") return "Draft";
+    if (s === "failed" || s === "error") return "Needs attention";
+    if (!status) return "Draft";
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  };
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    const s = (status || "").toLowerCase();
+    if (s === "complete" || s === "scored") return "default";
+    if (s === "failed" || s === "error") return "destructive";
+    return "secondary";
+  };
+
+  const creditsRemaining = Math.max(
+    0,
+    (profile?.ai_credits_monthly || 0) - (profile?.ai_credits_used || 0)
+  );
+  const readyCount = projects.filter((p) => {
+    const s = (p.status || "").toLowerCase();
+    return s === "complete" || s === "scored";
+  }).length;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -121,48 +155,78 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {showOnboarding && user && profile && (
-        <OnboardingOverlay
-          userName={user.user_metadata?.full_name || "there"}
-          credits={profile.ai_credits_monthly - profile.ai_credits_used}
-          userId={user.id}
-          onComplete={() => setShowOnboarding(false)}
-        />
-      )}
-
       <AppNav user={user} profile={profile} />
 
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Inline stats bar */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 flex-wrap">
-          <span className="font-mono">{totalProjects} report{totalProjects !== 1 ? "s" : ""}</span>
-          <span className="text-border">|</span>
-          <span className="font-mono">
-            {profile?.ai_credits_used}/{profile?.ai_credits_monthly} credits used
-          </span>
-          <span className="text-border">|</span>
-          <span className="capitalize">{profile?.subscription_tier || "Free"} plan</span>
-          <div className="flex-1" />
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Your decision workspace</h1>
+            <p className="mt-2 text-muted-foreground max-w-xl">
+              Pressure-test ideas, compare the evidence, and decide what to do next.
+            </p>
+          </div>
           <Button
-            size="sm"
             onClick={() => navigate("/projects/new")}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg self-start"
           >
             <Plus className="mr-2 h-4 w-4" />
-            New Report
+            New report
           </Button>
         </div>
 
+        {/* Stats */}
+        <div className="mb-2 grid grid-cols-3 gap-3 md:gap-4">
+          {[
+            { label: "Reports", value: totalProjects, icon: FileText },
+            { label: "Ready", value: readyCount, icon: CheckCircle2 },
+            { label: "Credits remaining", value: creditsRemaining, icon: Sparkles },
+          ].map(({ label, value, icon: Icon }) => (
+            <div
+              key={label}
+              className="rounded-lg border border-border bg-card px-3 py-3 md:px-4 md:py-4"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider">
+                <Icon className="h-3.5 w-3.5" />
+                <span className="truncate">{label}</span>
+              </div>
+              <div className="mt-1 text-2xl font-semibold font-mono tabular-nums">{value}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mb-8 text-xs text-muted-foreground">
+          <span className="capitalize">{profile?.subscription_tier || "Free"}</span> plan
+        </p>
+
         {/* Projects */}
         {projects.length === 0 ? (
-          <div className="py-24 text-center">
-            <p className="text-muted-foreground mb-4">You haven't analyzed any ideas yet.</p>
-            <Button
-              onClick={() => navigate("/projects/new")}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg"
-            >
-              Analyze Your First Idea
-            </Button>
+          <div className="rounded-2xl border border-border bg-card px-6 py-16 md:py-20 text-center">
+            <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Turn your first idea into a decision brief
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
+              Describe the idea in a few sentences. Validifier will score the evidence, surface the risks, and build a 15-section action plan.
+            </p>
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <Button
+                onClick={() => navigate("/projects/new")}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg"
+              >
+                Create my first report
+              </Button>
+              <button
+                onClick={() => navigate("/sample-report")}
+                className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
+              >
+                See a finished sample
+              </button>
+            </div>
+            <p className="mt-6 text-xs text-muted-foreground">
+              One full report is included on the free plan. No credit card.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -172,7 +236,7 @@ const Dashboard = () => {
             </div>
 
             {/* Table header */}
-            <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px_80px_40px] gap-4 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+            <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px_120px_40px] gap-4 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
               <span>Name</span>
               <span>Industry</span>
               <span>Date</span>
@@ -185,9 +249,24 @@ const Dashboard = () => {
               <div
                 key={project.id}
                 onClick={() => navigate(`/projects/${project.id}/report`)}
-                className="group grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px_80px_40px] gap-2 md:gap-4 items-center px-4 py-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors border-b border-border/50 last:border-0"
+                className="group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_120px_100px_80px_120px_40px] gap-2 md:gap-4 items-center px-4 py-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors border-b border-border/50 last:border-0"
               >
-                <span className="font-medium text-foreground truncate">{project.name}</span>
+                <div className="min-w-0">
+                  <div className="font-medium text-foreground truncate">{project.name}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground md:hidden">
+                    {project.industry && <span className="truncate">{project.industry}</span>}
+                    <span aria-hidden>·</span>
+                    <span>
+                      {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                    <span aria-hidden>·</span>
+                    <span className={project.validation_score ? getScoreColor(project.validation_score) : ""}>
+                      Score {project.validation_score ?? "—"}
+                    </span>
+                    <span aria-hidden>·</span>
+                    <span>{getStatusLabel(project.status)}</span>
+                  </div>
+                </div>
                 <span className="text-sm text-muted-foreground hidden md:block">
                   <Badge variant="outline" className="font-normal text-xs">{project.industry}</Badge>
                 </span>
@@ -199,17 +278,18 @@ const Dashboard = () => {
                 </span>
                 <span className="hidden md:block">
                   <Badge
-                    variant={project.status === "complete" ? "default" : "secondary"}
+                    variant={getStatusVariant(project.status)}
                     className="text-xs"
                   >
-                    {project.status}
+                    {getStatusLabel(project.status)}
                   </Badge>
                 </span>
                 <div className="flex items-center gap-1">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="p-1 rounded text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Actions for ${project.name}`}
+                        className="inline-flex h-11 w-11 md:h-8 md:w-8 items-center justify-center rounded text-muted-foreground hover:text-foreground md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="h-4 w-4" />
@@ -224,7 +304,7 @@ const Dashboard = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             ))}
@@ -232,7 +312,7 @@ const Dashboard = () => {
             {totalProjects > 10 && !showAll && (
               <div className="text-center pt-4">
                 <Button variant="ghost" size="sm" onClick={() => setShowAll(true)}>
-                  View all {totalProjects} projects
+                  View all {totalProjects} reports
                 </Button>
               </div>
             )}
