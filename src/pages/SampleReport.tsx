@@ -20,7 +20,6 @@ const SampleReport = () => {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    document.title = "Sample Report | Validifier";
     verifyAndRedirect();
   }, []);
 

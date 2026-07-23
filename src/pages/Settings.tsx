@@ -40,7 +40,6 @@ const Settings = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => { document.title = "Settings | Validifier"; }, []);
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {

@@ -36,8 +36,6 @@ const Dashboard = () => {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const navigate = useNavigate();
 
-  useEffect(() => { document.title = "Dashboard | Validifier"; }, []);
-
   const loadData = useCallback(async () => {
     setLoading(true);
     setLoadError(false);
