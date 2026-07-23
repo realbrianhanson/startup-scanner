@@ -45,7 +45,7 @@ const Landing = () => {
   };
 
   return (
-    <div className="landing-dark min-h-screen bg-slate-950 text-slate-100 antialiased">
+    <div className="landing-dark min-h-screen bg-slate-950 text-slate-100 antialiased overflow-x-hidden">
       {/* Ambient backdrop */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(56,189,248,0.14),transparent_55%),radial-gradient(ellipse_at_bottom,rgba(29,78,216,0.12),transparent_60%)]" />
