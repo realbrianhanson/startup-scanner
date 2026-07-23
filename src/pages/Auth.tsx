@@ -16,7 +16,8 @@ function safeNext(raw: string | null): string {
   // Only accept internal paths from our allowlist. Reject external URLs and unknown paths.
   if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
   const path = raw.split("?")[0].split("#")[0];
-  return ALLOWED_NEXT.has(path) ? raw : "/dashboard";
+  // Return only the canonical allowlisted path — strip any query/hash payloads.
+  return ALLOWED_NEXT.has(path) ? path : "/dashboard";
 }
 
 const Auth = () => {
