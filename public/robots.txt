@@ -7,19 +7,3 @@ Disallow: /admin
 Disallow: /projects/new
 
 Sitemap: https://validifier.com/sitemap.xml
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
-Allow: /
-
-Sitemap: https://validifier.com/sitemap.xml
