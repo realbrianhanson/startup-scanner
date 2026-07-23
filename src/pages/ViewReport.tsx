@@ -463,8 +463,25 @@ const ViewReport = () => {
               )}
             </div>
 
+            {/* Another worker actively generating */}
+            {anotherGenerationActive && !generating && isOwner && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mb-8 rounded-xl border border-primary/30 bg-primary/5 p-5 flex items-start gap-3"
+              >
+                <Loader2 className="h-5 w-5 text-primary shrink-0 mt-0.5 animate-spin" aria-hidden="true" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">Another generation is already running</p>
+                  <p className="text-sm text-muted-foreground">
+                    We&apos;ll update this page automatically as sections finish.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Stale-job recovery */}
-            {staleRecoveryAvailable && !generating && (
+            {staleRecoveryAvailable && !generating && isOwner && (
               <div
                 role="region"
                 aria-live="polite"
@@ -476,7 +493,9 @@ const ViewReport = () => {
                   <div>
                     <p className="font-medium text-foreground">Report generation paused</p>
                     <p className="text-sm text-muted-foreground">
-                      Progress was saved. Resume to continue where you left off — no additional credits will be used.
+                      {report?.credits_charged_at
+                        ? "Progress was saved. Resume to continue where you left off — no additional credits will be used."
+                        : `Progress was saved. Resuming will apply the normal one-time report cost (${project?.report_quality === "premium" ? 12 : 5} credits) since this report has not been charged yet.`}
                     </p>
                   </div>
                   <Button
