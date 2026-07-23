@@ -79,7 +79,7 @@ import { GameChangingIdeaSection } from "@/components/report/GameChangingIdeaSec
 import { FinancialBasicsSection } from "@/components/report/FinancialBasicsSection";
 import { RiskMatrixSection } from "@/components/report/RiskMatrixSection";
 import { ActionPlanSection } from "@/components/report/ActionPlanSection";
-import { InlineReportCTA, StickyReportCTA, EndOfReportCTA } from "@/components/report/ReportCTAs";
+import { EndOfReportCTA } from "@/components/report/ReportCTAs";
 import { ReportSectionErrorBoundary } from "@/components/ReportSectionErrorBoundary";
 import { ReportFeedback } from "@/components/ReportFeedback";
 import { useCalendly } from "@/hooks/useCalendly";
@@ -194,7 +194,7 @@ const ViewReport = () => {
 
       if (reportData) {
         setReport(reportData);
-        if (projectData.status === "complete") setProgress(100);
+        if (projectData.status === "complete" || projectData.status === "scored") setProgress(100);
         else updateProgress(reportData.generation_status);
       } else if (ownerCheck) {
         // Pass quality explicitly — don't rely on the async project state.
@@ -310,10 +310,11 @@ const ViewReport = () => {
 
   // Track generating→complete transition for first-time completion CTA
   useEffect(() => {
+    const complete = project?.status === "complete" || project?.status === "scored";
     const currentlyGenerating = project?.status === "analyzing" || generating;
     if (currentlyGenerating) {
       wasGeneratingRef.current = true;
-    } else if (wasGeneratingRef.current && project?.status === "complete") {
+    } else if (wasGeneratingRef.current && complete) {
       wasGeneratingRef.current = false;
       const ctaKey = `cta_shown_${id}`;
       if (!sessionStorage.getItem(ctaKey)) {
@@ -365,29 +366,35 @@ const ViewReport = () => {
   const scoreFactors = typeof rawScore === 'object' && rawScore?.factors ? rawScore.factors : undefined;
   const reportData = report?.report_data || {};
   const isGenerating = project?.status === "analyzing" || generating;
+  const isReportComplete = project?.status === "complete" || project?.status === "scored";
+  const showBackHome = !isOwner && !isSample;
+  const canExportMarkdown = isOwner && !isSample && userTier !== "free";
+  const showLockedMarkdown = isOwner && !isSample && userTier === "free";
 
   return (
     <div className="min-h-screen bg-background" style={{ opacity: 1 }}>
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div
-              className="flex items-center space-x-2 cursor-pointer"
-              onClick={() => navigate(isSample ? "/" : "/dashboard")}
+            <button
+              type="button"
+              onClick={() => navigate(isSample ? "/" : showBackHome ? "/" : "/dashboard")}
+              aria-label="Validifier home"
+              className="flex items-center gap-2 min-h-[44px] min-w-[44px] px-1 -mx-1 rounded-md"
             >
               <span className="font-serif text-xl">Validifier</span>
               {isSample && (
-                <span className="ml-2 text-[11px] uppercase tracking-wider text-muted-foreground border border-border rounded-full px-2 py-0.5">
+                <span className="ml-1 text-[11px] uppercase tracking-wider text-muted-foreground border border-border rounded-full px-2 py-0.5">
                   Sample report
                 </span>
               )}
-            </div>
+            </button>
             <div className="flex items-center space-x-2">
               {!isSample && <ThemeToggle />}
               {!isSample && isOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Report options">
+                    <Button variant="ghost" size="icon" aria-label="Report options" className="h-11 w-11">
                       <MoreVertical className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -417,10 +424,25 @@ const ViewReport = () => {
                 >
                   Create my report — free
                 </Button>
+              ) : showBackHome ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/")}
+                  aria-label="Back home"
+                  className="min-h-[44px] px-2 sm:px-3"
+                >
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Back home</span>
+                </Button>
               ) : (
-                <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Dashboard
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/dashboard")}
+                  aria-label="Back to Dashboard"
+                  className="min-h-[44px] px-2 sm:px-3"
+                >
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Back to Dashboard</span>
                 </Button>
               )}
             </div>
@@ -428,7 +450,7 @@ const ViewReport = () => {
         </div>
       </nav>
 
-      {isSample && project?.status === "complete" && (
+      {isSample && isReportComplete && (
         <div className="border-b border-border/60 bg-muted/30">
           <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
@@ -452,9 +474,14 @@ const ViewReport = () => {
         </div>
       )}
 
+      {/* Mobile section jump — only for complete reports with content */}
+      {isReportComplete && Object.keys(reportData).length > 0 && (
+        <ReportNavigation reportData={reportData} variant="mobile" />
+      )}
+
       <div className="container mx-auto px-4 py-8">
         <div className={`flex gap-8 ${isGenerating ? 'justify-center' : ''}`}>
-          {project?.status === "complete" && Object.keys(reportData).length > 0 && (
+          {isReportComplete && Object.keys(reportData).length > 0 && (
             <div className="hidden lg:block w-56 shrink-0">
               <ReportNavigation reportData={reportData} />
             </div>
@@ -466,7 +493,7 @@ const ViewReport = () => {
               <div className="space-y-2 mb-8">
                 <div className="flex items-center gap-3">
                   <h1 className="font-serif text-3xl md:text-4xl tracking-tight">{project?.name}</h1>
-                  {project?.status === "complete" && (
+                  {isReportComplete && (
                     project?.report_quality === "premium" ? (
                       <Badge variant="secondary" className="gap-1 text-[10px]">
                         <Sparkles className="h-3 w-3" /> Premium
@@ -484,7 +511,7 @@ const ViewReport = () => {
               </div>
 
               {/* Score Display — large typography, no ring */}
-              {project?.status === "complete" && (
+              {isReportComplete && (
                 <ValidationScoreDisplay
                   score={validationScore}
                   justification={reportData.executive_summary?.score_justification}
@@ -493,7 +520,7 @@ const ViewReport = () => {
               )}
 
               {/* Upsell banner for standard reports */}
-              {project?.status === "complete" && project?.report_quality !== "premium" && isOwner && userTier !== "free" && (
+              {isReportComplete && project?.report_quality !== "premium" && isOwner && userTier !== "free" && (
                 <div className="flex items-center gap-3 border-l-2 border-l-primary pl-4 py-3 mb-8">
                   <p className="text-sm text-muted-foreground flex-1">
                     Want deeper insights? Regenerate with <span className="font-medium text-foreground">Premium AI</span>.
@@ -509,7 +536,7 @@ const ViewReport = () => {
                   </Button>
                 </div>
               )}
-              {project?.status === "complete" && project?.report_quality !== "premium" && isOwner && userTier === "free" && (
+              {isReportComplete && project?.report_quality !== "premium" && isOwner && userTier === "free" && (
                 <div className="flex items-center gap-3 border-l-2 border-l-muted-foreground/30 pl-4 py-3 mb-8">
                   <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
                   <p className="text-sm text-muted-foreground flex-1">
@@ -587,7 +614,7 @@ const ViewReport = () => {
 
 
             {/* Report at a Glance — hero dashboard */}
-            {project?.status === "complete" && Object.keys(reportData).length > 0 && (
+            {isReportComplete && Object.keys(reportData).length > 0 && (
               <ReportAtAGlance reportData={reportData} />
             )}
 
@@ -609,13 +636,8 @@ const ViewReport = () => {
               </ReportSectionErrorBoundary>
             )}
 
-            {/* Inline CTA — after game-changing idea for peak excitement */}
-            {!isSample && project?.status === "complete" && reportData.game_changing_idea && (
-              <InlineReportCTA />
-            )}
-
             {/* Report Sections — continuous document */}
-            {project?.status === "complete" && (
+            {isReportComplete && (
               <div>
                 {(() => {
                   const status = (report?.generation_status as Record<string, string> | null) || {};
@@ -675,7 +697,7 @@ const ViewReport = () => {
             )}
 
             {/* Action Buttons */}
-            {!isSample && project?.status === "complete" && (
+            {!isSample && isReportComplete && (
               <div className="flex flex-wrap items-center justify-center gap-4 pt-8">
                 <Button variant="default" size="lg" onClick={() => navigate(`/projects/${id}/chat`)}>
                   <MessageSquare className="mr-2 h-5 w-5" />
@@ -771,15 +793,23 @@ const ViewReport = () => {
                       <Download className="mr-2 h-4 w-4" />
                       Print / Save PDF
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      const md = generateReportMarkdown(reportData, project);
-                      const slug = project?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'report';
-                      downloadAsFile(md, `${slug}-report.md`);
-                      toast.success("Markdown report downloaded!");
-                    }}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Export as Markdown
-                    </DropdownMenuItem>
+                    {canExportMarkdown && (
+                      <DropdownMenuItem onClick={() => {
+                        const md = generateReportMarkdown(reportData, project);
+                        const slug = project?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'report';
+                        downloadAsFile(md, `${slug}-report.md`);
+                        toast.success("Markdown report downloaded!");
+                      }}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Export as Markdown
+                      </DropdownMenuItem>
+                    )}
+                    {showLockedMarkdown && (
+                      <DropdownMenuItem onClick={() => navigate("/pricing")}>
+                        <Lock className="mr-2 h-4 w-4" />
+                        Markdown export — Pro
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={async () => {
                       const shareText = generateSocialShareText(project?.name, validationScore);
@@ -795,7 +825,7 @@ const ViewReport = () => {
             )}
 
             {/* AI Disclaimer */}
-            {project?.status === "complete" && (
+            {isReportComplete && (
               <>
                 <div className="text-center pt-6 pb-2">
                   <p className="text-xs text-muted-foreground/60 max-w-2xl mx-auto leading-relaxed">
@@ -829,9 +859,6 @@ const ViewReport = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Sticky bottom CTA bar — only when report is complete */}
-      {!isSample && project?.status === "complete" && <StickyReportCTA />}
 
       {/* Celebration overlay */}
       {!isSample && celebrationPhase && (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface Section {
@@ -8,12 +8,21 @@ interface Section {
 
 interface ReportNavigationProps {
   reportData: any;
+  variant?: "desktop" | "mobile";
 }
 
-export function ReportNavigation({ reportData }: ReportNavigationProps) {
+function scrollToSection(id: string) {
+  const element = document.getElementById(id);
+  if (!element) return;
+  const offset = 100;
+  const top = element.getBoundingClientRect().top + window.scrollY - offset;
+  window.scrollTo({ top, behavior: "smooth" });
+}
+
+export function ReportNavigation({ reportData, variant = "desktop" }: ReportNavigationProps) {
   const [activeSection, setActiveSection] = useState<string>("");
 
-  const sections: Section[] = [
+  const sections: Section[] = useMemo(() => [
     ...(reportData.executive_summary ? [{ id: "executive-summary", label: "Executive Summary" }] : []),
     ...(reportData.game_changing_idea ? [{ id: "game-changing-idea", label: "Game-Changing Idea" }] : []),
     ...(reportData.market_analysis ? [{ id: "market-analysis", label: "Market Analysis" }] : []),
@@ -29,44 +38,55 @@ export function ReportNavigation({ reportData }: ReportNavigationProps) {
     ...(reportData.financial_basics ? [{ id: "financial-basics", label: "Financial Basics" }] : []),
     ...(reportData.risk_matrix ? [{ id: "risk-matrix", label: "Risk Matrix" }] : []),
     ...(reportData.action_plan ? [{ id: "action-plan", label: "Action Plan" }] : []),
-  ];
+  ], [reportData]);
 
   useEffect(() => {
     const handleScroll = () => {
-      const sectionElements = sections.map(s => ({
-        id: s.id,
-        element: document.getElementById(s.id)
-      })).filter(s => s.element);
-
       const scrollPosition = window.scrollY + 150;
-
-      for (let i = sectionElements.length - 1; i >= 0; i--) {
-        const section = sectionElements[i];
-        if (section.element && section.element.offsetTop <= scrollPosition) {
-          setActiveSection(section.id);
-          break;
+      let current = "";
+      for (const s of sections) {
+        const el = document.getElementById(s.id);
+        if (el && el.offsetTop <= scrollPosition) {
+          current = s.id;
         }
       }
+      if (current) setActiveSection(current);
     };
-
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, [sections]);
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 100;
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: elementPosition - offset,
-        behavior: "smooth"
-      });
-    }
-  };
-
   if (sections.length === 0) return null;
+
+  if (variant === "mobile") {
+    return (
+      <div className="lg:hidden sticky top-[64px] z-40 bg-background/90 backdrop-blur-sm border-b border-border/60">
+        <div className="container mx-auto px-4 py-2 max-w-3xl">
+          <label htmlFor="report-section-jump" className="sr-only">
+            Jump to report section
+          </label>
+          <select
+            id="report-section-jump"
+            aria-label="Jump to report section"
+            value={activeSection || sections[0].id}
+            onChange={(e) => {
+              const id = e.target.value;
+              setActiveSection(id);
+              scrollToSection(id);
+            }}
+            className="w-full min-h-[44px] rounded-md border border-border bg-background px-3 text-sm"
+          >
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <nav className="hidden lg:block sticky top-24 h-fit">
@@ -74,20 +94,25 @@ export function ReportNavigation({ reportData }: ReportNavigationProps) {
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
           Sections
         </p>
-        {sections.map((section) => (
-          <button
-            key={section.id}
-            onClick={() => scrollToSection(section.id)}
-            className={cn(
-              "w-full text-left text-sm py-1.5 px-3 transition-colors border-l-2",
-              activeSection === section.id
-                ? "border-l-primary text-foreground font-medium"
-                : "border-l-transparent text-muted-foreground hover:text-foreground hover:border-l-muted-foreground/30"
-            )}
-          >
-            {section.label}
-          </button>
-        ))}
+        {sections.map((section) => {
+          const isActive = activeSection === section.id;
+          return (
+            <button
+              key={section.id}
+              type="button"
+              aria-current={isActive ? "location" : undefined}
+              onClick={() => scrollToSection(section.id)}
+              className={cn(
+                "w-full text-left text-sm py-1.5 px-3 transition-colors border-l-2",
+                isActive
+                  ? "border-l-primary text-foreground font-medium"
+                  : "border-l-transparent text-muted-foreground hover:text-foreground hover:border-l-muted-foreground/30"
+              )}
+            >
+              {section.label}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
