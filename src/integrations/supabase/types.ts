@@ -413,6 +413,13 @@ export type Database = {
       reports: {
         Row: {
           created_at: string
+          credits_charged_at: string | null
+          generation_attempt_id: string | null
+          generation_completed_at: string | null
+          generation_error: string | null
+          generation_heartbeat_at: string | null
+          generation_quality: string
+          generation_started_at: string | null
           generation_status: Json
           id: string
           project_id: string
@@ -420,6 +427,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credits_charged_at?: string | null
+          generation_attempt_id?: string | null
+          generation_completed_at?: string | null
+          generation_error?: string | null
+          generation_heartbeat_at?: string | null
+          generation_quality?: string
+          generation_started_at?: string | null
           generation_status?: Json
           id?: string
           project_id: string
@@ -427,6 +441,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credits_charged_at?: string | null
+          generation_attempt_id?: string | null
+          generation_completed_at?: string | null
+          generation_error?: string | null
+          generation_heartbeat_at?: string | null
+          generation_quality?: string
+          generation_started_at?: string | null
           generation_status?: Json
           id?: string
           project_id?: string
@@ -567,6 +588,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_report_generation: {
+        Args: {
+          p_project_id: string
+          p_quality: string
+          p_regenerate?: boolean
+          p_user_id: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
