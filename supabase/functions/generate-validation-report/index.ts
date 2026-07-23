@@ -204,6 +204,7 @@ serve(async (req) => {
     async function ownedUpdate(patch: Record<string, any>): Promise<"ok" | "superseded" | "error"> {
       const { data, error } = await supabase.from("reports").update(patch)
         .eq("id", report.id).eq("generation_attempt_id", attemptId)
+        .is("generation_completed_at", null)
         .select("id");
       if (error) { console.error("owned update failed", { code: (error as any)?.code }); return "error"; }
       if (!data || data.length === 0) return "superseded";
@@ -363,42 +364,60 @@ serve(async (req) => {
       } catch (err) {
         console.error(`section failed`, { section: section.key });
         currentStatus = { ...currentStatus, [section.key]: "failed" };
-        await ownedUpdate({
+        const failMark = await ownedUpdate({
           generation_status: currentStatus,
           generation_error: "One or more sections could not be generated. Try regenerating.",
           generation_heartbeat_at: new Date().toISOString(),
         });
+        if (failMark === "superseded") {
+          return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
+        }
+        if (failMark === "error") {
+          // Restore to pending so a future resume can retry this section.
+          currentStatus = { ...currentStatus, [section.key]: "pending" };
+          const restore = await ownedUpdate({
+            generation_status: currentStatus,
+            generation_heartbeat_at: new Date().toISOString(),
+          });
+          if (restore === "superseded") {
+            return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
+          }
+          return genericError(500, "Failed to persist section state");
+        }
       }
     }
 
-    // If we broke out early due to timeout/error, flip any lingering "generating" back to "pending"
-    if (resumable) {
-      let flipped = false;
+    // Helper to safely exit into a resumable state. Always persists the full
+    // current status (with any generating→pending conversion) and heartbeat,
+    // and reports superseded/DB errors truthfully instead of pretending success.
+    async function exitResumable(): Promise<Response> {
       for (const k of SECTION_KEYS) {
-        if (currentStatus[k] === "generating") { currentStatus[k] = "pending"; flipped = true; }
+        if (currentStatus[k] === "generating") currentStatus[k] = "pending";
       }
-      if (flipped) {
-        await ownedUpdate({ generation_status: currentStatus, generation_heartbeat_at: new Date().toISOString() });
+      const persist = await ownedUpdate({
+        generation_status: currentStatus,
+        generation_heartbeat_at: new Date().toISOString(),
+      });
+      if (persist === "superseded") {
+        return new Response(JSON.stringify({ superseded: true }), { status: 202, headers: JSON_HEADERS });
+      }
+      if (persist === "error") {
+        return genericError(500, "Failed to persist generation state");
       }
       return new Response(
         JSON.stringify({ resumable: true, report_id: report.id }),
         { status: 202, headers: JSON_HEADERS },
       );
+    }
+
+    if (resumable) {
+      return await exitResumable();
     }
 
     // If any sections still not complete (pending/failed/generating remain), don't finalize
     const hasIncomplete = SECTION_KEYS.some((k) => currentStatus[k] !== "complete" && currentStatus[k] !== "failed");
     if (hasIncomplete) {
-      // Ensure "generating" residues become "pending"
-      let flipped = false;
-      for (const k of SECTION_KEYS) {
-        if (currentStatus[k] === "generating") { currentStatus[k] = "pending"; flipped = true; }
-      }
-      if (flipped) await ownedUpdate({ generation_status: currentStatus, generation_heartbeat_at: new Date().toISOString() });
-      return new Response(
-        JSON.stringify({ resumable: true, report_id: report.id }),
-        { status: 202, headers: JSON_HEADERS },
-      );
+      return await exitResumable();
     }
 
     // ============================================================
