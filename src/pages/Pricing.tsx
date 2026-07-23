@@ -125,7 +125,6 @@ const Pricing = () => {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Pricing | Validifier";
     trackEvent("pricing_page_view");
   }, []);
 

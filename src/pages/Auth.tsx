@@ -21,13 +21,6 @@ function safeNext(raw: string | null, fallback: string): string {
   return ALLOWED_NEXT.has(path) ? path : fallback;
 }
 
-const TITLES: Record<AuthView, string> = {
-  login: "Sign In | Validifier",
-  signup: "Create Account | Validifier",
-  forgot: "Reset Password | Validifier",
-  reset: "Set New Password | Validifier",
-};
-
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const isReset = searchParams.get("reset") === "true";
@@ -61,10 +54,6 @@ const Auth = () => {
   useEffect(() => {
     if ((refCode || mode === "signup") && !isReset) setView("signup");
   }, [refCode, isReset, mode]);
-
-  useEffect(() => {
-    document.title = TITLES[view];
-  }, [view]);
 
   useEffect(() => {
     if (isReset) { setView("reset"); return; }

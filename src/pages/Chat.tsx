@@ -68,7 +68,6 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { document.title = "Follow-up | Validifier"; }, []);
   useEffect(() => { loadProjectAndChat(); }, [projectId]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
 

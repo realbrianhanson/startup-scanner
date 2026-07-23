@@ -13,7 +13,6 @@ const Landing = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Validifier — Turn a business idea into a go / no-go decision";
     trackEvent("landing_page_view");
 
     const script = document.createElement("script");

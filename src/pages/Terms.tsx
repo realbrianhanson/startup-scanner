@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -6,7 +5,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Terms = () => {
   const navigate = useNavigate();
-  useEffect(() => { document.title = "Terms of Service | Validifier"; }, []);
 
   return (
     <div className="min-h-screen bg-background">

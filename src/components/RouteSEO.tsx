@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const SITE = "https://validifier.com";
 const OG_IMAGE = `${SITE}/og-image.png`;
@@ -34,7 +34,7 @@ function setLink(rel: string, href: string) {
   el.setAttribute("href", href);
 }
 
-function metaFor(pathname: string, search: string, params: Record<string, string | undefined>): Meta {
+function metaFor(pathname: string, search: string): Meta {
   const isSampleQuery = new URLSearchParams(search).get("sample") === "1";
 
   // Sample viewer (either /sample-report or /projects/:id/report?sample=1)
@@ -108,10 +108,9 @@ function metaFor(pathname: string, search: string, params: Record<string, string
 
 export default function RouteSEO() {
   const location = useLocation();
-  const params = useParams();
 
   useEffect(() => {
-    const m = metaFor(location.pathname, location.search, params as Record<string, string | undefined>);
+    const m = metaFor(location.pathname, location.search);
 
     document.title = m.title;
     setMeta("description", m.description);
@@ -129,7 +128,7 @@ export default function RouteSEO() {
     setMeta("twitter:title", m.title);
     setMeta("twitter:description", m.description);
     setMeta("twitter:image", OG_IMAGE);
-  }, [location.pathname, location.search, params]);
+  }, [location.pathname, location.search]);
 
   return null;
 }

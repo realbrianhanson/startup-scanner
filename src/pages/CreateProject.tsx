@@ -41,8 +41,6 @@ const CreateProject = () => {
   const [creditsMonthly, setCreditsMonthly] = useState<number>(PRODUCT_FACTS.free.monthlyCredits);
   const [creditsUsed, setCreditsUsed] = useState<number>(0);
 
-  useEffect(() => { document.title = "New Report | Validifier"; }, []);
-
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();

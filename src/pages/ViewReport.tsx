@@ -156,16 +156,6 @@ const ViewReport = () => {
   };
 
   useEffect(() => {
-    if (project) {
-      document.title = isSample
-        ? `Sample Report — ${project.name} | Validifier`
-        : `${project.name} - Validation Report | Validifier`;
-    } else {
-      document.title = "Validation Report | Validifier";
-    }
-  }, [project, isSample]);
-
-  useEffect(() => {
     loadProjectAndReport();
 
     const channel = supabase
