@@ -845,7 +845,7 @@ const ViewReport = () => {
       )}
 
       {/* Completion CTA modal */}
-      <Dialog open={showCompletionCTA} onOpenChange={setShowCompletionCTA}>
+      <Dialog open={!isSample && showCompletionCTA} onOpenChange={setShowCompletionCTA}>
         <DialogContent className="sm:max-w-md text-center space-y-6">
           <div className="space-y-2">
             <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
