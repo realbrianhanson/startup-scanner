@@ -13,14 +13,60 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    if (!url) {
+    const rawUrl = (body as { url?: unknown } | null)?.url;
+    if (typeof rawUrl !== "string") {
       return new Response(
         JSON.stringify({ error: "URL is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const trimmed = rawUrl.trim();
+    if (trimmed.length === 0 || trimmed.length > 2048) {
+      return new Response(
+        JSON.stringify({ error: "URL must be between 1 and 2048 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse and validate URL — block SSRF-prone targets.
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid URL" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return new Response(
+        JSON.stringify({ error: "Only http and https URLs are allowed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (parsed.username || parsed.password) {
+      return new Response(
+        JSON.stringify({ error: "URLs with credentials are not allowed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (isBlockedHost(parsed.hostname)) {
+      return new Response(
+        JSON.stringify({ error: "URL host is not allowed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const url = parsed.toString();
 
     // Authenticate user
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -46,13 +92,20 @@ serve(async (req) => {
 
     // Rate limit: max 5 website analyses per hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count: recentCount } = await supabase
+    const { count: recentCount, error: rateErr } = await supabase
       .from("ai_usage_logs")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("operation_type", "website_analysis")
       .gte("created_at", oneHourAgo);
 
+    if (rateErr) {
+      console.error("Rate-limit query failed:", rateErr);
+      return new Response(
+        JSON.stringify({ error: "Service temporarily unavailable" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     if (recentCount !== null && recentCount >= 5) {
       return new Response(
         JSON.stringify({ error: "Too many website analyses. Please wait before trying again.", retry_after: 3600 }),
