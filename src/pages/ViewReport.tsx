@@ -557,14 +557,15 @@ const ViewReport = () => {
                     <DropdownMenuItem onClick={async () => {
                       toast.info("Generating print preview...");
                       // Open synchronously to avoid popup blocking; detach opener.
-                      const printWindow = window.open('about:blank', '_blank', 'noopener,noreferrer');
-                      if (printWindow && 'opener' in printWindow) {
-                        try { (printWindow as Window).opener = null; } catch { /* noop */ }
+                      const printWindow = window.open('about:blank', '_blank');
+                      if (!printWindow) {
+                        toast.error("Popup blocked");
+                        return;
                       }
+                      try { printWindow.opener = null; } catch { /* noop */ }
                       try {
                         const { data, error } = await supabase.functions.invoke('generate-pdf', { body: { project_id: id } });
                         if (error) throw error;
-                        if (!printWindow) throw new Error('Popup blocked');
                         const html = data?.html;
                         if (typeof html !== 'string' || !html.trim()) throw new Error('Invalid response');
                         const blob = new Blob([html], { type: 'text/html' });
