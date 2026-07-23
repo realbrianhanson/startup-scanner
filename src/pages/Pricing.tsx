@@ -169,8 +169,6 @@ const Pricing = () => {
       toast.error("Billing isn't configured yet.");
       return;
     }
-    const priceId = STRIPE_PRICE_IDS[plan.name];
-
     setLoadingPlan(plan.name);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
