@@ -5,6 +5,50 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+const JSON_HEADERS = { ...corsHeaders, "Content-Type": "application/json" };
+
+const SECTION_KEYS = [
+  "executive_summary",
+  "market_analysis",
+  "customer_personas",
+  "competitive_landscape",
+  "strategic_frameworks",
+  "porter_five_forces",
+  "pestel_analysis",
+  "catwoe_analysis",
+  "path_to_mvp",
+  "go_to_market_strategy",
+  "usp_analysis",
+  "game_changing_idea",
+  "financial_basics",
+  "risk_matrix",
+  "action_plan",
+] as const;
+
+const SECTION_TO_CTX: Record<string, string> = {
+  executive_summary: "executiveSummary",
+  market_analysis: "marketAnalysis",
+  customer_personas: "customerPersonas",
+  competitive_landscape: "competitiveLandscape",
+  strategic_frameworks: "strategicFrameworks",
+  porter_five_forces: "porterFiveForces",
+  pestel_analysis: "pestelAnalysis",
+  catwoe_analysis: "catwoeAnalysis",
+  path_to_mvp: "pathToMvp",
+  go_to_market_strategy: "goToMarketStrategy",
+  usp_analysis: "uspAnalysis",
+  game_changing_idea: "gameChangingIdea",
+  financial_basics: "financialBasics",
+  risk_matrix: "riskMatrix",
+  action_plan: "actionPlan",
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const REPORT_URL_BASE = "https://validifier.com";
+
+function genericError(status: number, message: string) {
+  return new Response(JSON.stringify({ error: message }), { status, headers: JSON_HEADERS });
+}
 
 // ============================================================
 // MODEL CONFIGURATION — Updated March 2026
@@ -32,197 +76,110 @@ serve(async (req) => {
   }
 
   try {
-    const { project_id, quality = 'standard' } = await req.json();
-
-    if (!project_id) {
-      return new Response(
-        JSON.stringify({ error: "project_id is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    let body: any;
+    try { body = await req.json(); } catch { return genericError(400, "Invalid JSON body"); }
+    const project_id = body?.project_id;
+    const quality = body?.quality === "premium" ? "premium" : "standard";
+    const regenerate = body?.regenerate === true;
+    if (typeof project_id !== "string" || !UUID_RE.test(project_id)) {
+      return genericError(400, "Invalid project_id");
     }
 
-    // Authenticate the requesting user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+      return genericError(401, "Authentication required");
     }
+    const token = authHeader.slice(7).trim();
+    if (!token) return genericError(401, "Authentication required");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
     if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error("Missing required environment variables");
+      console.error("Missing required environment variables");
+      return genericError(500, "Server misconfiguration");
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Verify user identity
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !authUser) {
+    const { data: userRes, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userRes?.user) return genericError(401, "Invalid authentication");
+    const authUser = userRes.user;
+
+    const { data: project, error: projectErr } = await supabase
+      .from("projects").select("*").eq("id", project_id).maybeSingle();
+    if (projectErr) { console.error("project fetch", projectErr); return genericError(500, "Failed to load project"); }
+    if (!project) return genericError(404, "Project not found");
+    if (project.user_id !== authUser.id) return genericError(403, "Forbidden");
+
+    // Atomic claim
+    const { data: claimData, error: claimErr } = await supabase.rpc("claim_report_generation", {
+      p_project_id: project_id,
+      p_user_id: authUser.id,
+      p_quality: quality,
+      p_regenerate: regenerate,
+    });
+    if (claimErr) {
+      console.error("claim rpc", claimErr);
+      const msg = (claimErr as any)?.message?.includes("insufficient credits")
+        ? "Insufficient AI credits"
+        : "Failed to start report generation";
+      const status = msg === "Insufficient AI credits" ? 402 : 500;
+      return genericError(status, msg);
+    }
+    const claim = claimData as any;
+    if (!claim) return genericError(500, "Failed to start report generation");
+
+    if (claim.already_in_progress) {
       return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ resumable: true, in_progress: true, report_id: claim.report_id }),
+        { status: 202, headers: JSON_HEADERS },
       );
     }
 
-    // Get project details
-    const { data: project, error: projectError } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", project_id)
-      .single();
+    const report = claim.report as any;
+    const attemptId: string = claim.attempt_id;
+    const wasResumed: boolean = !!claim.resumed;
 
-    if (projectError || !project) {
-      throw new Error("Project not found");
-    }
+    // Fetch profile for email prefs (post-claim; credits already updated by RPC if needed)
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles").select("*").eq("id", authUser.id).maybeSingle();
+    if (profileErr || !profile) { console.error("profile fetch", profileErr); return genericError(500, "Failed to load profile"); }
 
-    // Verify ownership
-    if (project.user_id !== authUser.id) {
-      return new Response(
-        JSON.stringify({ error: "You don't have permission to generate a report for this project" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Rate limit: max 1 report per 60 seconds per user
-    const { data: recentReports } = await supabase
-      .from("reports")
-      .select("created_at")
-      .in("project_id", 
-        (await supabase.from("projects").select("id").eq("user_id", authUser.id)).data?.map((p: any) => p.id) || []
-      )
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (recentReports && recentReports.length > 0) {
-      const lastCreated = new Date(recentReports[0].created_at).getTime();
-      const secondsSince = (Date.now() - lastCreated) / 1000;
-      if (secondsSince < 60) {
-        const retryAfter = Math.ceil(60 - secondsSince);
-        return new Response(
-          JSON.stringify({ error: "Please wait before generating another report", retry_after: retryAfter }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(retryAfter) } }
-        );
-      }
-    }
-
-    // Check user credits
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", project.user_id)
-      .single();
-
-    if (!profile) {
-      throw new Error("User profile not found");
-    }
-
-    // Determine models based on quality level
     let sectionPremiumModel: string;
     let sectionFastModel: string;
-    let creditsNeeded: number;
-
-    if (quality === 'premium') {
+    if (quality === "premium") {
       sectionPremiumModel = PREMIUM_MODEL;
       sectionFastModel = FAST_MODEL;
-      creditsNeeded = 12;
     } else {
-      // Standard: use Gemini 3 Flash for everything
       sectionPremiumModel = FAST_MODEL;
       sectionFastModel = FAST_MODEL;
-      creditsNeeded = 5;
     }
 
-    if (profile.ai_credits_used + creditsNeeded > profile.ai_credits_monthly) {
-      throw new Error("Insufficient AI credits");
+    // Hydrate ctx from preserved report_data (snake_case → camelCase)
+    const initialData: Record<string, any> = (report.report_data && typeof report.report_data === "object") ? report.report_data : {};
+    const ctx: Record<string, any> = {};
+    for (const k of SECTION_KEYS) {
+      const camel = SECTION_TO_CTX[k];
+      if (camel && initialData[k] !== undefined) ctx[camel] = initialData[k];
     }
 
-    // If regenerating, delete the existing report first
-    const { data: existingReport } = await supabase
-      .from("reports")
-      .select("id")
-      .eq("project_id", project_id)
-      .maybeSingle();
+    let currentStatus: Record<string, string> = { ...(report.generation_status || {}) };
+    for (const k of SECTION_KEYS) if (!currentStatus[k]) currentStatus[k] = "pending";
 
-    if (existingReport) {
-      await supabase.from("reports").delete().eq("id", existingReport.id);
+    // Owned-attempt guarded update helpers
+    async function ownedUpdate(patch: Record<string, any>): Promise<"ok" | "superseded" | "error"> {
+      const { data, error } = await supabase.from("reports").update(patch)
+        .eq("id", report.id).eq("generation_attempt_id", attemptId)
+        .select("id");
+      if (error) { console.error("owned update", error); return "error"; }
+      if (!data || data.length === 0) return "superseded";
+      return "ok";
     }
 
-    // Create report entry
-    const { data: report, error: reportError } = await supabase
-      .from("reports")
-      .insert({
-        project_id: project_id,
-        report_data: {},
-        generation_status: {
-          executive_summary: "pending",
-          market_analysis: "pending",
-          customer_personas: "pending",
-          competitive_landscape: "pending",
-          strategic_frameworks: "pending",
-          porter_five_forces: "pending",
-          pestel_analysis: "pending",
-          catwoe_analysis: "pending",
-          path_to_mvp: "pending",
-          go_to_market_strategy: "pending",
-          usp_analysis: "pending",
-          game_changing_idea: "pending",
-          financial_basics: "pending",
-          risk_matrix: "pending",
-          action_plan: "pending",
-        },
-      })
-      .select()
-      .single();
-
-    if (reportError) {
-      throw new Error("Failed to create report");
+    async function heartbeat(): Promise<"ok" | "superseded" | "error"> {
+      return await ownedUpdate({ generation_heartbeat_at: new Date().toISOString(), generation_status: currentStatus });
     }
-
-
-    // Update project status
-    await supabase
-      .from("projects")
-      .update({ status: "analyzing" })
-      .eq("id", project_id);
-
-    // Helper function to update status after each section
-    const updateSectionStatus = async (sectionName: string, sectionData: any, currentStatus: any) => {
-      
-      const newStatus = { ...currentStatus, [sectionName]: "complete" };
-
-      // Fetch current report_data to merge incrementally
-      const { data: currentReport } = await supabase
-        .from("reports")
-        .select("report_data")
-        .eq("id", report.id)
-        .single();
-
-      const updatedReportData = {
-        ...(currentReport?.report_data as Record<string, any> || {}),
-        [sectionName]: sectionData,
-      };
-
-      const { error } = await supabase
-        .from("reports")
-        .update({
-          report_data: updatedReportData,
-          generation_status: newStatus,
-        })
-        .eq("id", report.id);
-
-      if (error) {
-        console.error(`Error updating ${sectionName}:`, error);
-      }
-      return newStatus;
-    };
-
-    let currentStatus = { ...report.generation_status };
 
     // ============================================================
     // TIMEOUT SAFETY NET
