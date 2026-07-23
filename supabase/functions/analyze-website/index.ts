@@ -7,20 +7,109 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function isBlockedHost(hostnameRaw: string): boolean {
+  const hostname = hostnameRaw.toLowerCase().replace(/^\[|\]$/g, "");
+  if (!hostname) return true;
+
+  // Name-based blocks
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) return true;
+  if (hostname.endsWith(".local") || hostname.endsWith(".internal")) return true;
+
+  // IPv4 (including IPv4-mapped IPv6: ::ffff:a.b.c.d)
+  const mapped = hostname.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  const ipv4Str = mapped ? mapped[1] : (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ? hostname : null);
+  if (ipv4Str) {
+    const parts = ipv4Str.split(".").map(Number);
+    if (parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return true;
+    const [a, b] = parts;
+    if (a === 0) return true;              // 0.0.0.0/8 unspecified
+    if (a === 127) return true;            // loopback
+    if (a === 10) return true;             // private
+    if (a === 172 && b >= 16 && b <= 31) return true; // private
+    if (a === 192 && b === 168) return true;          // private
+    if (a === 169 && b === 254) return true;          // link-local
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+    return false;
+  }
+
+  // IPv6
+  if (hostname.includes(":")) {
+    if (hostname === "::" || hostname === "::1") return true;
+    if (hostname.startsWith("fe80:") || hostname.startsWith("fe80::")) return true; // link-local
+    const first = hostname.split(":")[0];
+    if (first.length > 0) {
+      const n = parseInt(first, 16);
+      if (!Number.isNaN(n)) {
+        if ((n & 0xfe00) === 0xfc00) return true; // fc00::/7 unique-local
+        if ((n & 0xffc0) === 0xfe80) return true; // fe80::/10 link-local
+      }
+    }
+    return false;
+  }
+
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { url } = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    if (!url) {
+    const rawUrl = (body as { url?: unknown } | null)?.url;
+    if (typeof rawUrl !== "string") {
       return new Response(
         JSON.stringify({ error: "URL is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const trimmed = rawUrl.trim();
+    if (trimmed.length === 0 || trimmed.length > 2048) {
+      return new Response(
+        JSON.stringify({ error: "URL must be between 1 and 2048 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse and validate URL — block SSRF-prone targets.
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid URL" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return new Response(
+        JSON.stringify({ error: "Only http and https URLs are allowed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (parsed.username || parsed.password) {
+      return new Response(
+        JSON.stringify({ error: "URLs with credentials are not allowed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (isBlockedHost(parsed.hostname)) {
+      return new Response(
+        JSON.stringify({ error: "URL host is not allowed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const url = parsed.toString();
 
     // Authenticate user
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -46,13 +135,20 @@ serve(async (req) => {
 
     // Rate limit: max 5 website analyses per hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count: recentCount } = await supabase
+    const { count: recentCount, error: rateErr } = await supabase
       .from("ai_usage_logs")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("operation_type", "website_analysis")
       .gte("created_at", oneHourAgo);
 
+    if (rateErr) {
+      console.error("Rate-limit query failed:", rateErr);
+      return new Response(
+        JSON.stringify({ error: "Service temporarily unavailable" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     if (recentCount !== null && recentCount >= 5) {
       return new Response(
         JSON.stringify({ error: "Too many website analyses. Please wait before trying again.", retry_after: 3600 }),
