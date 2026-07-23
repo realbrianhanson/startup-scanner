@@ -4,6 +4,9 @@ import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { trackEvent } from "@/lib/analytics";
+import { PRODUCT_FACTS } from "@/lib/productFacts";
+
+const F = PRODUCT_FACTS;
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -24,7 +27,7 @@ const Landing = () => {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Validate your business idea in 90 seconds. Full strategic analysis across 14 frameworks with viability score, competitor analysis, financial projections, and action plan.",
+        `Get a ${F.reportSectionCount}-section validation report on your business idea — ${F.reportTimeCopy}. Viability score, competitor analysis, financial projections, and 30-day action plan.`,
       url: "https://validifier.com",
       offers: [
         { "@type": "Offer", price: "0", priceCurrency: "USD", name: "Free" },
@@ -78,35 +81,35 @@ const Landing = () => {
     <div className="min-h-screen grain bg-background text-foreground">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3 min-w-0">
           <span
-            className="text-2xl font-serif cursor-pointer tracking-tight text-foreground"
+            className="text-2xl font-serif cursor-pointer tracking-tight text-foreground shrink-0"
             onClick={() => navigate("/")}
           >
             Validifier
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <ThemeToggle />
             <button
               onClick={() => navigate("/pricing")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="hidden sm:inline text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Pricing
             </button>
             <button
               onClick={() => navigate("/auth")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Log in
             </button>
             <button
               onClick={() => {
                 trackEvent("cta_click", { button: "nav_start", page: "landing" });
-                navigate("/auth");
+                navigate("/auth?mode=signup&next=%2Fdashboard");
               }}
-              className="text-sm font-medium px-5 py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground"
+              className="text-sm font-medium px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground whitespace-nowrap"
             >
-              Start Analyzing
+              Start free
             </button>
           </div>
         </div>
@@ -126,24 +129,24 @@ const Landing = () => {
         <div className="absolute inset-0 bg-background/70 dark:bg-background/60" />
         <div className="absolute inset-0 dot-grid opacity-[0.04]" />
         <div className="container mx-auto px-4 relative z-10 py-32 md:py-40">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
             {/* Left — copy */}
-            <div className="space-y-8 max-w-xl">
-              <h1 className="font-serif text-6xl md:text-7xl lg:text-8xl leading-[0.95] tracking-[-0.04em] text-foreground">
+            <div className="space-y-8 max-w-xl min-w-0">
+              <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.95] tracking-[-0.04em] text-foreground">
                 Know if your idea
                 <br />
                 will work
               </h1>
               <p className="text-base md:text-lg leading-relaxed max-w-lg text-muted-foreground">
-                Validifier runs your business idea through 14 strategic frameworks and returns a full
-                validation report with a viability score, real competitor analysis, financial projections,
+                Validifier analyzes your business idea across {F.reportSectionCount} sections and returns a full
+                validation report with a viability score, competitor analysis, financial projections,
                 and a 30-day action plan.
               </p>
               <div className="flex flex-col sm:flex-row items-start gap-4">
                 <button
                   onClick={() => {
                     trackEvent("cta_click", { button: "hero_analyze", page: "landing" });
-                    navigate("/auth");
+                    navigate("/auth?mode=signup&next=%2Fdashboard");
                   }}
                   className="text-base font-medium px-6 py-3.5 rounded-lg transition-all duration-200 hover:-translate-y-px hover:brightness-110 flex items-center gap-2 bg-primary text-primary-foreground"
                 >
@@ -161,14 +164,14 @@ const Landing = () => {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground/60">
-                No credit card. Report ready in ~90 seconds.
+                No credit card. Report ready {F.reportTimeCopy}.
               </p>
             </div>
 
             {/* Right — Product screenshot */}
-            <div ref={scoreRef} className="relative">
+            <div ref={scoreRef} className="relative min-w-0 w-full max-w-full">
               <div
-                className="rounded-xl overflow-hidden border border-border bg-card"
+                className="rounded-xl overflow-hidden border border-border bg-card w-full max-w-full"
                 style={{
                   transform: "perspective(1000px) rotateY(-4deg)",
                 }}
@@ -261,7 +264,7 @@ const Landing = () => {
           {/* Product proof */}
           <div className="mt-20 text-center">
             <span className="font-mono text-sm tracking-wide text-muted-foreground/50">
-              14 frameworks · 90 seconds · 0 fluff
+              {F.reportSectionCount} sections · {F.reportTimeShort} · 0 fluff
             </span>
           </div>
         </div>
@@ -312,8 +315,8 @@ const Landing = () => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0">
               {[
                 "Describe your idea in a few sentences",
-                "Validifier analyzes it across 14 frameworks",
-                "Get your full report in ~90 seconds",
+                `Validifier analyzes it across ${F.reportSectionCount} sections`,
+                `Most reports are ready ${F.reportTimeCopy}`,
               ].map((step, i) => (
                 <div key={i} className="flex items-center gap-4 md:gap-0">
                   <p className="text-center text-base font-medium max-w-[220px] text-foreground/80">
@@ -354,7 +357,13 @@ const Landing = () => {
                   </div>
                 </div>
                 <ul className="space-y-3">
-                  {["1 validation report per month", "Standard AI analysis", "All 12 report sections", "10 AI advisor chat messages per month", "PDF export"].map((f, i) => (
+                  {[
+                    `${F.free.monthlyCredits} credits/mo (about ${F.free.includedStandardReports} Standard report + ${F.free.includedChatMessages} advisor messages)`,
+                    "Standard AI analysis (Gemini 3 Flash)",
+                    `All ${F.reportSectionCount} report sections, including Game-Changing Idea and 30-Day Action Plan`,
+                    "AI advisor chat",
+                    "PDF export",
+                  ].map((f, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                       <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
                       {f}
@@ -362,7 +371,7 @@ const Landing = () => {
                   ))}
                 </ul>
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
                   className="w-full py-3 rounded-lg text-sm font-medium border border-border text-foreground/80 bg-transparent transition-all duration-200 hover:-translate-y-px"
                 >
                   Start Free
@@ -383,12 +392,10 @@ const Landing = () => {
                 </div>
                 <ul className="space-y-3">
                   {[
-                    "5 validation reports per month",
-                    "Premium AI analysis (Gemini 3.1 Pro)",
-                    "All sections + Game-Changing Idea + Action Plan",
-                    "40 AI advisor chat messages per month",
-                    "Real competitor names and market data",
-                    "Detailed financial projections",
+                    `${F.pro.monthlyCredits} credits/mo (about ${F.pro.includedPremiumReports} Premium reports + ${F.pro.includedChatMessages} advisor messages)`,
+                    "Premium AI analysis (Gemini 3.1 Pro — deeper, more specific)",
+                    `All ${F.reportSectionCount} report sections with deeper competitive and financial reasoning`,
+                    "AI advisor chat with higher monthly volume",
                     "PDF + Markdown export",
                     "Priority email support",
                   ].map((f, i) => (
@@ -399,10 +406,10 @@ const Landing = () => {
                   ))}
                 </ul>
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/pricing?plan=pro")}
                   className="w-full py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:brightness-110 bg-primary text-primary-foreground"
                 >
-                  Start 7-Day Free Trial
+                  Start {F.proTrialDays}-Day Free Trial
                 </button>
               </div>
             </div>
@@ -506,12 +513,12 @@ const Landing = () => {
           </h2>
           <p className="text-base leading-relaxed max-w-xl mx-auto text-muted-foreground">
             Most startups fail because the founder didn't validate first. Validifier gives you the analysis
-            in 90 seconds that used to take a consulting firm 3 weeks.
+            {" "}{F.reportTimeCopy} that used to take a consulting firm weeks.
           </p>
           <button
             onClick={() => {
               trackEvent("cta_click", { button: "final_cta", page: "landing" });
-              navigate("/auth");
+              navigate("/auth?mode=signup&next=%2Fdashboard");
             }}
             className="text-base font-medium px-7 py-3.5 rounded-lg transition-all duration-200 hover:-translate-y-px hover:brightness-110 inline-flex items-center gap-2 bg-primary text-primary-foreground"
           >
