@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Sparkles, MessageSquare, FileText } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ArrowRight, ShieldCheck, Sparkles, MessageSquare, FileText, Gauge, Users, Swords, LineChart, ListChecks } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { PRODUCT_FACTS } from "@/lib/productFacts";
 import { DecisionCockpit } from "@/components/landing/DecisionCockpit";
@@ -26,7 +25,7 @@ const Landing = () => {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        `Turn a business idea into a go/no-go decision. A ${F.reportSectionCount}-section decision brief ${F.reportTimeCopy}, covering demand, competition, economics, and your next 30 days.`,
+        `A ${F.reportSectionCount}-section decision brief delivered ${F.reportTimeCopy}, covering demand, competition, economics, and your next 30 days so founders can make a confident go/no-go call.`,
       url: "https://validifier.com",
       offers: [
         { "@type": "Offer", price: "0", priceCurrency: "USD", name: "Free" },
@@ -81,7 +80,6 @@ const Landing = () => {
             >
               Pricing
             </button>
-            <div className="hidden sm:block"><ThemeToggle /></div>
             <button
               onClick={() => navigate("/auth")}
               className="text-sm text-slate-300 hover:text-white transition-colors whitespace-nowrap"
@@ -155,7 +153,7 @@ const Landing = () => {
         </section>
 
         {/* Decision grid */}
-        <section id="what-you-get" className="container mx-auto px-4 py-20 sm:py-28">
+        <section id="what-you-get" className="container mx-auto px-4 py-16 sm:py-20">
           <div className="max-w-2xl mb-10 sm:mb-14">
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-white">
               Stop collecting opinions.<br />Start collecting evidence.
@@ -168,7 +166,7 @@ const Landing = () => {
         </section>
 
         {/* Differentiation + report preview */}
-        <section id="report-preview" className="container mx-auto px-4 py-20 sm:py-28">
+        <section id="report-preview" className="container mx-auto px-4 py-16 sm:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div className="min-w-0 space-y-5">
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-white">
@@ -210,13 +208,53 @@ const Landing = () => {
               </div>
             </div>
             <div className="min-w-0">
-              <DecisionCockpit />
+              <aside
+                aria-label="Decision document outputs"
+                className="rounded-2xl border border-white/10 bg-slate-950/70 backdrop-blur p-5 sm:p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-sky-300" />
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-sky-300">
+                      Decision document
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                    {F.reportSectionCount} sections
+                  </span>
+                </div>
+                <ul className="mt-4 divide-y divide-white/5">
+                  {[
+                    { icon: Gauge, t: "Weighted viability score", d: "0–100 with six-factor breakdown" },
+                    { icon: Users, t: "Market sizing + personas", d: "TAM/SAM/SOM plus 3 buyer profiles" },
+                    { icon: Swords, t: "Named competitors", d: "Strengths, weaknesses, and the gap" },
+                    { icon: LineChart, t: "Startup cost + unit economics + break-even", d: "Modeled scenarios, not hand-waving" },
+                    { icon: ListChecks, t: "Weekly 30-day plan", d: "Specific tasks for the next four weeks" },
+                  ].map((row) => {
+                    const Icon = row.icon;
+                    return (
+                      <li key={row.t} className="py-3 flex items-start gap-3">
+                        <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] shrink-0">
+                          <Icon className="h-3.5 w-3.5 text-sky-300" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm text-white">{row.t}</p>
+                          <p className="text-xs text-slate-400 leading-snug">{row.d}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-4 pt-3 border-t border-white/5 text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                  Real output categories · no fabricated values
+                </p>
+              </aside>
             </div>
           </div>
         </section>
 
         {/* How it works */}
-        <section id="how-it-works" className="container mx-auto px-4 py-20 sm:py-24">
+        <section id="how-it-works" className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto">
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-center text-white">
               Idea → Evidence → Decision
@@ -238,7 +276,7 @@ const Landing = () => {
         </section>
 
         {/* Pricing teaser */}
-        <section className="container mx-auto px-4 py-16 sm:py-20">
+        <section className="container mx-auto px-4 py-12 sm:py-16">
           <div className="max-w-3xl mx-auto rounded-2xl border border-white/10 bg-slate-950/60 p-6 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <div>
@@ -277,7 +315,7 @@ const Landing = () => {
         </section>
 
         {/* Final CTA */}
-        <section className="container mx-auto px-4 py-24 sm:py-28 text-center">
+        <section className="container mx-auto px-4 py-20 sm:py-24 text-center">
           <div className="mx-auto max-w-3xl space-y-6">
             <Sparkles className="h-6 w-6 text-sky-300 mx-auto" aria-hidden />
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-white">

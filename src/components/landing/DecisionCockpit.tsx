@@ -1,4 +1,5 @@
 import { CheckCircle2, TrendingUp, Users, Wrench, DollarSign, Sparkles, Target } from "lucide-react";
+import { PRODUCT_FACTS } from "@/lib/productFacts";
 
 type Row = {
   label: string;
@@ -9,10 +10,10 @@ type Row = {
 };
 
 const rows: Row[] = [
-  { label: "Market", icon: TrendingUp, pct: 82, note: "TAM $4.2B · growing 11% YoY", tone: "success" },
-  { label: "Competition", icon: Users, pct: 58, note: "Crowded consumer app tier · clinic gap open", tone: "warning" },
-  { label: "Feasibility", icon: Wrench, pct: 85, note: "MVP achievable in 6–8 weeks", tone: "success" },
-  { label: "Financials", icon: DollarSign, pct: 72, note: "Break-even ~ month 9 at $42 ARPU", tone: "primary" },
+  { label: "Market", icon: TrendingUp, pct: 82, note: "Large category · clinic segment to validate", tone: "success" },
+  { label: "Competition", icon: Users, pct: 58, note: "Crowded B2C · clinic workflow gap", tone: "warning" },
+  { label: "Feasibility", icon: Wrench, pct: 85, note: "Focused MVP · integration risk to test", tone: "success" },
+  { label: "Financials", icon: DollarSign, pct: 72, note: "Model unit economics before acquisition spend", tone: "primary" },
 ];
 
 const toneBar: Record<Row["tone"], string> = {
@@ -48,7 +49,7 @@ export function DecisionCockpit() {
             <h3 className="mt-1 text-base sm:text-lg font-medium text-white truncate">
               AI-Powered Pet Care
             </h3>
-            <p className="mt-1 text-xs text-slate-400">Pet Services · 15-section validation</p>
+            <p className="mt-1 text-xs text-slate-400">Pet Services · {PRODUCT_FACTS.reportSectionCount}-section validation</p>
           </div>
           <div className="text-right shrink-0">
             <div className="font-mono text-4xl sm:text-5xl font-semibold tabular-nums text-emerald-300 leading-none">
@@ -114,7 +115,7 @@ export function DecisionCockpit() {
           <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
             Illustrative report preview
           </span>
-          <span className="text-[10px] font-mono text-slate-500">15 sections</span>
+          <span className="text-[10px] font-mono text-slate-500">{PRODUCT_FACTS.reportSectionCount} sections</span>
         </div>
       </div>
     </div>
