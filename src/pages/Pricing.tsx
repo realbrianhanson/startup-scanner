@@ -175,8 +175,7 @@ const Pricing = () => {
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
         body: {
-          price_id: priceId,
-          plan_name: plan.name,
+          plan_name: plan.name.toLowerCase(),
         },
       });
 
