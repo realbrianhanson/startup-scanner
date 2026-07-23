@@ -412,7 +412,7 @@ const ViewReport = () => {
                   size="sm"
                   onClick={() => {
                     trackEvent("sample_cta_click", { location: "nav" });
-                    navigate("/auth?mode=signup&next=%2Fdashboard");
+                    navigate("/auth?mode=signup&next=%2Fprojects%2Fnew");
                   }}
                 >
                   Create my report — free
@@ -443,7 +443,7 @@ const ViewReport = () => {
               className="shrink-0"
               onClick={() => {
                 trackEvent("sample_cta_click", { location: "banner" });
-                navigate("/auth?mode=signup&next=%2Fdashboard");
+                navigate("/auth?mode=signup&next=%2Fprojects%2Fnew");
               }}
             >
               Create yours free
@@ -660,7 +660,7 @@ const ViewReport = () => {
                       size="lg"
                       onClick={() => {
                         trackEvent("sample_cta_click", { location: "end_of_report" });
-                        navigate("/auth?mode=signup&next=%2Fdashboard");
+                        navigate("/auth?mode=signup&next=%2Fprojects%2Fnew");
                       }}
                     >
                       Create my free report

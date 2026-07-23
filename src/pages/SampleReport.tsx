@@ -94,7 +94,7 @@ const SampleReport = () => {
             size="lg"
             onClick={() => {
               trackEvent("sample_report_unavailable_cta", { action: "create_free_report" });
-              navigate("/auth?mode=signup&next=%2Fdashboard");
+              navigate("/auth?mode=signup&next=%2Fprojects%2Fnew");
             }}
           >
             Create my free report
