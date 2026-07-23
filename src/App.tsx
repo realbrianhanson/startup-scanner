@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,19 +8,32 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { NetworkOfflineBanner } from "@/components/NetworkOfflineBanner";
 import { CookieConsent } from "@/components/CookieConsent";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RouteSEO from "@/components/RouteSEO";
 import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import CreateProject from "./pages/CreateProject";
-import ViewReport from "./pages/ViewReport";
-import Chat from "./pages/Chat";
-import Pricing from "./pages/Pricing";
-import Settings from "./pages/Settings";
-import Admin from "./pages/Admin";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import NotFound from "./pages/NotFound";
-import SampleReport from "./pages/SampleReport";
+
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CreateProject = lazy(() => import("./pages/CreateProject"));
+const ViewReport = lazy(() => import("./pages/ViewReport"));
+const Chat = lazy(() => import("./pages/Chat"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const SampleReport = lazy(() => import("./pages/SampleReport"));
+
+const RouteFallback = () => (
+  <div
+    role="status"
+    aria-live="polite"
+    aria-label="Loading"
+    className="min-h-[60vh] flex items-center justify-center"
+  >
+    <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 border-t-foreground animate-spin" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -31,7 +45,9 @@ const App = () => (
           <Sonner />
           <NetworkOfflineBanner />
           <BrowserRouter>
-            <Routes>
+            <RouteSEO />
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -45,8 +61,9 @@ const App = () => (
               <Route path="/sample-report" element={<SampleReport />} />
               <Route path="/terms" element={<Terms />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
             <CookieConsent />
           </BrowserRouter>
         </TooltipProvider>

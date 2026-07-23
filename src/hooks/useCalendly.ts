@@ -33,6 +33,50 @@ declare global {
 // instead of opening a broken link. Remixers change it in Admin → CTA Settings.
 export const CALENDLY_PLACEHOLDER_URL = "https://calendly.com/REPLACE_WITH_YOUR_LINK";
 
+const CALENDLY_SCRIPT_SRC = "https://assets.calendly.com/assets/external/widget.js";
+let calendlyScriptPromise: Promise<boolean> | null = null;
+
+function loadCalendlyScript(): Promise<boolean> {
+  if (typeof window === "undefined") return Promise.resolve(false);
+  if (window.Calendly) return Promise.resolve(true);
+  if (calendlyScriptPromise) return calendlyScriptPromise;
+
+  calendlyScriptPromise = new Promise<boolean>((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${CALENDLY_SCRIPT_SRC}"]`
+    );
+    const handleLoad = () => resolve(!!window.Calendly);
+    const handleError = () => {
+      calendlyScriptPromise = null;
+      resolve(false);
+    };
+    if (existing) {
+      existing.addEventListener("load", handleLoad, { once: true });
+      existing.addEventListener("error", handleError, { once: true });
+      if (window.Calendly) resolve(true);
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = CALENDLY_SCRIPT_SRC;
+    s.async = true;
+    s.addEventListener("load", handleLoad, { once: true });
+    s.addEventListener("error", handleError, { once: true });
+    document.head.appendChild(s);
+  });
+  return calendlyScriptPromise;
+}
+
+function isSafeCalendlyUrl(raw: string): URL | null {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if (u.username || u.password) return null;
+    return u;
+  } catch {
+    return null;
+  }
+}
+
 export function useCalendly(): CalendlyConfig {
   const [config, setConfig] = useState<{ calendly_url: string; cta_enabled: string; cta_headline: string }>({
     calendly_url: CALENDLY_PLACEHOLDER_URL,
@@ -85,12 +129,23 @@ export function useCalendly(): CalendlyConfig {
         console.warn("Calendly URL is not configured — CTA click ignored.");
         return;
       }
-      const url = `${config.calendly_url}?utm_source=validifier&utm_medium=${utm_medium}&utm_campaign=${utm_campaign}`;
-      if (window.Calendly) {
-        window.Calendly.initPopupWidget({ url });
-      } else {
-        window.open(url, "_blank");
+      const base = isSafeCalendlyUrl(config.calendly_url);
+      if (!base) {
+        console.warn("Calendly URL failed validation — CTA click ignored.");
+        return;
       }
+      base.searchParams.set("utm_source", "validifier");
+      base.searchParams.set("utm_medium", utm_medium);
+      base.searchParams.set("utm_campaign", utm_campaign);
+      const url = base.toString();
+
+      loadCalendlyScript().then((ok) => {
+        if (ok && window.Calendly) {
+          window.Calendly.initPopupWidget({ url });
+        } else {
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+      });
     },
     [config.calendly_url]
   );

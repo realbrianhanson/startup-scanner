@@ -1,73 +1,53 @@
-# Welcome to your Lovable project
+# Validifier
 
-## Project info
+Validifier turns a business idea into a go / no-go decision. Each report is a 15-section evidence-backed brief covering market sizing, competitive landscape, financial projections, risks, and a 30-day action plan — generated in about 2–3 minutes.
 
-**URL**: https://lovable.dev/projects/4f397020-7a4a-4bc7-ac3e-2024a5b4620b
+## Stack
 
-## How can I edit this code?
+- Vite + React 18 + TypeScript
+- Tailwind CSS + shadcn/ui
+- React Router v6
+- Supabase (Postgres, Auth, RLS, Realtime, Edge Functions on Deno)
+- Google Gemini via the Lovable AI Gateway
+- Stripe (subscriptions + webhooks)
+- Resend (transactional email)
 
-There are several ways of editing your application.
+## Local development
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/4f397020-7a4a-4bc7-ac3e-2024a5b4620b) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+bun install          # or: npm install
+bun run dev          # start Vite on http://localhost:8080
+bunx tsgo --noEmit   # typecheck
+bun run build        # production build
 ```
 
-**Edit a file directly in GitHub**
+## Required environment variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Frontend (`.env`, auto-managed by Lovable Cloud):
 
-**Use GitHub Codespaces**
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_PROJECT_ID`
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Edge function secrets (set in Project Settings → Secrets):
 
-## What technologies are used for this project?
+- `LOVABLE_API_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRO_PRICE_ID`
+- `RESEND_API_KEY`
+- `CRON_SECRET`
 
-This project is built with:
+## Supabase
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Migrations live under `supabase/migrations/` and apply in file order.
+- Edge functions live under `supabase/functions/*` and deploy from that folder.
 
-## How can I deploy this project?
+## Deploy
 
-Simply open [Lovable](https://lovable.dev/projects/4f397020-7a4a-4bc7-ac3e-2024a5b4620b) and click on Share -> Publish.
+Publish through the Lovable Publish action. Hosting handles SPA fallback, HTTPS, and the `og:image` served at request time.
 
-## Can I connect a custom domain to my Lovable project?
+## Routes
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Public (indexable): `/`, `/pricing`, `/sample-report`, `/privacy`, `/terms`.
+Private (noindex): `/auth`, `/dashboard`, `/projects/new`, `/projects/:id/report`, `/projects/:id/chat`, `/settings`, `/admin`.
