@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, Loader2 } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,12 +10,20 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectToAuth = () => {
+    const dest = `${location.pathname}${location.search}`;
+    // Guard against ever encoding an external origin — pathname+search only.
+    const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/dashboard";
+    navigate(`/auth?next=${encodeURIComponent(safe)}`, { replace: true });
+  };
 
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/auth");
+        redirectToAuth();
       } else {
         setIsAuthenticated(true);
       }
@@ -25,14 +33,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
-        navigate("/auth");
+        redirectToAuth();
       } else {
         setIsAuthenticated(true);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, location.pathname, location.search]);
 
   if (isAuthenticated === null) {
     return (
