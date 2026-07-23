@@ -90,6 +90,7 @@ Deno.serve(async (req) => {
 
   let eventIdForFailure: string | null = null;
   let supabaseForFailure: ReturnType<typeof createClient> | null = null;
+  let ownedLeaseAt: string | null = null;
 
   try {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
@@ -211,6 +212,9 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      ownedLeaseAt = nowIso;
+    } else {
+      ownedLeaseAt = nowIso;
     }
 
     // Handle the event. Any thrown error aborts processed-marking.
@@ -225,7 +229,7 @@ Deno.serve(async (req) => {
         if (!config) throw new Error("unknown plan in session metadata");
         if (typeof session.customer !== "string") throw new Error("missing customer");
 
-        const { error: updateErr } = await supabase
+        const { data: updatedRows, error: updateErr } = await supabase
           .from("profiles")
           .update({
             subscription_tier: config.tier,
@@ -233,8 +237,12 @@ Deno.serve(async (req) => {
             ai_credits_used: 0,
             stripe_customer_id: session.customer,
           })
-          .eq("id", userId);
+          .eq("id", userId)
+          .select("id");
         if (updateErr) throw new Error(`profile update failed: ${updateErr.code ?? "unknown"}`);
+        if (!updatedRows || updatedRows.length === 0) {
+          throw new Error("profile update affected zero rows");
+        }
         break;
       }
 
@@ -257,14 +265,18 @@ Deno.serve(async (req) => {
           const config = resolvePlanFromEvent(planName, priceId, proPriceId);
           if (!config) throw new Error("unknown plan on subscription");
 
-          const { error: updateErr } = await supabase
+          const { data: updatedRows, error: updateErr } = await supabase
             .from("profiles")
             .update({
               subscription_tier: config.tier,
               ai_credits_monthly: config.credits,
             })
-            .eq("id", profile.id);
+            .eq("id", profile.id)
+            .select("id");
           if (updateErr) throw new Error(`profile update failed: ${updateErr.code ?? "unknown"}`);
+          if (!updatedRows || updatedRows.length === 0) {
+            throw new Error("profile update affected zero rows");
+          }
         }
         break;
       }
@@ -282,28 +294,41 @@ Deno.serve(async (req) => {
         if (profileErr) throw new Error(`profile lookup failed: ${profileErr.code ?? "unknown"}`);
         if (!profile) break;
 
-        const { error: updateErr } = await supabase
+        const { data: updatedRows, error: updateErr } = await supabase
           .from("profiles")
           .update({
             subscription_tier: "free",
             ai_credits_monthly: FREE_MONTHLY_CREDITS,
             ai_credits_used: 0,
           })
-          .eq("id", profile.id);
+          .eq("id", profile.id)
+          .select("id");
         if (updateErr) throw new Error(`profile update failed: ${updateErr.code ?? "unknown"}`);
+        if (!updatedRows || updatedRows.length === 0) {
+          throw new Error("profile update affected zero rows");
+        }
         break;
       }
     }
 
-    const { error: markErr } = await supabase
+    const { data: markedRows, error: markErr } = await supabase
       .from("stripe_webhook_events")
       .update({
         status: "processed",
         processed_at: new Date().toISOString(),
         last_error: null,
       })
-      .eq("event_id", eventId);
+      .eq("event_id", eventId)
+      .eq("status", "processing")
+      .eq("last_attempt_at", ownedLeaseAt as string)
+      .select("event_id");
     if (markErr) throw new Error(`mark processed failed: ${markErr.code ?? "unknown"}`);
+    if (!markedRows || markedRows.length === 0) {
+      // Our lease was superseded by a newer worker; don't overwrite its state.
+      return new Response(JSON.stringify({ received: true, superseded: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -312,12 +337,15 @@ Deno.serve(async (req) => {
     const originalMessage = (error as Error).message || "unknown";
     console.error("Webhook error:", originalMessage);
 
-    if (supabaseForFailure && eventIdForFailure) {
+    if (supabaseForFailure && eventIdForFailure && ownedLeaseAt) {
       try {
         await supabaseForFailure
           .from("stripe_webhook_events")
           .update({ status: "failed", last_error: GENERIC_HANDLER_ERROR })
-          .eq("event_id", eventIdForFailure);
+          .eq("event_id", eventIdForFailure)
+          .eq("status", "processing")
+          .eq("last_attempt_at", ownedLeaseAt)
+          .select("event_id");
       } catch {
         // best-effort
       }
