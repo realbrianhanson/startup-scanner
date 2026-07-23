@@ -6,16 +6,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PRODUCT_FACTS } from "@/lib/productFacts";
+
+const F = PRODUCT_FACTS;
 
 const PLANS = [
   {
     name: "Free",
     price: "$0",
     features: [
-      "1 validation report per month",
+      `${F.free.monthlyCredits} credits per month (about ${F.free.includedStandardReports} Standard report + ${F.free.includedChatMessages} advisor messages)`,
       "Standard AI analysis (Gemini 3 Flash)",
-      "All 12 report sections included",
-      "10 AI advisor chat messages per month",
+      `All ${F.reportSectionCount} report sections, including Game-Changing Idea and 30-Day Action Plan`,
+      "AI advisor chat",
       "PDF export",
     ],
     cta: "Start Free",
@@ -23,32 +26,29 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "$29",
+    price: `$${F.proPriceMonthly}`,
     badge: "Most popular",
     features: [
-      "5 validation reports per month",
+      `${F.pro.monthlyCredits} credits per month (about ${F.pro.includedPremiumReports} Premium reports + ${F.pro.includedChatMessages} advisor messages)`,
       "Premium AI analysis (Gemini 3.1 Pro — deeper, more specific)",
-      "All 12 report sections + Game-Changing Idea + 30-Day Action Plan",
-      "40 AI advisor chat messages per month",
-      "Real competitor names and market data",
-      "Detailed financial projections with unit economics",
-      "PDF export + Markdown export",
+      `All ${F.reportSectionCount} report sections with deeper competitive and financial reasoning`,
+      "AI advisor chat with higher monthly volume",
+      "PDF + Markdown export",
       "Priority email support",
     ],
-    cta: "Start 7-Day Free Trial",
+    cta: `Start ${F.proTrialDays}-Day Free Trial`,
     popular: true,
   },
 ];
 
-const FEATURE_ROWS = [
-  { label: "Validation reports per month", values: ["1", "5"] },
+const FEATURE_ROWS: { label: string; values: (string | boolean)[] }[] = [
+  { label: "Monthly credits", values: [`${F.free.monthlyCredits}`, `${F.pro.monthlyCredits}`] },
+  { label: "Typical monthly usage", values: [`~${F.free.includedStandardReports} Standard report + ${F.free.includedChatMessages} chats`, `~${F.pro.includedPremiumReports} Premium reports + ${F.pro.includedChatMessages} chats`] },
   { label: "AI analysis quality", values: ["Standard (Gemini 3 Flash)", "Premium (Gemini 3.1 Pro)"] },
-  { label: "Report sections", values: ["12 core sections", "All 14 sections"] },
-  { label: "AI advisor chat", values: ["10 messages/mo", "40 messages/mo"] },
-  { label: "Real competitor names", values: [false, true] },
-  { label: "Financial projections", values: ["Basic", "Detailed with unit economics"] },
-  { label: "Game-Changing Idea section", values: [false, true] },
-  { label: "30-Day Action Plan", values: [false, true] },
+  { label: "Report sections", values: [`All ${F.reportSectionCount}`, `All ${F.reportSectionCount}`] },
+  { label: "Game-Changing Idea", values: [true, true] },
+  { label: "30-Day Action Plan", values: [true, true] },
+  { label: "Depth of competitive & financial reasoning", values: ["Standard", "Deeper, more specific"] },
   { label: "PDF export", values: [true, true] },
   { label: "Markdown export", values: [false, true] },
   { label: "Priority email support", values: [false, true] },
@@ -56,20 +56,28 @@ const FEATURE_ROWS = [
 
 const FAQS = [
   {
-    q: "How many reports do I get?",
-    a: "Free accounts get 1 validation report per month. Pro accounts get 5 reports per month. Each report analyzes your idea across 14 strategic frameworks."
+    q: "How does credit usage work?",
+    a: `Every action costs credits from your monthly balance. A Standard report costs ${F.credits.standardReport} credits, a Premium report costs ${F.credits.premiumReport} credits, and each advisor chat message costs ${F.credits.chatMessage} credit. The plan bundles above show the intended monthly mix, but you can spend your credits however you like.`,
   },
   {
-    q: "What's the difference between Standard and Premium analysis?",
-    a: "Standard analysis uses Gemini 3 Flash — fast, reliable, and great for initial idea screening. Premium analysis uses Gemini 3.1 Pro, Google's most capable model, which produces deeper analysis with real competitor names, specific market data, detailed financial projections, and more nuanced strategic recommendations."
+    q: "How many sections are in a report?",
+    a: `Every report — Standard or Premium — includes all ${F.reportSectionCount} sections, from viability score and market intelligence to Game-Changing Idea and the 30-Day Action Plan.`,
+  },
+  {
+    q: "What's the difference between Standard and Premium?",
+    a: "Both produce a complete report. Standard uses Gemini 3 Flash — fast and great for screening ideas. Premium uses Gemini 3.1 Pro for deeper, more specific competitive analysis and financial reasoning.",
+  },
+  {
+    q: "How long does a report take?",
+    a: `${F.reportTimeCopy[0].toUpperCase()}${F.reportTimeCopy.slice(1)} from submission to a finished report.`,
   },
   {
     q: "Can I see a sample report before buying?",
-    a: "Absolutely! You can view a complete sample report with every section and framework — no sign-up required. Check out the sample report from the landing page."
+    a: "Yes — you can view a complete sample report with every section from the landing page. No sign-up required.",
   },
-  { q: "Can I upgrade or downgrade anytime?", a: "Yes! Change your plan anytime. Upgrades take effect immediately, downgrades at the next billing cycle." },
-  { q: "Do you offer refunds?", a: "Yes, 7-day money-back guarantee on Pro, no questions asked." },
-  { q: "Is my data secure?", a: "Absolutely. We use enterprise-grade encryption and never share your data. Your business ideas remain 100% yours." },
+  { q: "Can I upgrade or downgrade anytime?", a: "Yes. Upgrades take effect immediately, downgrades at the next billing cycle." },
+  { q: "Do you offer refunds?", a: `Yes, ${F.proTrialDays}-day money-back guarantee on Pro, no questions asked.` },
+  { q: "Is my data secure?", a: "Yes. We use enterprise-grade encryption and never share your data. Your business ideas remain 100% yours." },
 ];
 
 /* FAQ Accordion Item */
@@ -103,32 +111,15 @@ const FaqItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────
-// 💳 STRIPE CONFIG — REMIXER: SET THIS
-// Paste your real Stripe price IDs here after connecting Stripe.
-// While a value is still the placeholder (or empty) the checkout
-// button is disabled and shows "Billing isn't configured yet".
-// ─────────────────────────────────────────────────────────────
-export const STRIPE_PRICE_PLACEHOLDER = "price_pro_monthly_placeholder";
-export const STRIPE_PRICE_IDS: Record<string, string> = {
-  Pro: STRIPE_PRICE_PLACEHOLDER,
-};
-
-function isPriceConfigured(planName: string): boolean {
-  const id = STRIPE_PRICE_IDS[planName];
-  return !!id && id !== STRIPE_PRICE_PLACEHOLDER;
-}
-
 const Pricing = () => {
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     document.title = "Pricing | Validifier";
-    trackEvent('pricing_page_view');
+    trackEvent("pricing_page_view");
   }, []);
 
   useEffect(() => {
@@ -142,13 +133,6 @@ const Pricing = () => {
           .eq("id", u.id)
           .single();
         if (data) setProfile(data);
-        const { data: roleRow } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", u.id)
-          .eq("role", "admin")
-          .maybeSingle();
-        setIsAdmin(!!roleRow);
       }
     };
     loadUser();
@@ -156,36 +140,38 @@ const Pricing = () => {
 
   const handleSubscribe = async (plan: typeof PLANS[0]) => {
     if (plan.name === "Free") {
-      navigate("/auth");
+      navigate("/auth?mode=signup&next=%2Fdashboard");
       return;
     }
 
     if (!user) {
-      navigate("/auth");
+      navigate("/auth?mode=signup&next=%2Fpricing&plan=pro");
       return;
     }
 
-    if (!isPriceConfigured(plan.name)) {
-      toast.error("Billing isn't configured yet.");
-      return;
-    }
     setLoadingPlan(plan.name);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-        body: {
-          plan_name: plan.name.toLowerCase(),
-        },
+        body: { plan_name: "pro" },
       });
 
-      if (error) throw error;
+      if (error) {
+        // 503 => billing temporarily unavailable
+        const status = (error as any)?.context?.status ?? (error as any)?.status;
+        if (status === 503) {
+          toast.error("Billing setup is temporarily unavailable. Please try again shortly.");
+          return;
+        }
+        throw error;
+      }
       if (data?.url) {
-        trackEvent('checkout_started', { plan: plan.name });
+        trackEvent("checkout_started", { plan: plan.name });
         window.location.href = data.url;
       } else {
-        throw new Error("No checkout URL returned");
+        toast.error("Billing setup is temporarily unavailable. Please try again shortly.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to start checkout");
+      toast.error("Billing setup is temporarily unavailable. Please try again shortly.");
     } finally {
       setLoadingPlan(null);
     }
@@ -193,28 +179,28 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen grain bg-background text-foreground animate-fade-in">
-      {/* Navigation — matches Landing */}
+      {/* Navigation — compact one-line on mobile */}
       <nav className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3 min-w-0">
           <span
-            className="text-2xl font-serif cursor-pointer tracking-tight text-foreground"
+            className="text-2xl font-serif cursor-pointer tracking-tight text-foreground shrink-0"
             onClick={() => navigate("/")}
           >
             Validifier
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <ThemeToggle />
             <button
-              onClick={() => navigate("/dashboard")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => navigate("/auth")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
-              Dashboard
+              Log in
             </button>
             <button
-              onClick={() => navigate("/auth")}
-              className="text-sm font-medium px-5 py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground"
+              onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
+              className="text-sm font-medium px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground whitespace-nowrap"
             >
-              Start Analyzing
+              Start free
             </button>
           </div>
         </div>
@@ -225,11 +211,11 @@ const Pricing = () => {
         <div className="absolute inset-0 dot-grid opacity-[0.04]" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl tracking-[-0.03em] text-foreground">
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-[-0.03em] text-foreground">
               Straightforward pricing
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Start free with a full validation report. Upgrade to Pro for deeper, more specific analysis.
+              Start free with a complete {F.reportSectionCount}-section report. Upgrade to Pro for deeper, more specific analysis.
             </p>
           </div>
         </div>
@@ -242,7 +228,6 @@ const Pricing = () => {
             {PLANS.map((plan, index) => {
               const isPopular = plan.popular;
               const isCurrent = user && profile?.subscription_tier === plan.name.toLowerCase();
-              const notConfigured = plan.name !== "Free" && !isPriceConfigured(plan.name);
               return (
                 <div
                   key={index}
@@ -284,21 +269,6 @@ const Pricing = () => {
                     >
                       Current Plan
                     </button>
-                  ) : notConfigured ? (
-                    <div className="space-y-2">
-                      <button
-                        disabled
-                        className="w-full py-3 rounded-lg text-sm font-medium border border-border text-muted-foreground bg-transparent"
-                      >
-                        Billing isn&apos;t configured yet
-                      </button>
-                      {isAdmin && (
-                        <p className="text-[11px] text-muted-foreground text-center">
-                          Admin: set <code className="font-mono">STRIPE_PRICE_IDS.{plan.name}</code>{" "}
-                          in <code className="font-mono">src/pages/Pricing.tsx</code>.
-                        </p>
-                      )}
-                    </div>
                   ) : (
                     <button
                       onClick={() => handleSubscribe(plan)}
@@ -320,6 +290,10 @@ const Pricing = () => {
               );
             })}
           </div>
+
+          <p className="text-center text-xs text-muted-foreground/70 mt-6 max-w-2xl mx-auto">
+            Credits are flexible: Standard report {F.credits.standardReport} · Premium report {F.credits.premiumReport} · advisor message {F.credits.chatMessage}.
+          </p>
         </div>
       </section>
 
@@ -397,7 +371,7 @@ const Pricing = () => {
         </section>
       </ScrollReveal>
 
-      {/* Final CTA — editorial, calm */}
+      {/* Final CTA */}
       <section className="py-24 md:py-32 relative border-t border-border">
         <div className="absolute inset-0 dot-grid opacity-[0.04]" />
         <div className="container mx-auto px-4 text-center space-y-8 max-w-3xl relative z-10">
@@ -405,11 +379,11 @@ const Pricing = () => {
             Your idea deserves real analysis.
           </h2>
           <p className="text-base leading-relaxed max-w-xl mx-auto text-muted-foreground">
-            Get a full validation report in 90 seconds — for free.
+            Get a full {F.reportSectionCount}-section validation report — {F.reportTimeCopy}. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
               className="text-base font-medium px-7 py-3.5 rounded-lg transition-all duration-200 hover:-translate-y-px hover:brightness-110 inline-flex items-center gap-2 bg-primary text-primary-foreground"
             >
               Start Free
