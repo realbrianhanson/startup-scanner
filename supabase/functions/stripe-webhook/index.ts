@@ -212,6 +212,9 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      ownedLeaseAt = nowIso;
+    } else {
+      ownedLeaseAt = nowIso;
     }
 
     // Handle the event. Any thrown error aborts processed-marking.
