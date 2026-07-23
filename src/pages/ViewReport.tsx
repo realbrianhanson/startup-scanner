@@ -114,6 +114,8 @@ function getScoreMessage(score: number) {
 const ViewReport = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isSample = searchParams.get("sample") === "1";
   const [project, setProject] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
