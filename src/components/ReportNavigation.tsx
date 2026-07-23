@@ -43,14 +43,17 @@ export function ReportNavigation({ reportData, variant = "desktop" }: ReportNavi
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 150;
-      let current = "";
+      let current = sections[0]?.id || "";
       for (const s of sections) {
         const el = document.getElementById(s.id);
-        if (el && el.offsetTop <= scrollPosition) {
-          current = s.id;
+        if (el) {
+          const elementTop = el.getBoundingClientRect().top + window.scrollY;
+          if (elementTop <= scrollPosition) {
+            current = s.id;
+          }
         }
       }
-      if (current) setActiveSection(current);
+      setActiveSection(current);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
