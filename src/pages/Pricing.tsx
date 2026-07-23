@@ -145,7 +145,7 @@ const Pricing = () => {
 
   const handleSubscribe = async (plan: typeof PLANS[0]) => {
     if (plan.name === "Free") {
-      navigate("/auth?mode=signup&next=%2Fdashboard");
+      navigate("/auth?mode=signup&next=%2Fprojects%2Fnew");
       return;
     }
 
@@ -224,7 +224,7 @@ const Pricing = () => {
                   Log in
                 </button>
                 <button
-                  onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
+                  onClick={() => navigate("/auth?mode=signup&next=%2Fprojects%2Fnew")}
                   className="text-sm font-medium px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-px bg-primary text-primary-foreground whitespace-nowrap"
                 >
                   Start free
@@ -412,7 +412,7 @@ const Pricing = () => {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => navigate("/auth?mode=signup&next=%2Fdashboard")}
+              onClick={() => navigate("/auth?mode=signup&next=%2Fprojects%2Fnew")}
               className="text-base font-medium px-7 py-3.5 rounded-lg transition-all duration-200 hover:-translate-y-px hover:brightness-110 inline-flex items-center gap-2 bg-primary text-primary-foreground"
             >
               Start Free

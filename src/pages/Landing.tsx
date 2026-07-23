@@ -7,7 +7,7 @@ import { DecisionCockpit } from "@/components/landing/DecisionCockpit";
 import { DecisionGrid } from "@/components/landing/DecisionGrid";
 
 const F = PRODUCT_FACTS;
-const SIGNUP_HREF = "/auth?mode=signup&next=%2Fdashboard";
+const SIGNUP_HREF = "/auth?mode=signup&next=%2Fprojects%2Fnew";
 
 const Landing = () => {
   const navigate = useNavigate();
