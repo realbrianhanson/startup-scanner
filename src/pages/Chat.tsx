@@ -145,7 +145,6 @@ export default function Chat() {
     }
     setIsSending(true);
     setIsTyping(true);
-    trackEvent('chat_message_sent');
 
     const optimisticUser: Message = {
       id: crypto.randomUUID(),
@@ -165,6 +164,7 @@ export default function Chat() {
         setMessages(prev => prev.filter(m => m.id !== optimisticUser.id));
         throw new Error('Could not save your message. Please try again.');
       }
+      trackEvent('chat_message_sent');
 
       const { data, error } = await supabase.functions.invoke('chat-with-cora', {
         body: { conversation_id: conversationId, user_message: text, project_id: projectId }
