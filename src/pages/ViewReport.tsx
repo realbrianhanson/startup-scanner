@@ -156,11 +156,13 @@ const ViewReport = () => {
 
   useEffect(() => {
     if (project) {
-      document.title = `${project.name} - Validation Report | Validifier`;
+      document.title = isSample
+        ? `Sample Report — ${project.name} | Validifier`
+        : `${project.name} - Validation Report | Validifier`;
     } else {
       document.title = "Validation Report | Validifier";
     }
-  }, [project]);
+  }, [project, isSample]);
 
   useEffect(() => {
     loadProjectAndReport();
@@ -330,7 +332,7 @@ const ViewReport = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4" role="status" aria-live="polite">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-muted-foreground">Loading project...</p>
         </div>
