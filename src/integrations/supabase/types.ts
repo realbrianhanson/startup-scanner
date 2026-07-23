@@ -460,6 +460,36 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_webhook_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          event_id: string
+          event_type: string
+          last_error: string | null
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          event_id: string
+          event_type: string
+          last_error?: string | null
+          processed_at?: string | null
+          status: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          event_id?: string
+          event_type?: string
+          last_error?: string | null
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       testimonials: {
         Row: {
           approved: boolean | null
@@ -541,6 +571,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      reset_monthly_credits_cron: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
