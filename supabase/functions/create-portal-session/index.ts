@@ -6,6 +6,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ALLOWED_ORIGIN_HOSTS = ["validifier.com", "www.validifier.com"];
+const FALLBACK_ORIGIN = "https://validifier.com";
+
+function resolveOrigin(req: Request): string {
+  const origin = req.headers.get("origin");
+  if (!origin) return FALLBACK_ORIGIN;
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== "https:" && url.hostname !== "localhost") return FALLBACK_ORIGIN;
+    if (ALLOWED_ORIGIN_HOSTS.includes(url.hostname)) return origin;
+    if (url.hostname.endsWith(".lovable.app")) return origin;
+    return FALLBACK_ORIGIN;
+  } catch {
+    return FALLBACK_ORIGIN;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -60,7 +77,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const origin = req.headers.get("origin") || "https://validifier.com";
+    const origin = resolveOrigin(req);
     const portalRes = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
       method: "POST",
       headers: {
@@ -86,7 +103,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
