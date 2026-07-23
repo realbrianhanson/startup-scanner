@@ -372,13 +372,18 @@ const ViewReport = () => {
           <div className="flex items-center justify-between">
             <div
               className="flex items-center space-x-2 cursor-pointer"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate(isSample ? "/" : "/dashboard")}
             >
               <span className="font-serif text-xl">Validifier</span>
+              {isSample && (
+                <span className="ml-2 text-[11px] uppercase tracking-wider text-muted-foreground border border-border rounded-full px-2 py-0.5">
+                  Sample report
+                </span>
+              )}
             </div>
             <div className="flex items-center space-x-2">
-              <ThemeToggle />
-              {isOwner && (
+              {!isSample && <ThemeToggle />}
+              {!isSample && isOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" aria-label="Report options">
@@ -401,14 +406,50 @@ const ViewReport = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
-              </Button>
+              {isSample ? (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    trackEvent("sample_cta_click", { location: "nav" });
+                    navigate("/auth?mode=signup&next=%2Fdashboard");
+                  }}
+                >
+                  Create my report — free
+                </Button>
+              ) : (
+                <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </nav>
+
+      {isSample && project?.status === "complete" && (
+        <div className="border-b border-border/60 bg-muted/30">
+          <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">You&apos;re viewing a complete sample report.</p>
+              <p className="text-xs text-muted-foreground">
+                This illustrates the depth and structure of a Validifier analysis. AI-generated findings should be verified before making business decisions.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              onClick={() => {
+                trackEvent("sample_cta_click", { location: "banner" });
+                navigate("/auth?mode=signup&next=%2Fdashboard");
+              }}
+            >
+              Create yours free
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-8">
         <div className={`flex gap-8 ${isGenerating ? 'justify-center' : ''}`}>
