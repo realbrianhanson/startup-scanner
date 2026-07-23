@@ -311,7 +311,7 @@ const Auth = () => {
                 </div>
 
                 {isAuthForm && (
-                  <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                  <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input
@@ -406,7 +406,7 @@ const Auth = () => {
                 )}
 
                 {view === "forgot" && (
-                  <form onSubmit={handleForgotPassword} className="space-y-4" noValidate>
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="forgot-email">Email</Label>
                       <Input
@@ -437,7 +437,7 @@ const Auth = () => {
                 )}
 
                 {view === "reset" && (
-                  <form onSubmit={handleResetPassword} className="space-y-4" noValidate>
+                  <form onSubmit={handleResetPassword} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="new-password">New password</Label>
                       <div className="relative">
