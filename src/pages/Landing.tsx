@@ -153,7 +153,7 @@ const Landing = () => {
         </section>
 
         {/* Decision grid */}
-        <section id="what-you-get" className="container mx-auto px-4 py-20 sm:py-28">
+        <section id="what-you-get" className="container mx-auto px-4 py-16 sm:py-20">
           <div className="max-w-2xl mb-10 sm:mb-14">
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-white">
               Stop collecting opinions.<br />Start collecting evidence.
@@ -166,7 +166,7 @@ const Landing = () => {
         </section>
 
         {/* Differentiation + report preview */}
-        <section id="report-preview" className="container mx-auto px-4 py-20 sm:py-28">
+        <section id="report-preview" className="container mx-auto px-4 py-16 sm:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div className="min-w-0 space-y-5">
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-white">
@@ -208,13 +208,53 @@ const Landing = () => {
               </div>
             </div>
             <div className="min-w-0">
-              <DecisionCockpit />
+              <aside
+                aria-label="Decision document outputs"
+                className="rounded-2xl border border-white/10 bg-slate-950/70 backdrop-blur p-5 sm:p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-sky-300" />
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-sky-300">
+                      Decision document
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                    {F.reportSectionCount} sections
+                  </span>
+                </div>
+                <ul className="mt-4 divide-y divide-white/5">
+                  {[
+                    { icon: Gauge, t: "Weighted viability score", d: "0–100 with six-factor breakdown" },
+                    { icon: Users, t: "Market sizing + personas", d: "TAM/SAM/SOM plus 3 buyer profiles" },
+                    { icon: Swords, t: "Named competitors", d: "Strengths, weaknesses, and the gap" },
+                    { icon: LineChart, t: "Startup cost + unit economics + break-even", d: "Modeled scenarios, not hand-waving" },
+                    { icon: ListChecks, t: "Weekly 30-day plan", d: "Specific tasks for the next four weeks" },
+                  ].map((row) => {
+                    const Icon = row.icon;
+                    return (
+                      <li key={row.t} className="py-3 flex items-start gap-3">
+                        <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] shrink-0">
+                          <Icon className="h-3.5 w-3.5 text-sky-300" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm text-white">{row.t}</p>
+                          <p className="text-xs text-slate-400 leading-snug">{row.d}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-4 pt-3 border-t border-white/5 text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                  Real output categories · no fabricated values
+                </p>
+              </aside>
             </div>
           </div>
         </section>
 
         {/* How it works */}
-        <section id="how-it-works" className="container mx-auto px-4 py-20 sm:py-24">
+        <section id="how-it-works" className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto">
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-[-0.02em] text-center text-white">
               Idea → Evidence → Decision
@@ -236,7 +276,7 @@ const Landing = () => {
         </section>
 
         {/* Pricing teaser */}
-        <section className="container mx-auto px-4 py-16 sm:py-20">
+        <section className="container mx-auto px-4 py-12 sm:py-16">
           <div className="max-w-3xl mx-auto rounded-2xl border border-white/10 bg-slate-950/60 p-6 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <div>
