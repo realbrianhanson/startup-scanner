@@ -120,6 +120,7 @@ const ViewReport = () => {
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [staleRecoveryAvailable, setStaleRecoveryAvailable] = useState(false);
+  const [anotherGenerationActive, setAnotherGenerationActive] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -190,16 +191,6 @@ const ViewReport = () => {
         setReport(reportData);
         if (projectData.status === "complete") setProgress(100);
         else updateProgress(reportData.generation_status);
-        // Stale-heartbeat recovery detection
-        if (projectData.status === "analyzing") {
-          const hb = (reportData as any).generation_heartbeat_at
-            ? new Date((reportData as any).generation_heartbeat_at).getTime()
-            : 0;
-          const ageMs = Date.now() - hb;
-          if (!hb || ageMs > 5 * 60 * 1000) {
-            setStaleRecoveryAvailable(ownerCheck);
-          }
-        }
       } else if (ownerCheck) {
         startReportGeneration();
       }
@@ -210,10 +201,27 @@ const ViewReport = () => {
     }
   };
 
+  // Recompute stale-heartbeat recovery visibility on a 30-second timer while analyzing,
+  // so a worker that dies after page load becomes recoverable without a refresh.
+  useEffect(() => {
+    if (!isOwner) { setStaleRecoveryAvailable(false); return; }
+    if (project?.status !== "analyzing") { setStaleRecoveryAvailable(false); return; }
+    const evaluate = () => {
+      const hb = report?.generation_heartbeat_at ? new Date(report.generation_heartbeat_at).getTime() : 0;
+      const stale = !hb || Date.now() - hb > 5 * 60 * 1000;
+      setStaleRecoveryAvailable(stale);
+    };
+    evaluate();
+    const t = setInterval(evaluate, 30_000);
+    return () => clearInterval(t);
+  }, [isOwner, project?.status, report?.generation_heartbeat_at]);
+
   const startReportGeneration = async (regenerate = false, qualityOverride?: string) => {
     setGenerating(true);
-    setProgress(0);
+    // Only reset progress for an explicit regenerate; ordinary resume preserves saved progress.
+    if (regenerate) setProgress(0);
     setStaleRecoveryAvailable(false);
+    setAnotherGenerationActive(false);
     try {
       const quality = qualityOverride || project?.report_quality || 'standard';
       const response = await supabase.functions.invoke("generate-validation-report", {
@@ -226,14 +234,24 @@ const ViewReport = () => {
         setGenerating(false);
         return;
       }
-      if (data?.resumable || data?.in_progress) {
-        // Partial progress saved; UI can offer resume
-        setStaleRecoveryAvailable(false);
+      if (data?.in_progress) {
+        setAnotherGenerationActive(true);
         setGenerating(false);
+        toast.info("Another generation is already running for this report.");
+        return;
+      }
+      if (data?.resumable) {
+        // Controlled timeout — recovery is available immediately
+        setGenerating(false);
+        setStaleRecoveryAvailable(true);
         toast.success("Progress saved — you can resume anytime.");
         return;
       }
       if (data?.superseded) {
+        setGenerating(false);
+        return;
+      }
+      if (data?.already_complete) {
         setGenerating(false);
         return;
       }
@@ -445,8 +463,25 @@ const ViewReport = () => {
               )}
             </div>
 
+            {/* Another worker actively generating */}
+            {anotherGenerationActive && !generating && isOwner && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mb-8 rounded-xl border border-primary/30 bg-primary/5 p-5 flex items-start gap-3"
+              >
+                <Loader2 className="h-5 w-5 text-primary shrink-0 mt-0.5 animate-spin" aria-hidden="true" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">Another generation is already running</p>
+                  <p className="text-sm text-muted-foreground">
+                    We&apos;ll update this page automatically as sections finish.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Stale-job recovery */}
-            {staleRecoveryAvailable && !generating && (
+            {staleRecoveryAvailable && !generating && isOwner && (
               <div
                 role="region"
                 aria-live="polite"
@@ -458,7 +493,9 @@ const ViewReport = () => {
                   <div>
                     <p className="font-medium text-foreground">Report generation paused</p>
                     <p className="text-sm text-muted-foreground">
-                      Progress was saved. Resume to continue where you left off — no additional credits will be used.
+                      {report?.credits_charged_at
+                        ? "Progress was saved. Resume to continue where you left off — no additional credits will be used."
+                        : `Progress was saved. Resuming will apply the normal one-time report cost (${project?.report_quality === "premium" ? 12 : 5} credits) since this report has not been charged yet.`}
                     </p>
                   </div>
                   <Button
