@@ -6,6 +6,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function jsonError(status: number, error: string) {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// Robust HTML escape. Every dynamic value MUST go through this.
+function esc(val: unknown): string {
+  if (val == null) return '';
+  const str = typeof val === 'string' ? val : String(val);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,80 +35,104 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabase.auth.getUser(token);
-
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      return jsonError(401, 'Unauthorized');
     }
+    const token = authHeader.slice(7).trim();
+    if (!token) return jsonError(401, 'Unauthorized');
 
-    const { project_id } = await req.json();
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) return jsonError(401, 'Unauthorized');
+    const user = userData.user;
+
+    let body: { project_id?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return jsonError(400, 'Invalid JSON body');
+    }
+    const projectId = body?.project_id;
+    if (typeof projectId !== 'string' || !/^[0-9a-f-]{10,64}$/i.test(projectId)) {
+      return jsonError(400, 'Invalid project_id');
+    }
 
     const { data: project, error: projectError } = await supabase
-      .from('projects').select('*').eq('id', project_id).eq('user_id', user.id).single();
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (projectError || !project) {
-      return new Response(JSON.stringify({ error: 'Project not found' }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (projectError) {
+      console.error('project lookup failed', { code: projectError.code });
+      return jsonError(500, 'Could not load project');
     }
+    if (!project) return jsonError(404, 'Project not found');
 
-    const { data: report } = await supabase
-      .from('reports').select('*').eq('project_id', project_id).single();
+    const { data: report, error: reportError } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('project_id', projectId)
+      .maybeSingle();
 
-    if (!report) {
-      return new Response(JSON.stringify({ error: 'Report not found' }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (reportError) {
+      console.error('report lookup failed', { code: reportError.code });
+      return jsonError(500, 'Could not load report');
     }
+    if (!report) return jsonError(404, 'Report not found');
 
     const html = generateReportHTML(project, report);
     return new Response(JSON.stringify({ html }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error generating PDF:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('generate-pdf error:', (error as Error).message);
+    return jsonError(500, 'Could not generate report');
   }
 });
 
 // --- Helpers ---
+// s(): returns HTML-safe text for the value. Object fallback produces markup
+// that only exposes the template-owned <strong> wrapper; keys and values are
+// individually escaped.
 function s(val: any, fb = ''): string {
-  if (val == null) return fb;
-  if (typeof val === 'string') return val;
-  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  if (val == null) return esc(fb);
+  if (typeof val === 'string') return esc(val);
+  if (typeof val === 'number' || typeof val === 'boolean') return esc(String(val));
   if (typeof val === 'object') {
     const t = val.description || val.text || val.summary || val.name || val.title || val.action || val.value || val.total || '';
-    if (t) return String(t);
+    if (t) return esc(String(t));
     const entries = Object.entries(val).filter(([_, v]) => v != null && v !== '');
-    if (entries.length) return entries.map(([k, v]) => `<strong>${k.replace(/_/g, ' ')}:</strong> ${typeof v === 'object' ? s(v) : v}`).join(' · ');
-    return fb;
+    if (entries.length) {
+      return entries.map(([k, v]) => {
+        const label = esc(k.replace(/_/g, ' '));
+        const inner = typeof v === 'object' ? s(v) : esc(String(v));
+        return `<strong>${label}:</strong> ${inner}`;
+      }).join(' · ');
+    }
+    return esc(fb);
   }
-  return String(val);
+  return esc(String(val));
 }
 
 function arr(val: any): any[] { return Array.isArray(val) ? val : []; }
 
 function fmt(item: any): string {
-  if (typeof item === 'string') return item;
-  if (typeof item !== 'object' || !item) return String(item ?? '');
+  if (typeof item === 'string') return esc(item);
+  if (typeof item !== 'object' || !item) return esc(String(item ?? ''));
   const name = item.name || item.title || item.feature || item.task || item.action || item.channel || item.risk || '';
   const desc = item.description || item.detail || item.details || item.strategy || item.analysis || item.mitigation || item.mitigation_strategy || '';
   const extras: string[] = [];
-  if (item.value && item.value !== name) extras.push(item.value);
-  if (item.effort) extras.push(`Effort: ${item.effort}`);
-  if (item.priority) extras.push(`Priority: ${item.priority}`);
-  if (item.probability || item.likelihood) extras.push(`Prob: ${item.probability || item.likelihood}`);
-  if (item.impact && item.impact !== desc) extras.push(`Impact: ${item.impact}`);
-  if (item.rating) extras.push(`Rating: ${item.rating}`);
-  let r = name ? `<strong>${name}</strong>` : '';
-  if (desc) r += (r ? ': ' : '') + desc;
-  if (!r && item.value) r = String(item.value);
+  if (item.value && item.value !== name) extras.push(esc(String(item.value)));
+  if (item.effort) extras.push(`Effort: ${esc(String(item.effort))}`);
+  if (item.priority) extras.push(`Priority: ${esc(String(item.priority))}`);
+  if (item.probability || item.likelihood) extras.push(`Prob: ${esc(String(item.probability || item.likelihood))}`);
+  if (item.impact && item.impact !== desc) extras.push(`Impact: ${esc(String(item.impact))}`);
+  if (item.rating) extras.push(`Rating: ${esc(String(item.rating))}`);
+  let r = name ? `<strong>${esc(String(name))}</strong>` : '';
+  if (desc) r += (r ? ': ' : '') + esc(String(desc));
+  if (!r && item.value) r = esc(String(item.value));
   if (extras.length) r += (r ? ' — ' : '') + extras.join(' · ');
   return r || s(item);
 }
@@ -100,11 +143,11 @@ function ul(items: any[]): string {
 }
 
 function pg(title: string, content: string): string {
-  return `<div class="page"><h1>${title}</h1>${content}</div>`;
+  return `<div class="page"><h1>${esc(title)}</h1>${content}</div>`;
 }
 
 function sub(title: string, content: string): string {
-  return `<div class="section"><h2>${title}</h2>${content}</div>`;
+  return `<div class="section"><h2>${esc(title)}</h2>${content}</div>`;
 }
 
 // --- Main ---
@@ -118,7 +161,7 @@ function generateReportHTML(project: any, report: any): string {
   if (rd.executive_summary) {
     const es = rd.executive_summary;
     pages.push(pg('Executive Summary', `
-      <div class="score-box"><div class="score">${score}/100</div><p>Validation Score</p></div>
+      <div class="score-box"><div class="score">${esc(String(score))}/100</div><p>Validation Score</p></div>
       ${sub('Strengths', ul(arr(es.strengths)))}
       ${sub('Concerns', ul(arr(es.concerns)))}
       ${sub('Recommendation', `<p>${s(es.recommendation, 'N/A')}</p>`)}
@@ -166,24 +209,24 @@ function generateReportHTML(project: any, report: any): string {
     pages.push(pg('Target Customers', personas.map((p: any, i: number) => {
       let c = `<div class="card"><h2>${s(p.name, `Persona ${i + 1}`)}</h2>`;
       c += '<table class="data-table">';
-      if (p.age_range) c += `<tr><td><strong>Age</strong></td><td>${p.age_range}</td></tr>`;
-      if (p.occupation) c += `<tr><td><strong>Occupation</strong></td><td>${p.occupation}</td></tr>`;
-      if (p.income_level) c += `<tr><td><strong>Income</strong></td><td>${p.income_level}</td></tr>`;
-      if (p.location) c += `<tr><td><strong>Location</strong></td><td>${p.location}</td></tr>`;
-      if (p.tech_savviness) c += `<tr><td><strong>Tech Savviness</strong></td><td>${p.tech_savviness}</td></tr>`;
+      if (p.age_range) c += `<tr><td><strong>Age</strong></td><td>${s(p.age_range)}</td></tr>`;
+      if (p.occupation) c += `<tr><td><strong>Occupation</strong></td><td>${s(p.occupation)}</td></tr>`;
+      if (p.income_level) c += `<tr><td><strong>Income</strong></td><td>${s(p.income_level)}</td></tr>`;
+      if (p.location) c += `<tr><td><strong>Location</strong></td><td>${s(p.location)}</td></tr>`;
+      if (p.tech_savviness) c += `<tr><td><strong>Tech Savviness</strong></td><td>${s(p.tech_savviness)}</td></tr>`;
       c += '</table>';
       const pains = arr(p.pain_points);
       if (pains.length) c += `<h3>Pain Points</h3>${ul(pains)}`;
       const goals = arr(p.goals);
       if (goals.length) c += `<h3>Goals</h3>${ul(goals)}`;
       const values = arr(p.values || p.personality_traits);
-      if (values.length) c += `<h3>Values & Traits</h3>${ul(values)}`;
+      if (values.length) c += `<h3>Values &amp; Traits</h3>${ul(values)}`;
       const objections = arr(p.objections);
       if (objections.length) c += `<h3>Objections</h3>${ul(objections)}`;
       const closing = arr(p.closing_angles);
       if (closing.length) c += `<h3>Closing Angles</h3>${ul(closing)}`;
       if (p.buying_behavior) c += `<h3>Buying Behavior</h3><p>${s(p.buying_behavior)}</p>`;
-      if (p.priority_reason) c += `<h3>Why They're a Priority</h3><p>${s(p.priority_reason)}</p>`;
+      if (p.priority_reason) c += `<h3>Why They&#39;re a Priority</h3><p>${s(p.priority_reason)}</p>`;
       if (p.dream_outcome) c += `<h3>Dream Outcome</h3><p>${s(p.dream_outcome)}</p>`;
       if (p.current_solution) c += `<h3>Current Solution</h3><p>${s(p.current_solution)}</p>`;
       c += '</div>';
@@ -214,36 +257,50 @@ function generateReportHTML(project: any, report: any): string {
       { key: 'opportunities', label: 'Opportunities', color: '#3b82f6' },
       { key: 'threats', label: 'Threats', color: '#f59e0b' },
     ];
-    const grid = quads.map(q => `<div class="swot-quad" style="border-left:4px solid ${q.color}"><h3>${q.label}</h3>${ul(arr(sw[q.key]))}</div>`).join('');
+    // colors are template-owned constants; safe to inline.
+    const grid = quads.map(q => `<div class="swot-quad" style="border-left:4px solid ${q.color}"><h3>${esc(q.label)}</h3>${ul(arr(sw[q.key]))}</div>`).join('');
     pages.push(pg('SWOT Analysis', `<div class="swot-grid">${grid}</div>`));
   }
 
   // 7. Porter's Five Forces
   if (rd.porter_five_forces) {
     const pf = rd.porter_five_forces;
-    const forces = [['supplier_power','Supplier Power'],['buyer_power','Buyer Power'],['competitive_rivalry','Competitive Rivalry'],['threat_of_substitution','Threat of Substitution'],['threat_of_new_entry','Threat of New Entry']];
-    const c = forces.map(([k,l]) => {
+    const forces: [string, string][] = [
+      ['supplier_power', 'Supplier Power'],
+      ['buyer_power', 'Buyer Power'],
+      ['competitive_rivalry', 'Competitive Rivalry'],
+      ['threat_of_substitution', 'Threat of Substitution'],
+      ['threat_of_new_entry', 'Threat of New Entry'],
+    ];
+    const c = forces.map(([k, l]) => {
       const f = pf[k]; if (!f) return '';
-      return `<div class="card"><h3>${l}</h3><p><strong>Rating:</strong> ${s(f.rating,'N/A')}</p><p>${s(f.analysis,'')}</p></div>`;
+      return `<div class="card"><h3>${esc(l)}</h3><p><strong>Rating:</strong> ${s(f.rating, 'N/A')}</p><p>${s(f.analysis, '')}</p></div>`;
     }).join('');
     pages.push(pg("Porter's Five Forces", c));
   }
 
   // 8. PESTEL Analysis
   if (rd.pestel_analysis) {
-    const factors = ['political','economic','social','technological','environmental','legal'];
+    const factors = ['political', 'economic', 'social', 'technological', 'environmental', 'legal'];
     const c = factors.map(f => {
       const d = rd.pestel_analysis[f]; if (!d) return '';
-      const text = typeof d === 'string' ? d : s(d.analysis || d.impact || d);
-      return `<div class="section"><h3>${f.charAt(0).toUpperCase()+f.slice(1)}</h3><p>${text}</p></div>`;
+      const text = typeof d === 'string' ? esc(d) : s(d.analysis || d.impact || d);
+      const heading = esc(f.charAt(0).toUpperCase() + f.slice(1));
+      return `<div class="section"><h3>${heading}</h3><p>${text}</p></div>`;
     }).join('');
     pages.push(pg('PESTEL Analysis', c));
   }
 
   // 9. CATWOE Analysis
   if (rd.catwoe_analysis) {
-    const items = [['customers','Customers'],['actors','Actors'],['transformation','Transformation'],['worldview','Worldview'],['owners','Owners'],['environment','Environment']];
-    const c = items.map(([k,l]) => { const v = rd.catwoe_analysis[k]; return v ? `<div class="section"><h3>${l}</h3><p>${s(v)}</p></div>` : ''; }).join('');
+    const items: [string, string][] = [
+      ['customers', 'Customers'], ['actors', 'Actors'], ['transformation', 'Transformation'],
+      ['worldview', 'Worldview'], ['owners', 'Owners'], ['environment', 'Environment'],
+    ];
+    const c = items.map(([k, l]) => {
+      const v = rd.catwoe_analysis[k];
+      return v ? `<div class="section"><h3>${esc(l)}</h3><p>${s(v)}</p></div>` : '';
+    }).join('');
     pages.push(pg('CATWOE Analysis', c));
   }
 
@@ -328,7 +385,7 @@ function generateReportHTML(project: any, report: any): string {
   // 14. Risk Matrix
   if (rd.risk_matrix) {
     let c = '';
-    for (const [key, label] of [['critical_risks','Critical Risks'],['moderate_risks','Moderate Risks'],['low_risks','Low Risks']]) {
+    for (const [key, label] of [['critical_risks', 'Critical Risks'], ['moderate_risks', 'Moderate Risks'], ['low_risks', 'Low Risks']]) {
       const risks = arr(rd.risk_matrix[key]);
       if (risks.length) {
         const rows = risks.map((r: any) => `<tr>
@@ -343,10 +400,9 @@ function generateReportHTML(project: any, report: any): string {
         </table>`);
       }
     }
-    // Also handle flat array format
     const flatRisks = arr(rd.risk_matrix.risks || (Array.isArray(rd.risk_matrix) ? rd.risk_matrix : []));
     if (flatRisks.length && !c) {
-      const rows = flatRisks.map((r: any) => `<tr><td>${s(r.risk||r.name)}</td><td>${s(r.probability||r.likelihood,'N/A')}</td><td>${s(r.impact,'N/A')}</td><td>${s(r.mitigation||r.mitigation_strategy,'')}</td></tr>`).join('');
+      const rows = flatRisks.map((r: any) => `<tr><td>${s(r.risk || r.name)}</td><td>${s(r.probability || r.likelihood, 'N/A')}</td><td>${s(r.impact, 'N/A')}</td><td>${s(r.mitigation || r.mitigation_strategy, '')}</td></tr>`).join('');
       c = `<table class="data-table full-width"><thead><tr><th>Risk</th><th>Probability</th><th>Impact</th><th>Mitigation</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
     if (rd.risk_matrix.overall_risk_assessment) c += sub('Overall Assessment', `<p>${s(rd.risk_matrix.overall_risk_assessment)}</p>`);
@@ -354,18 +410,16 @@ function generateReportHTML(project: any, report: any): string {
     pages.push(pg('Risk Mitigation Matrix', c || '<p>No data available</p>'));
   }
 
-  // 15. Action Plan (uses week_1..week_4 structure)
+  // 15. Action Plan
   if (rd.action_plan) {
     const ap = rd.action_plan;
     let c = '';
 
-    // Quick Wins
     const qw = arr(ap.quick_wins);
     if (qw.length) {
-      c += `<div class="card" style="border-left:4px solid #667eea"><h3>⚡ Quick Wins — Do These Today</h3>${ul(qw)}</div>`;
+      c += `<div class="card" style="border-left:4px solid #667eea"><h3>Quick Wins — Do These Today</h3>${ul(qw)}</div>`;
     }
 
-    // Weekly cards (week_1, week_2, week_3, week_4)
     for (let i = 1; i <= 4; i++) {
       const week = ap[`week_${i}`];
       if (!week) continue;
@@ -375,14 +429,14 @@ function generateReportHTML(project: any, report: any): string {
       if (actions.length) {
         wc += '<ul>';
         actions.forEach((a: any) => {
-          const day = typeof a === 'object' ? s(a.day || a.timeline, '') : '';
-          const action = typeof a === 'string' ? a : s(a.action || a.task || a.description, '');
-          const deliverable = typeof a === 'object' ? a.deliverable : '';
-          const why = typeof a === 'object' ? a.why : '';
+          const day = typeof a === 'object' ? s(a?.day || a?.timeline, '') : '';
+          const action = typeof a === 'string' ? esc(a) : s(a?.action || a?.task || a?.description, '');
+          const deliverable = typeof a === 'object' && a ? s(a.deliverable, '') : '';
+          const why = typeof a === 'object' && a ? s(a.why, '') : '';
           wc += '<li>';
           if (day) wc += `<strong>${day}:</strong> `;
           wc += action;
-          if (deliverable) wc += `<br/><em>📦 Deliverable: ${deliverable}</em>`;
+          if (deliverable) wc += `<br/><em>Deliverable: ${deliverable}</em>`;
           if (why) wc += `<br/><span class="muted">Why: ${why}</span>`;
           wc += '</li>';
         });
@@ -392,7 +446,6 @@ function generateReportHTML(project: any, report: any): string {
       c += wc;
     }
 
-    // Also handle weeks array format
     const weeksArr = arr(ap.weeks || ap.phases || ap.steps);
     if (weeksArr.length) {
       weeksArr.forEach((w: any, i: number) => {
@@ -402,20 +455,19 @@ function generateReportHTML(project: any, report: any): string {
       });
     }
 
-    // Critical Milestones
     const ms = arr(ap.critical_milestones);
-    if (ms.length) {
-      c += sub('Critical Milestones', ul(ms));
-    }
+    if (ms.length) c += sub('Critical Milestones', ul(ms));
 
-    // Resources Needed
     if (ap.resources_needed) {
       const rn = ap.resources_needed;
       let rc = '<table class="data-table">';
       if (rn.budget_estimate) rc += `<tr><td><strong>Budget</strong></td><td>${s(rn.budget_estimate)}</td></tr>`;
       if (rn.people) rc += `<tr><td><strong>People</strong></td><td>${s(rn.people)}</td></tr>`;
       const tools = arr(rn.tools);
-      if (tools.length) rc += `<tr><td><strong>Tools</strong></td><td>${tools.join(', ')}</td></tr>`;
+      if (tools.length) {
+        const toolsHtml = tools.map((t: any) => esc(typeof t === 'string' ? t : (t?.name || t?.title || String(t ?? '')))).join(', ');
+        rc += `<tr><td><strong>Tools</strong></td><td>${toolsHtml}</td></tr>`;
+      }
       rc += '</table>';
       c += sub('Resources Needed', rc);
     }
@@ -423,14 +475,28 @@ function generateReportHTML(project: any, report: any): string {
     pages.push(pg('30-Day Action Plan', c || '<p>No data available</p>'));
   }
 
+  // Restrictive CSP: no scripts, no external assets, no forms/base tags. Only
+  // the inline template CSS is allowed. Uses a system font stack so we don't
+  // need to whitelist Google Fonts.
+  const csp = [
+    "default-src 'none'",
+    "style-src 'unsafe-inline'",
+    "img-src data:",
+    "font-src data:",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="${csp}">
+<title>${s(project.name, 'Business Validation Report')}</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;line-height:1.7;color:#1a1a2e;font-size:11pt}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.7;color:#1a1a2e;font-size:11pt}
 .cover{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-align:center;page-break-after:always}
 .cover h1{font-size:42pt;margin-bottom:12px;font-weight:700}
 .cover h2{font-size:20pt;font-weight:400;opacity:.9}
@@ -461,9 +527,9 @@ li{margin-bottom:6px}
 </head>
 <body>
 <div class="cover">
-<h1>${project.name}</h1>
+<h1>${s(project.name)}</h1>
 <h2>Business Validation Report</h2>
-<div class="meta"><p>${project.industry||''}</p><p>Generated on ${date}</p></div>
+<div class="meta"><p>${s(project.industry, '')}</p><p>Generated on ${esc(date)}</p></div>
 </div>
 ${pages.join('\n')}
 <div class="footer">Generated by Validifier.com | &copy; 2025-2026 All Rights Reserved</div>

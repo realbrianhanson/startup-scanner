@@ -556,17 +556,31 @@ const ViewReport = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={async () => {
                       toast.info("Generating print preview...");
+                      // Open synchronously to avoid popup blocking; detach opener.
+                      const printWindow = window.open('about:blank', '_blank', 'noopener,noreferrer');
+                      if (printWindow && 'opener' in printWindow) {
+                        try { (printWindow as Window).opener = null; } catch { /* noop */ }
+                      }
                       try {
                         const { data, error } = await supabase.functions.invoke('generate-pdf', { body: { project_id: id } });
                         if (error) throw error;
-                        const printWindow = window.open('', '_blank');
-                        if (printWindow) {
-                          printWindow.document.write(data.html);
-                          printWindow.document.close();
-                          printWindow.onload = () => printWindow.print();
-                        }
+                        if (!printWindow) throw new Error('Popup blocked');
+                        const html = data?.html;
+                        if (typeof html !== 'string' || !html.trim()) throw new Error('Invalid response');
+                        const blob = new Blob([html], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+                        const onLoad = () => {
+                          try { printWindow.print(); } catch { /* noop */ }
+                        };
+                        printWindow.addEventListener('load', onLoad, { once: true });
+                        printWindow.location.href = url;
+                        // Revoke after the window has had time to load the blob.
+                        setTimeout(() => URL.revokeObjectURL(url), 60_000);
                         toast.success("Print preview opened in new tab");
-                      } catch { toast.error("Failed to generate PDF"); }
+                      } catch {
+                        if (printWindow) { try { printWindow.close(); } catch { /* noop */ } }
+                        toast.error("Failed to generate PDF");
+                      }
                     }}>
                       <Download className="mr-2 h-4 w-4" />
                       Print / Save PDF
