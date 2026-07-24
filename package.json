@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:prod": "BASE_URL=https://validifier.com playwright test --project=chromium"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
