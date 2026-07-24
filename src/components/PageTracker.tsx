@@ -12,6 +12,7 @@ export default function PageTracker() {
   useEffect(() => {
     if (lastPath.current === location.pathname) return;
     lastPath.current = location.pathname;
+    // trackPageView normalizes dynamic ids before emitting.
     trackPageView(location.pathname);
   }, [location.pathname]);
   return null;

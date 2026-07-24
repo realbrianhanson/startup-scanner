@@ -72,7 +72,9 @@ Cohort: `profiles.created_at ≥ now() - period`.
 2. **Created a project** — cohort user with ≥1 row in `projects`.
 3. **Completed a report** — cohort user with ≥1 `reports.generation_completed_at IS NOT NULL`.
 4. **Used chat** — cohort user with ≥1 `chat_messages.role='user'`.
-5. **Became paid** — cohort user whose `subscription_tier` is not `free`, or who has a `stripe_customer_id`.
+5. **Became paid** — cohort user whose `subscription_tier` is not `free`.
+   A `stripe_customer_id` alone means a billing profile was created (checkout lead);
+   it is reported separately as **Billing profiles** and never counted as paid.
 
 Landing/CTA sessions use distinct `session_id` from browser events, unioning
 legacy aliases.

@@ -29,9 +29,9 @@ interface EventCount {
 type LaunchDashboard = {
   period_days: number;
   generated_at: string;
-  cohort_funnel: { signups: number; created_project: number; completed_report: number; used_chat: number; paid: number };
+  cohort_funnel: { signups: number; created_project: number; completed_report: number; used_chat: number; paid: number; billing_profiles: number };
   acquisition: { landing_sessions: number; cta_sessions: number };
-  totals: { users: number; paid_users: number; projects: number; reports_complete: number };
+  totals: { users: number; paid_users: number; billing_profiles: number; projects: number; reports_complete: number };
   report_health: { started: number; completed: number; failed: number; stuck: number };
   billing_health: { webhook_failed: number; webhook_processing_stale: number };
   unresolved: { info: number; warning: number; critical: number };
@@ -43,13 +43,12 @@ type LaunchDashboard = {
   daily_14d: Array<{ day: string; signups: number; projects: number; reports_completed: number }>;
 };
 
-// Historical event aliases retained for backward-compatible legacy Analytics tab.
+// Historical event aliases for the legacy Analytics tab. Verification-required
+// events are NOT completed signups and are intentionally excluded here.
 const SIGNUP_ALIASES = [
   "sign_up",
   "auth_signup_complete",
   "signup_completed",
-  "auth_verification_required",
-  "signup_verification_required",
 ];
 const PROJECT_ALIASES = ["project_created"];
 
@@ -890,6 +889,7 @@ function LaunchDashboardView(props: {
             <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Stat label="Total users" value={data.totals.users} />
               <Stat label="Paid users" value={data.totals.paid_users} />
+              <Stat label="Billing profiles" value={data.totals.billing_profiles} />
               <Stat label="Projects" value={data.totals.projects} />
               <Stat label="Reports completed" value={data.totals.reports_complete} />
             </CardContent>
