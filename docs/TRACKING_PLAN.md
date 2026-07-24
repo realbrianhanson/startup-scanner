@@ -68,13 +68,21 @@ The Admin → Analytics tab unions legacy signup aliases when counting signups.
 
 Cohort: `profiles.created_at ≥ now() - period`.
 
-1. **Signed up** — cohort size.
-2. **Created a project** — cohort user with ≥1 row in `projects`.
-3. **Completed a report** — cohort user with ≥1 `reports.generation_completed_at IS NOT NULL`.
-4. **Used chat** — cohort user with ≥1 `chat_messages.role='user'`.
-5. **Became paid** — cohort user whose `subscription_tier` is not `free`.
-   A `stripe_customer_id` alone means a billing profile was created (checkout lead);
-   it is reported separately as **Billing profiles** and never counted as paid.
+1. **Accounts created** — cohort size (`profiles.created_at` in period).
+2. **Verified signup** — accounts whose `auth.users.email_confirmed_at` is
+   set. This is the denominator for every step below.
+3. **Created project** — verified user with ≥1 row in `projects`.
+4. **Completed report** — verified user with ≥1 `reports.generation_completed_at IS NOT NULL`.
+5. **Used chat** — verified user with ≥1 `chat_messages.role='user'`.
+6. **Trialing** — verified user with `subscription_status = 'trialing'`.
+7. **Active subscription** — verified user with `subscription_status = 'active'`.
+   This is the only "paid" bucket. Pro-tier users and billing profiles are
+   reported separately in Current totals and never counted as paid.
+
+Current totals in Admin Launch use these authoritative definitions:
+**Active subscriptions**, **Trials**, **Past due**, **Pro-tier users** (any
+`subscription_tier <> 'free'`, i.e. entitlement not revenue), and **Billing
+profiles** (`stripe_customer_id IS NOT NULL`).
 
 Landing/CTA sessions use distinct `session_id` from browser events, unioning
 legacy aliases.
