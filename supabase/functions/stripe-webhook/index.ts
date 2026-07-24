@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logOpsEvent, logAnalyticsEvent } from "../_shared/ops.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,7 @@ const ALLOWED_EVENT_TYPES = new Set([
   "checkout.session.completed",
   "customer.subscription.updated",
   "customer.subscription.deleted",
+  "invoice.payment_failed",
 ]);
 const GENERIC_HANDLER_ERROR = "handler_failed";
 

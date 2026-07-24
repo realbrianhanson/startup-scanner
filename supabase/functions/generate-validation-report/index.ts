@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logOpsEvent, logAnalyticsEvent, durationBucket } from "../_shared/ops.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -491,6 +492,18 @@ serve(async (req) => {
     });
     if (usageErr) { console.error("ai_usage_logs insert failed", { code: (usageErr as any)?.code }); }
 
+    // Authoritative report_completed analytics + duration bucket.
+    await logAnalyticsEvent(supabase, {
+      event_name: "report_completed",
+      user_id: project.user_id,
+      properties: {
+        quality: effectiveQuality,
+        duration: durationBucket(Date.now() - startTime),
+        resumed: wasResumed,
+        sections: sectionsCompleted,
+      },
+    });
+
     // Send report-complete email
     try {
       if (profile.email_notifications_enabled !== false) {
@@ -569,6 +582,24 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Unhandled error in report generation");
+    try {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+        const s = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        await logOpsEvent(s, {
+          severity: "critical",
+          category: "report_generation",
+          event_name: "report_generation_failed",
+          function_name: "generate-validation-report",
+          error_code: "unhandled_exception",
+        });
+        await logAnalyticsEvent(s, {
+          event_name: "report_generation_failed",
+          properties: { reason: "unhandled_exception" },
+        });
+      }
+    } catch { /* ignore */ }
     return new Response(
       JSON.stringify({ error: "Failed to generate report" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

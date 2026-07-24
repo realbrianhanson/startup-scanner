@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logOpsEvent, logAnalyticsEvent } from "../_shared/ops.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -152,8 +153,23 @@ Deno.serve(async (req) => {
 
     if (!sessionRes.ok || session.error || !session.url) {
       console.error("Stripe checkout creation failed", { status: sessionRes.status });
+      await logOpsEvent(adminSupabase, {
+        severity: "warning",
+        category: "billing",
+        event_name: "checkout_create_failed",
+        function_name: "create-checkout-session",
+        error_code: `stripe_${sessionRes.status}`,
+        user_id: user.id,
+        metadata: { plan: planName },
+      });
       return jsonError(502, "Could not start checkout");
     }
+
+    await logAnalyticsEvent(adminSupabase, {
+      event_name: "checkout_created",
+      user_id: user.id,
+      properties: { plan: planName },
+    });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
