@@ -8,37 +8,44 @@ production data.
 
 Open the Admin **Launch** tab and review:
 
-- Cohort funnel: landings → signups → first project → completed report.
-  Investigate any single-day drop >30% vs the prior 7-day median.
-- Report health: generation success rate, median duration, failure count.
-- Billing health: checkouts started vs completed, subscription changes,
-  failed payments.
-- System health: unresolved operational events, especially `critical` and
-  `warning`.
-- 14-day trend chart: look for unexplained inflection points.
+- Cohort funnel: accounts created → verified signup → created project →
+  completed report → used chat → trialing → active subscription. Investigate
+  any single-day drop >30% vs the prior 7-day median.
+- Report health: started / completed / failed / stuck counts.
+- Billing health: Stripe webhook failed count and stale processing count.
+- Unresolved incidents: counts by severity (`critical`, `warning`, `info`).
+- 14-day trend: signups, projects and completed reports per day.
 
 ## Weekly routine
 
-- Reconcile paid users (`subscription_tier <> 'free'`) against Stripe.
-  Investigate any discrepancy.
+- Reconcile active subscriptions (`profiles.subscription_status = 'active'`)
+  and trials (`subscription_status = 'trialing'`) against Stripe. Investigate
+  any discrepancy.
 - Skim the analytics view (legacy tab) for unusual funnel divergence
   between signup aliases.
 - Confirm backup/PITR is still enabled and no failure alerts fired.
-- Review the unresolved operational events list; anything older than 7
-  days is auto-escalated to launch owner.
+- Review the unresolved operational events list; the launch owner triages
+  anything older than 7 days (no automated escalation is configured).
 
 ## Metric definitions
 
 - **Landing session**: `page_viewed` with `page_url = '/'`, unique per
   session id. Legacy `landing_page_view` events are counted regardless of
   URL for historical parity.
-- **Signup completed**: verified email + first successful sign-in.
-  Verification-required events are NOT completed signups.
+- **Accounts created**: `profiles.created_at` in period.
+- **Verified signup**: account whose `auth.users.email_confirmed_at` is set.
+  This is the denominator for every post-verification funnel step in Admin
+  Launch.
 - **Report completed**: server-authoritative `report_completed` event
   emitted at finalization.
-- **Paid user**: `profiles.subscription_tier <> 'free'`. A
-  `stripe_customer_id` alone means the user has a billing profile, not
-  that they are paying — it is reported separately as "billing profiles".
+- **Trialing**: `subscription_status = 'trialing'`.
+- **Active subscription**: `subscription_status = 'active'`. Only this
+  counts as "paid" in Launch.
+- **Past due**: `subscription_status = 'past_due'`.
+- **Pro-tier user**: `subscription_tier <> 'free'`. Includes trialing,
+  active, past_due and unknown — this is an entitlement view, not revenue.
+- **Billing profile**: `stripe_customer_id IS NOT NULL`. A checkout lead
+  only; never counted as paid.
 
 ## Triage: report events
 
@@ -83,12 +90,14 @@ Open the Admin **Launch** tab and review:
 An operational event may be resolved only when:
 
 1. The underlying trigger is fixed OR determined to be benign, AND
-2. A short note has been added describing what happened, AND
-3. Any user-visible remediation (regenerate, refund, credit) is completed.
+2. Any user-visible remediation (regenerate, refund, credit) is completed.
 
 Resolution is recorded via the admin UI — the migration limits authenticated
 users to updating `resolved_at` and `resolved_by` only. Do not attempt to
-edit `metadata` after the fact.
+edit `metadata` after the fact. Because `operational_events` has no note
+column, keep incident context in a private internal ticket and reference
+that ticket from the postmortem — do not embed user or project UUIDs in
+public issues.
 
 ## Evidence collection (no PII)
 
@@ -96,7 +105,8 @@ When capturing evidence for a bug or incident:
 
 - Do not paste raw email addresses, project titles, or idea descriptions
   into public issues or chat.
-- Refer to users and projects by their UUIDs.
+- Refer to users and projects by an internal ticket reference, not by
+  raw UUIDs (the operational_events UI does not surface project ids).
 - Screenshot only the affected UI region.
 - Redact Stripe IDs, session tokens, and API keys.
 

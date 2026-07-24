@@ -85,6 +85,24 @@ function isUniqueViolation(err: { code?: string | null } | null | undefined): bo
   return err?.code === "23505";
 }
 
+const ALLOWED_STATUSES = new Set([
+  "free","trialing","active","past_due","unpaid","incomplete","canceled","unknown",
+]);
+
+function normalizeStatus(raw: unknown): string {
+  if (typeof raw !== "string") return "unknown";
+  return ALLOWED_STATUSES.has(raw) ? raw : "unknown";
+}
+
+function epochToIso(v: unknown): string | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) return null;
+  const ms = v * 1000;
+  const d = new Date(ms);
+  const t = d.getTime();
+  if (!Number.isFinite(t)) return null;
+  return d.toISOString();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -242,6 +260,8 @@ Deno.serve(async (req) => {
             ai_credits_monthly: config.credits,
             ai_credits_used: 0,
             stripe_customer_id: session.customer,
+            subscription_status: "trialing",
+            cancel_at_period_end: false,
           })
           .eq("id", userId)
           .select("id");
@@ -268,27 +288,39 @@ Deno.serve(async (req) => {
         if (profileErr) throw new Error(`profile lookup failed: ${profileErr.code ?? "unknown"}`);
         if (!profile) break; // No local profile — nothing to entitle.
 
-        if (subscription.status === "active" || subscription.status === "trialing") {
+        const status = normalizeStatus(subscription?.status);
+        const cancelAtPeriodEnd = subscription?.cancel_at_period_end === true;
+        const trialEnd = epochToIso(subscription?.trial_end);
+        const periodEnd = epochToIso(subscription?.current_period_end);
+
+        // Always record the truthful subscription state.
+        const baseUpdate: Record<string, unknown> = {
+          subscription_status: status,
+          cancel_at_period_end: cancelAtPeriodEnd,
+          trial_ends_at: trialEnd,
+          current_period_ends_at: periodEnd,
+        };
+
+        if (status === "active" || status === "trialing") {
           const planName = subscription.metadata?.plan_name?.toLowerCase();
           const priceId = subscription.items?.data?.[0]?.price?.id;
           const config = resolvePlanFromEvent(planName, priceId, proPriceId);
           if (!config) throw new Error("unknown plan on subscription");
-
-          const { data: updatedRows, error: updateErr } = await supabase
-            .from("profiles")
-            .update({
-              subscription_tier: config.tier,
-              ai_credits_monthly: config.credits,
-            })
-            .eq("id", profile.id)
-            .select("id");
-          if (updateErr) throw new Error(`profile update failed: ${updateErr.code ?? "unknown"}`);
-          if (!updatedRows || updatedRows.length === 0) {
-            throw new Error("profile update affected zero rows");
-          }
-          postAnalytics = subscription.status === "trialing"
+          baseUpdate.subscription_tier = config.tier;
+          baseUpdate.ai_credits_monthly = config.credits;
+          postAnalytics = status === "trialing"
             ? { event: "trial_started", user_id: profile.id as string, props: { plan: config.tier } }
             : { event: "subscription_activated", user_id: profile.id as string, props: { plan: config.tier } };
+        }
+
+        const { data: updatedRows, error: updateErr } = await supabase
+          .from("profiles")
+          .update(baseUpdate)
+          .eq("id", profile.id)
+          .select("id");
+        if (updateErr) throw new Error(`profile update failed: ${updateErr.code ?? "unknown"}`);
+        if (!updatedRows || updatedRows.length === 0) {
+          throw new Error("profile update affected zero rows");
         }
         break;
       }
@@ -312,6 +344,10 @@ Deno.serve(async (req) => {
             subscription_tier: "free",
             ai_credits_monthly: FREE_MONTHLY_CREDITS,
             ai_credits_used: 0,
+            subscription_status: "canceled",
+            cancel_at_period_end: false,
+            trial_ends_at: null,
+            current_period_ends_at: null,
           })
           .eq("id", profile.id)
           .select("id");
@@ -331,6 +367,12 @@ Deno.serve(async (req) => {
           const { data: profile } = await supabase
             .from("profiles").select("id").eq("stripe_customer_id", customerId).maybeSingle();
           userId = (profile?.id as string) ?? null;
+          if (userId) {
+            await supabase
+              .from("profiles")
+              .update({ subscription_status: "past_due" })
+              .eq("id", userId);
+          }
         }
         await logOpsEvent(supabase, {
           severity: "warning",

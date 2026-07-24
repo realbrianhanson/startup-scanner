@@ -42,9 +42,9 @@ const CONTROLS: Control[] = [
   },
   {
     icon: Activity,
-    title: "Input, rate, and credit controls",
+    title: "Endpoint and generation controls",
     body:
-      "Report generation, chat, website analysis, and comparison endpoints validate input length, enforce per-user rate limits, and consume credits through atomic database functions so failures release the hold rather than silently deducting.",
+      "Chat, website analysis, and comparison endpoints validate input and enforce per-user rate limits. Report generation is protected by ownership checks, atomic credit charging, a single active attempt lease with heartbeat, resumable partial progress, and idempotent finalization so a duplicate or resumed run cannot double-charge or corrupt a report.",
   },
   {
     icon: FileWarning,
@@ -127,9 +127,9 @@ const Security = () => {
           <h2 className="text-lg font-semibold text-foreground">Incident response</h2>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             We investigate security reports as they come in and use our operational event log to detect service
-            failures. If we identify an incident that materially affects your data, we will contact affected
-            account holders by email with a description of what happened, what data was affected, and what steps
-            we took.
+            failures. If we identify an incident that materially affects your data, we will notify you as
+            appropriate and as required by applicable law, with a description of what happened, what data was
+            affected, and what steps we took.
           </p>
           <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
             Report a security issue:{" "}

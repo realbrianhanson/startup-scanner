@@ -10,8 +10,9 @@ company-, jurisdiction-, and person-specific details.
   ($29/mo, 7-day trial, 100 credits/mo). See [`src/lib/productFacts.ts`](../src/lib/productFacts.ts).
 - Security & data integrity migrations, atomic credit RPCs, verified idempotent
   Stripe webhooks, resumable report generation. See [`SECURITY memory`](../SECURITY_MEMORY.md) if present and repo migrations.
-- Analytics: normalized paths, sanitized event props, launch dashboard RPC. See
-  [`TRACKING_PLAN.md`](./TRACKING_PLAN.md).
+- Analytics: normalized paths, sanitized event props, launch dashboard RPC that
+  distinguishes accounts created, verified signups, trials, active subscriptions,
+  Pro-tier entitlement, and Stripe billing profiles. See [`TRACKING_PLAN.md`](./TRACKING_PLAN.md).
 - Public trust pages: `/privacy`, `/terms`, `/contact`, `/security`.
 - Public E2E smoke suite (Playwright) + CI. See root [`README.md`](../README.md).
 
