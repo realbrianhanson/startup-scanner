@@ -26,7 +26,7 @@ See also: [`TRACKING_PLAN.md`](./TRACKING_PLAN.md),
 | D-4 | Engineering | Confirm backup/PITR is enabled and restore drill documented. |
 | D-3 | Launch owner | Content calendar loaded: Product Hunt, LinkedIn, X, community post, launch email. |
 | D-2 | Launch owner | Go/no-go review against thresholds below. |
-| D-1 | Engineering | Freeze non-critical deploys; enable higher log verbosity. |
+| D-1 | Engineering | Freeze non-critical deploys. |
 
 ## Daily owner checklist (through day 14)
 
@@ -57,7 +57,8 @@ Do **not** launch on D0 if any of the following is true:
 
 - Report generation failure rate over the last 7 days is above 5%.
 - Any unresolved P0 operational event exists.
-- Stripe webhook success rate under 99% in staging.
+- Stripe webhook success rate under 99% (Admin Launch → Billing) OR any
+  authoritative subscription-status discrepancy vs Stripe.
 - Any user-facing page fails the Playwright smoke suite.
 - Sending domain is not DKIM/SPF/DMARC aligned.
 - Support inbox is unmonitored.
@@ -111,8 +112,10 @@ correspondence templates to the repo.
      post a status update, then investigate.
    - No → continue.
 3. **Is billing wrong?**
-   - Yes → disable `create-checkout-session` (feature flag or 503) while
-     investigating; refunds are handled manually via Stripe.
+   - Yes → pause paid-plan promotion (remove/hide the pricing CTAs) and
+     ship a reviewed change that disables `create-checkout-session` (return
+     503) or roll back the last deploy. Do not silently mutate production
+     state or entitlements. Refunds are handled manually via Stripe.
    - No → continue.
 4. **Everything else** → open a triage ticket, communicate ETA to
    affected users, fix forward.
