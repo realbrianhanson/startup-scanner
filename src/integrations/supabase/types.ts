@@ -282,7 +282,9 @@ export type Database = {
         Row: {
           ai_credits_monthly: number
           ai_credits_used: number
+          cancel_at_period_end: boolean
           created_at: string
+          current_period_ends_at: string | null
           email: string
           email_notifications_enabled: boolean
           full_name: string | null
@@ -292,13 +294,17 @@ export type Database = {
           referral_code: string
           referral_source: string | null
           stripe_customer_id: string | null
+          subscription_status: string
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
           ai_credits_monthly?: number
           ai_credits_used?: number
+          cancel_at_period_end?: boolean
           created_at?: string
+          current_period_ends_at?: string | null
           email: string
           email_notifications_enabled?: boolean
           full_name?: string | null
@@ -308,13 +314,17 @@ export type Database = {
           referral_code?: string
           referral_source?: string | null
           stripe_customer_id?: string | null
+          subscription_status?: string
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
           ai_credits_monthly?: number
           ai_credits_used?: number
+          cancel_at_period_end?: boolean
           created_at?: string
+          current_period_ends_at?: string | null
           email?: string
           email_notifications_enabled?: boolean
           full_name?: string | null
@@ -324,7 +334,9 @@ export type Database = {
           referral_code?: string
           referral_source?: string | null
           stripe_customer_id?: string | null
+          subscription_status?: string
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: []
