@@ -83,6 +83,24 @@ function metaFor(pathname: string, search: string): Meta {
         robots: "index,follow",
         ogUrl: `${SITE}/terms`,
       };
+    case "/contact":
+      return {
+        title: "Contact — Validifier",
+        description:
+          "Reach the Validifier team by email for product support, privacy requests, legal questions, or security disclosure.",
+        canonical: `${SITE}/contact`,
+        robots: "index,follow",
+        ogUrl: `${SITE}/contact`,
+      };
+    case "/security":
+      return {
+        title: "Security Overview — Validifier",
+        description:
+          "How Validifier protects your account and data: TLS, managed auth, row-level security, server-only billing, and verified webhooks.",
+        canonical: `${SITE}/security`,
+        robots: "index,follow",
+        ogUrl: `${SITE}/security`,
+      };
     default: {
       // All private / owner routes
       const base: Meta = {
