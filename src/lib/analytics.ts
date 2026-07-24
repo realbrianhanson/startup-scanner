@@ -18,6 +18,22 @@ const MAX_PAYLOAD_BYTES = 4000;
 const KEY_RE = /^[a-z0-9_]{1,40}$/;
 const SESSION_KEY = 'validifier.session.v1';
 const CACHED_USER_TTL_MS = 5 * 60 * 1000;
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+/**
+ * Normalize dynamic path segments so we never persist raw project or report
+ * UUIDs. `/projects/<uuid>/report` -> `/projects/:id/report`,
+ * `/projects/<uuid>` -> `/projects/:id`, and any other bare UUID -> `:id`.
+ * Query strings are always stripped.
+ */
+export function normalizePath(input: string | undefined | null): string {
+  const raw = typeof input === 'string' && input.length > 0 ? input : '/';
+  const path = raw.split('?')[0].split('#')[0].slice(0, 200);
+  return path
+    .replace(/^(\/projects\/)[0-9a-f-]{36}(\/report)(\/.*)?$/i, '$1:id$2')
+    .replace(/^(\/projects\/)[0-9a-f-]{36}$/i, '$1:id')
+    .replace(UUID_RE, ':id');
+}
 
 type SessionCtx = {
   session_id: string;
@@ -169,20 +185,21 @@ export const trackEvent = (eventName: string, properties?: Record<string, unknow
   const name = String(eventName || '').toLowerCase().slice(0, 80);
   if (!/^[a-z0-9_]{1,80}$/.test(name)) return;
 
-  // Consent-gated external analytics — payload is safe by construction.
-  try {
-    if (hasAnalyticsConsent() && (window as any).gtag) {
-      (window as any).gtag('event', name, properties || {});
-    }
-  } catch { /* ignore */ }
-
   try {
     const clean = sanitizeProps(properties);
     const withCtx = withContext(clean);
     const payload = boundedPayload(withCtx);
 
-    const path = (window.location.pathname || '/').slice(0, 200);
+    const path = normalizePath(window.location.pathname);
     const userId = getUserId();
+
+    // Consent-gated external analytics — same sanitized+bounded payload as
+    // first-party. Never forward raw caller input.
+    try {
+      if (hasAnalyticsConsent() && (window as any).gtag) {
+        (window as any).gtag('event', name, payload);
+      }
+    } catch { /* ignore */ }
 
     supabase
       .from('analytics_events')
@@ -200,5 +217,5 @@ export const trackEvent = (eventName: string, properties?: Record<string, unknow
 
 /** Track a route change. Called by the top-level page tracker. */
 export const trackPageView = (pathname: string) => {
-  trackEvent('page_viewed', { path: pathname.slice(0, 200) });
+  trackEvent('page_viewed', { path: normalizePath(pathname) });
 };
