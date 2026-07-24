@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { logOpsEvent } from "../_shared/ops.ts";
 
 const BASE_URL = Deno.env.get("APP_BASE_URL") || "https://validifier.com";
 const corsHeaders = {
@@ -347,6 +348,20 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in send-email:', error);
+    try {
+      const url = Deno.env.get('SUPABASE_URL');
+      const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (url && key) {
+        const s = createClient(url, key);
+        await logOpsEvent(s, {
+          severity: "warning",
+          category: "email",
+          event_name: "email_send_failed",
+          function_name: "send-email",
+          error_code: "unhandled_exception",
+        });
+      }
+    } catch { /* ignore */ }
     return new Response(
       JSON.stringify({ error: 'Failed to send email' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

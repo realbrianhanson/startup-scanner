@@ -221,6 +221,9 @@ Deno.serve(async (req) => {
     }
 
     // Handle the event. Any thrown error aborts processed-marking.
+    // Emitted after successful case; keyed on webhook idempotency so retries
+    // don't duplicate. Populated inside the switch on the happy path.
+    let postAnalytics: null | { event: string; user_id?: string | null; props?: Record<string, unknown> } = null;
     switch (eventType) {
       case "checkout.session.completed": {
         const session = event.data.object;
@@ -246,6 +249,7 @@ Deno.serve(async (req) => {
         if (!updatedRows || updatedRows.length === 0) {
           throw new Error("profile update affected zero rows");
         }
+        postAnalytics = { event: "subscription_activated", user_id: userId, props: { plan: config.tier } };
         break;
       }
 
@@ -280,6 +284,9 @@ Deno.serve(async (req) => {
           if (!updatedRows || updatedRows.length === 0) {
             throw new Error("profile update affected zero rows");
           }
+          postAnalytics = subscription.status === "trialing"
+            ? { event: "trial_started", user_id: profile.id as string, props: { plan: config.tier } }
+            : { event: "subscription_activated", user_id: profile.id as string, props: { plan: config.tier } };
         }
         break;
       }
@@ -310,6 +317,28 @@ Deno.serve(async (req) => {
         if (!updatedRows || updatedRows.length === 0) {
           throw new Error("profile update affected zero rows");
         }
+        postAnalytics = { event: "subscription_cancelled", user_id: profile.id as string };
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object;
+        const customerId = invoice?.customer;
+        let userId: string | null = null;
+        if (typeof customerId === "string") {
+          const { data: profile } = await supabase
+            .from("profiles").select("id").eq("stripe_customer_id", customerId).maybeSingle();
+          userId = (profile?.id as string) ?? null;
+        }
+        await logOpsEvent(supabase, {
+          severity: "warning",
+          category: "billing",
+          event_name: "payment_failed",
+          function_name: "stripe-webhook",
+          error_code: "invoice_payment_failed",
+          user_id: userId,
+        });
+        postAnalytics = { event: "payment_failed", user_id: userId };
         break;
       }
     }
@@ -333,6 +362,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (postAnalytics) {
+      await logAnalyticsEvent(supabase, {
+        event_name: postAnalytics.event,
+        user_id: postAnalytics.user_id ?? null,
+        properties: postAnalytics.props ?? {},
+      });
+    }
+
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -349,6 +386,13 @@ Deno.serve(async (req) => {
           .eq("status", "processing")
           .eq("last_attempt_at", ownedLeaseAt)
           .select("event_id");
+        await logOpsEvent(supabaseForFailure, {
+          severity: "critical",
+          category: "billing",
+          event_name: "stripe_webhook_failed",
+          function_name: "stripe-webhook",
+          error_code: "handler_failed",
+        });
       } catch {
         // best-effort
       }
