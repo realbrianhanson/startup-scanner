@@ -110,10 +110,11 @@ Targets before ending beta and moving to broader launch:
 - Median time-to-first-report under 5 minutes wall-clock.
 - Report generation failure rate under 5%.
 - ≥ 40% ask Cora at least one follow-up.
-- ≥ 50% of trials that reach day 7 convert to paid **or** state a specific
-  reason not to.
+- ≥ 50% of trials that reach day 7 convert to an **active subscription**
+  (`profiles.subscription_status = 'active'`) **or** state a specific reason
+  not to. Pro-tier entitlement alone (still trialing) does not count.
 - Average report rating ≥ 4 / 5.
-- 30-day retention of paid users ≥ 60%.
+- 30-day retention of active subscriptions ≥ 60%.
 
 ## Participant tracker (template — do not prefill with PII)
 
