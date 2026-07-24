@@ -546,6 +546,9 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
+            <p className="text-xs text-muted-foreground">
+              Legacy app-event counts from the analytics stream. These reflect client-side event totals — not verified database signups. Use the Launch tab for the authoritative cohort funnel.
+            </p>
             {/* Summary Cards */}
             <div className="grid gap-4 md:grid-cols-4">
               <Card>
@@ -556,7 +559,7 @@ const Admin = () => {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{signupsWeek}</p>
-                      <p className="text-xs text-muted-foreground">Sign-ups this week</p>
+                      <p className="text-xs text-muted-foreground">Signup events (7d)</p>
                     </div>
                   </div>
                 </CardContent>
@@ -569,7 +572,7 @@ const Admin = () => {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{signupsMonth}</p>
-                      <p className="text-xs text-muted-foreground">Sign-ups this month</p>
+                      <p className="text-xs text-muted-foreground">Signup events (30d)</p>
                     </div>
                   </div>
                 </CardContent>
@@ -582,7 +585,7 @@ const Admin = () => {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{projectsWeek}</p>
-                      <p className="text-xs text-muted-foreground">Projects this week</p>
+                      <p className="text-xs text-muted-foreground">Project events (7d)</p>
                     </div>
                   </div>
                 </CardContent>
@@ -595,7 +598,7 @@ const Admin = () => {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{projectsMonth}</p>
-                      <p className="text-xs text-muted-foreground">Projects this month</p>
+                      <p className="text-xs text-muted-foreground">Project events (30d)</p>
                     </div>
                   </div>
                 </CardContent>
