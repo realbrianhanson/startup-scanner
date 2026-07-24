@@ -48,6 +48,24 @@ Edge function secrets (set manually in Project Settings → Secrets):
 Optional edge function overrides (defaults apply when unset):
 
 - `APP_BASE_URL` — public site URL used in transactional email links (defaults to `https://validifier.com`).
+
+## Market readiness
+
+Launch operating kit — read the index first:
+
+- [`docs/MARKET_READINESS.md`](docs/MARKET_READINESS.md) — what's shipped, what's ready to execute, what's blocked on the owner.
+- [`docs/BETA_PROGRAM.md`](docs/BETA_PROGRAM.md) · [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) · [`docs/GO_TO_MARKET_KIT.md`](docs/GO_TO_MARKET_KIT.md)
+- [`docs/EMAIL_LIFECYCLE.md`](docs/EMAIL_LIFECYCLE.md) · [`docs/LAUNCH_RUNBOOK.md`](docs/LAUNCH_RUNBOOK.md) · [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md)
+- [`docs/LEGAL_BUSINESS_CHECKLIST.md`](docs/LEGAL_BUSINESS_CHECKLIST.md) · [`docs/PRODUCTION_CERTIFICATION.md`](docs/PRODUCTION_CERTIFICATION.md) · [`docs/TRACKING_PLAN.md`](docs/TRACKING_PLAN.md)
+
+Automated checks used before every release:
+
+```bash
+bunx tsgo --noEmit          # typecheck
+bun run build               # production build
+bun run test:e2e            # local Playwright smoke (uses vite preview)
+bun run test:e2e:prod       # read-only smoke against https://validifier.com
+```
 - `PREMIUM_MODEL` — Lovable AI Gateway model for premium reports (defaults to `google/gemini-3.1-pro-preview`).
 - `FAST_MODEL` — Lovable AI Gateway model for standard reports and chat (defaults to `google/gemini-3-flash-preview`).
 
