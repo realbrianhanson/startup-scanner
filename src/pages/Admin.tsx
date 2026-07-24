@@ -29,9 +29,26 @@ interface EventCount {
 type LaunchDashboard = {
   period_days: number;
   generated_at: string;
-  cohort_funnel: { signups: number; created_project: number; completed_report: number; used_chat: number; paid: number; billing_profiles: number };
+  cohort_funnel: {
+    accounts_created: number;
+    signups: number;
+    created_project: number;
+    completed_report: number;
+    used_chat: number;
+    trialing: number;
+    paid: number;
+  };
   acquisition: { landing_sessions: number; cta_sessions: number };
-  totals: { users: number; paid_users: number; billing_profiles: number; projects: number; reports_complete: number };
+  totals: {
+    users: number;
+    active_subscriptions: number;
+    trials: number;
+    past_due: number;
+    pro_tier: number;
+    billing_profiles: number;
+    projects: number;
+    reports_complete: number;
+  };
   report_health: { started: number; completed: number; failed: number; stuck: number };
   billing_health: { webhook_failed: number; webhook_processing_stale: number };
   unresolved: { info: number; warning: number; critical: number };
