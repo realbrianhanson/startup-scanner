@@ -24,6 +24,8 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const SampleReport = lazy(() => import("./pages/SampleReport"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Security = lazy(() => import("./pages/Security"));
 
 const RouteFallback = () => (
   <div
@@ -62,6 +64,8 @@ const App = () => (
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/sample-report" element={<SampleReport />} />
               <Route path="/terms" element={<Terms />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/security" element={<Security />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
