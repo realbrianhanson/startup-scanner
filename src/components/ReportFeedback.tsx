@@ -73,7 +73,7 @@ export const ReportFeedback = ({ projectId, isOwner }: ReportFeedbackProps) => {
           .insert({ user_id: user.id, project_id: projectId, rating, comment: comment.trim() || null } as any);
       }
 
-      trackEvent("report_feedback_submitted", { rating, project_id: projectId });
+      trackEvent("feedback_submitted", { rating, kind: "report" });
       setSubmitted(true);
       toast.success("Thanks for your feedback!");
 
@@ -108,7 +108,7 @@ export const ReportFeedback = ({ projectId, isOwner }: ReportFeedbackProps) => {
           quote: testimonialQuote.trim(),
         } as any);
 
-      trackEvent("testimonial_submitted", { project_id: projectId });
+      trackEvent("feedback_submitted", { kind: "testimonial" });
       setTestimonialSubmitted(true);
       toast.success("Thank you! Your testimonial has been submitted for review.");
     } catch {
