@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { ArrowRight, ShieldCheck, Sparkles, MessageSquare, FileText, Gauge, Users, Swords, LineChart, ListChecks } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { PRODUCT_FACTS } from "@/lib/productFacts";
@@ -13,8 +13,6 @@ const Landing = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    trackEvent("landing_page_view");
-
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.textContent = JSON.stringify({
@@ -38,7 +36,7 @@ const Landing = () => {
   }, []);
 
   const goSignup = (button: string) => {
-    trackEvent("cta_click", { button, page: "landing" });
+    trackEvent("landing_cta_clicked", { button, page: "landing" });
     navigate(SIGNUP_HREF);
   };
 
@@ -123,7 +121,7 @@ const Landing = () => {
                 </button>
                 <a
                   href="#report-preview"
-                  onClick={() => trackEvent("cta_click", { button: "hero_see_what", page: "landing" })}
+                  onClick={() => trackEvent("landing_cta_clicked", { button: "hero_see_what", page: "landing" })}
                   className="inline-flex items-center gap-2 rounded-lg border border-white/15 hover:border-white/30 text-slate-100 font-medium px-5 py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
                 >
                   See what you'll get
@@ -301,7 +299,7 @@ const Landing = () => {
                 </p>
                 <button
                   onClick={() => {
-                    trackEvent("cta_click", { button: "pricing_teaser_pro", page: "landing" });
+                    trackEvent("landing_cta_clicked", { button: "pricing_teaser_pro", page: "landing" });
                     navigate("/pricing");
                   }}
                   className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/15 hover:border-white/30 text-slate-100 font-medium px-4 py-2 text-sm transition-colors"

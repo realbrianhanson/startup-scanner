@@ -9,6 +9,7 @@ import { NetworkOfflineBanner } from "@/components/NetworkOfflineBanner";
 import { CookieConsent } from "@/components/CookieConsent";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RouteSEO from "@/components/RouteSEO";
+import PageTracker from "@/components/PageTracker";
 import Landing from "./pages/Landing";
 
 const Auth = lazy(() => import("./pages/Auth"));
@@ -46,6 +47,7 @@ const App = () => (
           <NetworkOfflineBanner />
           <BrowserRouter>
             <RouteSEO />
+            <PageTracker />
             <Suspense fallback={<RouteFallback />}>
               <Routes>
               <Route path="/" element={<Landing />} />

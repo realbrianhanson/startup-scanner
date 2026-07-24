@@ -225,6 +225,59 @@ export type Database = {
           },
         ]
       }
+      operational_events: {
+        Row: {
+          category: string
+          created_at: string
+          error_code: string | null
+          event_name: string
+          function_name: string | null
+          id: string
+          metadata: Json
+          project_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          error_code?: string | null
+          event_name: string
+          function_name?: string | null
+          id?: string
+          metadata?: Json
+          project_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          error_code?: string | null
+          event_name?: string
+          function_name?: string | null
+          id?: string
+          metadata?: Json
+          project_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ai_credits_monthly: number
@@ -614,6 +667,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_admin_launch_dashboard: { Args: { p_days?: number }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

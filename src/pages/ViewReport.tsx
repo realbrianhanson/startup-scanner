@@ -267,7 +267,7 @@ const ViewReport = () => {
         setGenerating(false);
         return;
       }
-      trackEvent('report_generation_started', { project_id: id, regenerate });
+      trackEvent('report_generation_started', { regenerate });
       toast.success(regenerate ? "Regenerating report..." : "Report generation started!");
       if (data?.success) setGenerating(false);
     } catch (error: any) {

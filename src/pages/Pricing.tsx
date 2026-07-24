@@ -125,10 +125,6 @@ const Pricing = () => {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    trackEvent("pricing_page_view");
-  }, []);
-
-  useEffect(() => {
     const loadUser = async () => {
       try {
         const { data: { user: u } } = await supabase.auth.getUser();

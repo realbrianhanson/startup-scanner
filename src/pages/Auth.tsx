@@ -125,7 +125,7 @@ const Auth = () => {
       if (view === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        trackEvent("sign_in");
+        trackEvent("user_signed_in", { method: "email" });
         toast.success("Welcome back!");
       } else if (view === "signup") {
         const emailRedirectTo = `${window.location.origin}${nextDest}`;
@@ -141,7 +141,7 @@ const Auth = () => {
 
         if (data.session) {
           // Auto-confirmed. Safe to send welcome email while authenticated.
-          trackEvent("auth_signup_complete", { method: "email", has_referral: !!refCode });
+          trackEvent("signup_completed", { method: "email", has_referral: !!refCode });
           supabase.functions.invoke("send-email", {
             body: { to: email, template: "welcome", template_data: { name: email } },
           }).catch(() => {});
@@ -149,7 +149,7 @@ const Auth = () => {
           navigate(nextDest);
         } else {
           // Email confirmation required — do NOT claim they are logged in.
-          trackEvent("auth_verification_required", { method: "email", has_referral: !!refCode });
+          trackEvent("signup_verification_required", { method: "email", has_referral: !!refCode });
           setPendingEmail(email);
           setAwaitingVerification(true);
           startResendCooldown(30);

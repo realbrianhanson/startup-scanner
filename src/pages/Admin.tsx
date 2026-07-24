@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp, Star, MessageSquare, Settings, CalendarCheck, DollarSign } from "lucide-react";
+import { Shield, Plus, ArrowLeft, BarChart3, Users, FolderOpen, TrendingUp, Star, MessageSquare, Settings, CalendarCheck, DollarSign, Rocket, AlertTriangle, CheckCircle2, RefreshCcw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 interface Profile {
   id: string;
@@ -24,6 +25,33 @@ interface EventCount {
   event_name: string;
   count: number;
 }
+
+type LaunchDashboard = {
+  period_days: number;
+  generated_at: string;
+  cohort_funnel: { signups: number; created_project: number; completed_report: number; used_chat: number; paid: number };
+  acquisition: { landing_sessions: number; cta_sessions: number };
+  totals: { users: number; paid_users: number; projects: number; reports_complete: number };
+  report_health: { started: number; completed: number; failed: number; stuck: number };
+  billing_health: { webhook_failed: number; webhook_processing_stale: number };
+  unresolved: { info: number; warning: number; critical: number };
+  recent_events: Array<{
+    id: string; severity: "info" | "warning" | "critical"; category: string;
+    event_name: string; function_name: string | null; error_code: string | null;
+    metadata: Record<string, unknown>; created_at: string;
+  }>;
+  daily_14d: Array<{ day: string; signups: number; projects: number; reports_completed: number }>;
+};
+
+// Historical event aliases retained for backward-compatible legacy Analytics tab.
+const SIGNUP_ALIASES = [
+  "sign_up",
+  "auth_signup_complete",
+  "signup_completed",
+  "auth_verification_required",
+  "signup_verification_required",
+];
+const PROJECT_ALIASES = ["project_created"];
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -55,6 +83,13 @@ const Admin = () => {
   // AI Cost tracking state
   const [costData, setCostData] = useState<{ totalSpend: number; avgPerReport: number; modelBreakdown: { model: string; count: number; cost: number }[] }>({ totalSpend: 0, avgPerReport: 0, modelBreakdown: [] });
   const [costLoading, setCostLoading] = useState(false);
+
+  // Launch dashboard state
+  const [launchDays, setLaunchDays] = useState<7 | 30 | 90>(30);
+  const [launch, setLaunch] = useState<LaunchDashboard | null>(null);
+  const [launchLoading, setLaunchLoading] = useState(false);
+  const [launchError, setLaunchError] = useState<string | null>(null);
+
   useEffect(() => {
     checkAdminAccess();
   }, []);
@@ -79,10 +114,40 @@ const Admin = () => {
 
       setIsAdmin(true);
       loadProfiles();
+      loadLaunch(30);
     } catch (error) {
       navigate("/dashboard");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLaunch = async (days: 7 | 30 | 90) => {
+    setLaunchLoading(true);
+    setLaunchError(null);
+    try {
+      const { data, error } = await supabase.rpc("get_admin_launch_dashboard" as any, { p_days: days } as any);
+      if (error) throw error;
+      setLaunch(data as unknown as LaunchDashboard);
+    } catch (e: any) {
+      setLaunchError("Could not load launch dashboard");
+    } finally {
+      setLaunchLoading(false);
+    }
+  };
+
+  const resolveEvent = async (id: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("operational_events" as any)
+        .update({ resolved_at: new Date().toISOString(), resolved_by: user?.id ?? null } as any)
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Event resolved");
+      loadLaunch(launchDays);
+    } catch {
+      toast.error("Could not resolve event");
     }
   };
 
@@ -144,27 +209,30 @@ const Admin = () => {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Signups this week
-      const { count: swCount } = await supabase
-        .from("analytics_events")
-        .select("*", { count: "exact", head: true })
-        .eq("event_name", "sign_up")
-        .gte("created_at", weekAgo);
-      setSignupsWeek(swCount || 0);
-
-      // Signups this month
-      const { count: smCount } = await supabase
-        .from("analytics_events")
-        .select("*", { count: "exact", head: true })
-        .eq("event_name", "sign_up")
-        .gte("created_at", monthAgo);
-      setSignupsMonth(smCount || 0);
+      // Signups: union across historical aliases; count distinct users when possible.
+      const countSignups = async (sinceIso: string) => {
+        const { data } = await supabase
+          .from("analytics_events")
+          .select("user_id, id")
+          .in("event_name", SIGNUP_ALIASES)
+          .gte("created_at", sinceIso)
+          .limit(5000);
+        if (!data) return 0;
+        const seen = new Set<string>();
+        for (const row of data) {
+          const key = (row.user_id as string) || `anon:${row.id}`;
+          seen.add(key);
+        }
+        return seen.size;
+      };
+      setSignupsWeek(await countSignups(weekAgo));
+      setSignupsMonth(await countSignups(monthAgo));
 
       // Projects this week
       const { count: pwCount } = await supabase
         .from("analytics_events")
         .select("*", { count: "exact", head: true })
-        .eq("event_name", "project_created")
+        .in("event_name", PROJECT_ALIASES)
         .gte("created_at", weekAgo);
       setProjectsWeek(pwCount || 0);
 
@@ -172,7 +240,7 @@ const Admin = () => {
       const { count: pmCount } = await supabase
         .from("analytics_events")
         .select("*", { count: "exact", head: true })
-        .eq("event_name", "project_created")
+        .in("event_name", PROJECT_ALIASES)
         .gte("created_at", monthAgo);
       setProjectsMonth(pmCount || 0);
 
@@ -324,8 +392,12 @@ const Admin = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
+        <Tabs defaultValue="launch" className="space-y-6">
+          <TabsList className="w-full max-w-full overflow-x-auto justify-start no-scrollbar">
+            <TabsTrigger value="launch" onClick={() => loadLaunch(launchDays)}>
+              <Rocket className="h-4 w-4 mr-2" />
+              Launch
+            </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="h-4 w-4 mr-2" />
               Users
@@ -347,6 +419,18 @@ const Admin = () => {
               CTA Settings
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="launch" className="space-y-6">
+            <LaunchDashboardView
+              data={launch}
+              loading={launchLoading}
+              error={launchError}
+              days={launchDays}
+              onDaysChange={(d) => { setLaunchDays(d); loadLaunch(d); }}
+              onRetry={() => loadLaunch(launchDays)}
+              onResolve={resolveEvent}
+            />
+          </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
             <Card>
@@ -720,3 +804,234 @@ const Admin = () => {
 };
 
 export default Admin;
+
+// ---------------- Launch dashboard view ----------------
+
+function pct(n: number, d: number): string {
+  if (!d) return "0%";
+  return `${Math.round((n / d) * 100)}%`;
+}
+
+function healthStatus(d: LaunchDashboard): { color: string; label: string } {
+  if (d.unresolved.critical > 0 || d.billing_health.webhook_failed > 0) {
+    return { color: "bg-red-500/10 text-red-500 border-red-500/40", label: "Red" };
+  }
+  if (d.unresolved.warning > 0 || d.report_health.failed > 0 || d.report_health.stuck > 0) {
+    return { color: "bg-amber-500/10 text-amber-500 border-amber-500/40", label: "Amber" };
+  }
+  return { color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/40", label: "Green" };
+}
+
+function severityBadge(sev: "info" | "warning" | "critical") {
+  const map = {
+    info: "bg-sky-500/10 text-sky-500 border-sky-500/40",
+    warning: "bg-amber-500/10 text-amber-500 border-amber-500/40",
+    critical: "bg-red-500/10 text-red-500 border-red-500/40",
+  } as const;
+  return <Badge variant="outline" className={map[sev]}>{sev}</Badge>;
+}
+
+function LaunchDashboardView(props: {
+  data: LaunchDashboard | null;
+  loading: boolean;
+  error: string | null;
+  days: 7 | 30 | 90;
+  onDaysChange: (d: 7 | 30 | 90) => void;
+  onRetry: () => void;
+  onResolve: (id: string) => void;
+}) {
+  const { data, loading, error, days, onDaysChange, onRetry, onResolve } = props;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground mr-2">Period:</span>
+        {[7, 30, 90].map((d) => (
+          <Button
+            key={d}
+            size="sm"
+            variant={days === d ? "default" : "outline"}
+            onClick={() => onDaysChange(d as 7 | 30 | 90)}
+            aria-pressed={days === d}
+          >
+            {d}d
+          </Button>
+        ))}
+        <Button size="sm" variant="ghost" onClick={onRetry} aria-label="Refresh">
+          <RefreshCcw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {loading && (
+        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Loading launch metrics…</CardContent></Card>
+      )}
+
+      {error && !loading && (
+        <Card>
+          <CardContent className="py-10 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button size="sm" onClick={onRetry}>Retry</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {data && !loading && !error && (
+        <>
+          <Card>
+            <CardHeader className="flex-row items-center justify-between gap-2">
+              <div>
+                <CardTitle className="flex items-center gap-2"><Rocket className="h-5 w-5" /> Launch status</CardTitle>
+                <CardDescription>Last {data.period_days} days · updated {new Date(data.generated_at).toLocaleTimeString()}</CardDescription>
+              </div>
+              <Badge variant="outline" className={healthStatus(data).color}>
+                {healthStatus(data).label}
+              </Badge>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Stat label="Total users" value={data.totals.users} />
+              <Stat label="Paid users" value={data.totals.paid_users} />
+              <Stat label="Projects" value={data.totals.projects} />
+              <Stat label="Reports completed" value={data.totals.reports_complete} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Signup cohort funnel</CardTitle>
+              <CardDescription>Users who signed up in the last {data.period_days} days</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <FunnelRow label="Signed up" value={data.cohort_funnel.signups} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Created a project" value={data.cohort_funnel.created_project} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Completed a report" value={data.cohort_funnel.completed_report} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Used chat" value={data.cohort_funnel.used_chat} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Became paid" value={data.cohort_funnel.paid} base={data.cohort_funnel.signups} />
+              <div className="pt-3 border-t text-xs text-muted-foreground grid grid-cols-2 gap-2">
+                <div>Landing sessions: <span className="font-semibold text-foreground">{data.acquisition.landing_sessions}</span></div>
+                <div>CTA sessions: <span className="font-semibold text-foreground">{data.acquisition.cta_sessions}</span></div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <HealthCard title="Report generation" items={[
+              { label: "Started", value: data.report_health.started },
+              { label: "Completed", value: data.report_health.completed },
+              { label: "Failed", value: data.report_health.failed, warn: data.report_health.failed > 0 },
+              { label: "Stuck (>15m)", value: data.report_health.stuck, warn: data.report_health.stuck > 0 },
+            ]} />
+            <HealthCard title="Billing" items={[
+              { label: "Webhook failed", value: data.billing_health.webhook_failed, warn: data.billing_health.webhook_failed > 0 },
+              { label: "Processing stale", value: data.billing_health.webhook_processing_stale, warn: data.billing_health.webhook_processing_stale > 0 },
+            ]} />
+            <HealthCard title="Unresolved incidents" items={[
+              { label: "Critical", value: data.unresolved.critical, warn: data.unresolved.critical > 0 },
+              { label: "Warning", value: data.unresolved.warning, warn: data.unresolved.warning > 0 },
+              { label: "Info", value: data.unresolved.info },
+            ]} />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Last 14 days</CardTitle>
+              <CardDescription>Signups, projects and completed reports per day</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Day</TableHead>
+                      <TableHead className="text-right">Signups</TableHead>
+                      <TableHead className="text-right">Projects</TableHead>
+                      <TableHead className="text-right">Reports</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.daily_14d.map((d) => (
+                      <TableRow key={d.day}>
+                        <TableCell className="font-mono text-xs">{d.day}</TableCell>
+                        <TableCell className="text-right">{d.signups}</TableCell>
+                        <TableCell className="text-right">{d.projects}</TableCell>
+                        <TableCell className="text-right">{d.reports_completed}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Recent unresolved events</CardTitle>
+              <CardDescription>Latest operational incidents. No user data included.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.recent_events.length === 0 ? (
+                <p className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" /> No unresolved events.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {data.recent_events.map((e) => (
+                    <div key={e.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3">
+                      {severityBadge(e.severity)}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-mono truncate">{e.category} · {e.event_name}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {e.function_name ?? "—"} {e.error_code ? `· ${e.error_code}` : ""} · {new Date(e.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => onResolve(e.id)}>Resolve</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border p-3">
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function FunnelRow({ label, value, base }: { label: string; value: number; base: number }) {
+  const p = base > 0 ? Math.min(100, Math.round((value / base) * 100)) : 0;
+  return (
+    <div>
+      <div className="flex items-center justify-between text-sm">
+        <span>{label}</span>
+        <span className="font-mono text-muted-foreground">{value} <span className="text-xs">({pct(value, base)})</span></span>
+      </div>
+      <div className="mt-1 h-1.5 rounded bg-muted overflow-hidden" aria-label={`${label} ${p}%`}>
+        <div className="h-full bg-primary" style={{ width: `${p}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function HealthCard({ title, items }: { title: string; items: Array<{ label: string; value: number; warn?: boolean }> }) {
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
+      <CardContent className="space-y-2">
+        {items.map((it) => (
+          <div key={it.label} className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">{it.label}</span>
+            <span className={`font-mono font-semibold ${it.warn ? "text-amber-500" : ""}`}>{it.value}</span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
