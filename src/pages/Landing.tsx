@@ -339,6 +339,8 @@ const Landing = () => {
             <span className="font-serif text-base text-slate-300">Validifier</span>
             <div className="flex items-center gap-6 text-sm text-slate-400">
               <button onClick={() => navigate("/pricing")} className="hover:text-white transition-colors">Pricing</button>
+              <button onClick={() => navigate("/contact")} className="hover:text-white transition-colors">Contact</button>
+              <button onClick={() => navigate("/security")} className="hover:text-white transition-colors">Security</button>
               <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors">Privacy</button>
               <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors">Terms</button>
             </div>
