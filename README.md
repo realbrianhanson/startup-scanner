@@ -64,3 +64,51 @@ Publish through the Lovable Publish action. Hosting handles SPA fallback, HTTPS,
 
 Public (indexable): `/`, `/pricing`, `/sample-report`, `/privacy`, `/terms`.
 Private (noindex): `/auth`, `/dashboard`, `/projects/new`, `/projects/:id/report`, `/projects/:id/chat`, `/settings`, `/admin`.
+
+## End-to-end tests (Playwright)
+
+Public smoke suite in `tests/e2e`. Every test is read-only and safe to run
+against production.
+
+```bash
+# Local: builds and previews on 127.0.0.1:4173 automatically.
+bun run test:e2e
+
+# Local headed (debug).
+bun run test:e2e:headed
+
+# Production smoke against https://validifier.com (chromium only).
+bun run test:e2e:prod
+
+# One-off: point at any URL without spawning a server.
+BASE_URL=https://staging.example.com bunx playwright test
+```
+
+Artifacts on failure:
+
+- HTML report: `playwright-report/index.html`
+- Traces / screenshots / videos: `test-results/`
+
+### What the suite covers
+
+- Homepage title, single H1, primary signup CTA, sample entry, footer legal
+  links, no horizontal overflow, no unexpected console errors.
+- Pricing truthful copy (`$29`, 7-day trial, 15/100 credits) and enabled Pro CTA.
+- Auth signup UI surface + native validation (never submits).
+- `/sample-report` resolves to the canonical sample, renders navigation and
+  score, indexable canonical.
+- Protected routes redirect signed-out users to `/auth?next=<encoded>`.
+- Ordinary shared report route is `noindex`.
+- `robots.txt`, `sitemap.xml`, `manifest.json`, `og-image.png` served.
+- Public routes render and unknown routes hit the SPA 404.
+
+### Forbidden in the public production smoke run
+
+- Creating accounts, signing in, or verifying real inboxes.
+- Any Stripe checkout, purchase, refund, or subscription mutation.
+- Generating reports, sending emails, or writing to user-owned tables.
+- Chat/regenerate/download/feedback mutations on the sample or any report.
+- Anything that writes to production data or spends AI credits.
+
+See `docs/PRODUCTION_CERTIFICATION.md` for the launch gate and the
+owner-only real-flow checks that must be performed by hand.
