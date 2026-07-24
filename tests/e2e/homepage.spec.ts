@@ -29,6 +29,8 @@ test.describe("@smoke homepage", () => {
     await expect(footer).toBeVisible();
     await expect(footer.getByRole("button", { name: /privacy/i }).or(footer.getByRole("link", { name: /privacy/i })).first()).toBeVisible();
     await expect(footer.getByRole("button", { name: /terms/i }).or(footer.getByRole("link", { name: /terms/i })).first()).toBeVisible();
+    await expect(footer.getByRole("button", { name: /contact/i }).or(footer.getByRole("link", { name: /contact/i })).first()).toBeVisible();
+    await expect(footer.getByRole("button", { name: /^security$/i }).or(footer.getByRole("link", { name: /^security$/i })).first()).toBeVisible();
 
     expect(errors, `unexpected console errors:\n${errors.join("\n")}`).toEqual([]);
   });
