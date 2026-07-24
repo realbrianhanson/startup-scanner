@@ -176,6 +176,21 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("create-checkout-session error:", (error as Error).message);
+    try {
+      const adminSupabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      await logOpsEvent(adminSupabase, {
+        severity: "warning",
+        category: "billing",
+        event_name: "checkout_create_failed",
+        function_name: "create-checkout-session",
+        error_code: "handler_failed",
+      });
+    } catch {
+      // best-effort
+    }
     return jsonError(500, "Internal error");
   }
 });

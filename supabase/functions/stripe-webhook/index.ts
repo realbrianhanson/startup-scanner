@@ -249,7 +249,9 @@ Deno.serve(async (req) => {
         if (!updatedRows || updatedRows.length === 0) {
           throw new Error("profile update affected zero rows");
         }
-        postAnalytics = { event: "subscription_activated", user_id: userId, props: { plan: config.tier } };
+        // 7-day trial checkout → trial_started. Activation is emitted when
+        // customer.subscription.updated arrives with status=active.
+        postAnalytics = { event: "trial_started", user_id: userId, props: { plan: config.tier } };
         break;
       }
 
