@@ -14,7 +14,7 @@ Open the Admin **Launch** tab and review:
 - Report health: started / completed / failed / stuck counts.
 - Billing health: Stripe webhook failed count and stale processing count.
 - Unresolved incidents: counts by severity (`critical`, `warning`, `info`).
-- 14-day trend: signups, projects and completed reports per day.
+- 14-day trend: accounts created, projects and completed reports per day.
 
 ## Weekly routine
 

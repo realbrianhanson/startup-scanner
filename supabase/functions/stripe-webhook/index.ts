@@ -269,9 +269,9 @@ Deno.serve(async (req) => {
         if (!updatedRows || updatedRows.length === 0) {
           throw new Error("profile update affected zero rows");
         }
-        // 7-day trial checkout → trial_started. Activation is emitted when
-        // customer.subscription.updated arrives with status=active.
-        postAnalytics = { event: "trial_started", user_id: userId, props: { plan: config.tier } };
+        // Set trialing state/entitlement here. The authoritative lifecycle
+        // conversion (trial_started / subscription_activated) is emitted from
+        // customer.subscription.updated when the status transition happens.
         break;
       }
 
@@ -282,13 +282,14 @@ Deno.serve(async (req) => {
 
         const { data: profile, error: profileErr } = await supabase
           .from("profiles")
-          .select("id")
+          .select("id, subscription_status")
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
         if (profileErr) throw new Error(`profile lookup failed: ${profileErr.code ?? "unknown"}`);
         if (!profile) break; // No local profile — nothing to entitle.
 
         const status = normalizeStatus(subscription?.status);
+        const prevStatus = normalizeStatus(profile.subscription_status);
         const cancelAtPeriodEnd = subscription?.cancel_at_period_end === true;
         const trialEnd = epochToIso(subscription?.trial_end);
         const periodEnd = epochToIso(subscription?.current_period_end);
@@ -308,9 +309,13 @@ Deno.serve(async (req) => {
           if (!config) throw new Error("unknown plan on subscription");
           baseUpdate.subscription_tier = config.tier;
           baseUpdate.ai_credits_monthly = config.credits;
-          postAnalytics = status === "trialing"
-            ? { event: "trial_started", user_id: profile.id as string, props: { plan: config.tier } }
-            : { event: "subscription_activated", user_id: profile.id as string, props: { plan: config.tier } };
+          // Only emit conversion events on actual status transitions so
+          // repeated subscription.updated pings don't duplicate conversions.
+          if (status === "trialing" && prevStatus !== "trialing") {
+            postAnalytics = { event: "trial_started", user_id: profile.id as string, props: { plan: config.tier } };
+          } else if (status === "active" && prevStatus !== "active") {
+            postAnalytics = { event: "subscription_activated", user_id: profile.id as string, props: { plan: config.tier } };
+          }
         }
 
         const { data: updatedRows, error: updateErr } = await supabase
@@ -332,11 +337,12 @@ Deno.serve(async (req) => {
 
         const { data: profile, error: profileErr } = await supabase
           .from("profiles")
-          .select("id")
+          .select("id, subscription_status")
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
         if (profileErr) throw new Error(`profile lookup failed: ${profileErr.code ?? "unknown"}`);
         if (!profile) break;
+        const prevStatusDel = normalizeStatus(profile.subscription_status);
 
         const { data: updatedRows, error: updateErr } = await supabase
           .from("profiles")
@@ -355,7 +361,9 @@ Deno.serve(async (req) => {
         if (!updatedRows || updatedRows.length === 0) {
           throw new Error("profile update affected zero rows");
         }
-        postAnalytics = { event: "subscription_cancelled", user_id: profile.id as string };
+        if (prevStatusDel !== "canceled") {
+          postAnalytics = { event: "subscription_cancelled", user_id: profile.id as string };
+        }
         break;
       }
 
@@ -368,10 +376,13 @@ Deno.serve(async (req) => {
             .from("profiles").select("id").eq("stripe_customer_id", customerId).maybeSingle();
           userId = (profile?.id as string) ?? null;
           if (userId) {
-            await supabase
+            const { error: pastDueErr } = await supabase
               .from("profiles")
               .update({ subscription_status: "past_due" })
               .eq("id", userId);
+            if (pastDueErr) {
+              throw new Error(`profile update failed: ${pastDueErr.code ?? "unknown"}`);
+            }
           }
         }
         await logOpsEvent(supabase, {
