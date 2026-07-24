@@ -905,7 +905,10 @@ function LaunchDashboardView(props: {
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Stat label="Total users" value={data.totals.users} />
-              <Stat label="Paid users" value={data.totals.paid_users} />
+              <Stat label="Active subscriptions" value={data.totals.active_subscriptions} />
+              <Stat label="Trials" value={data.totals.trials} />
+              <Stat label="Past due" value={data.totals.past_due} />
+              <Stat label="Pro-tier users" value={data.totals.pro_tier} />
               <Stat label="Billing profiles" value={data.totals.billing_profiles} />
               <Stat label="Projects" value={data.totals.projects} />
               <Stat label="Reports completed" value={data.totals.reports_complete} />
@@ -915,14 +918,18 @@ function LaunchDashboardView(props: {
           <Card>
             <CardHeader>
               <CardTitle>Signup cohort funnel</CardTitle>
-              <CardDescription>Users who signed up in the last {data.period_days} days</CardDescription>
+              <CardDescription>
+                Accounts created in the last {data.period_days} days. Post-verification steps use verified signups as the denominator.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <FunnelRow label="Signed up" value={data.cohort_funnel.signups} base={data.cohort_funnel.signups} />
-              <FunnelRow label="Created a project" value={data.cohort_funnel.created_project} base={data.cohort_funnel.signups} />
-              <FunnelRow label="Completed a report" value={data.cohort_funnel.completed_report} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Accounts created" value={data.cohort_funnel.accounts_created} base={data.cohort_funnel.accounts_created} />
+              <FunnelRow label="Verified signup" value={data.cohort_funnel.signups} base={data.cohort_funnel.accounts_created} />
+              <FunnelRow label="Created project" value={data.cohort_funnel.created_project} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Completed report" value={data.cohort_funnel.completed_report} base={data.cohort_funnel.signups} />
               <FunnelRow label="Used chat" value={data.cohort_funnel.used_chat} base={data.cohort_funnel.signups} />
-              <FunnelRow label="Became paid" value={data.cohort_funnel.paid} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Trialing" value={data.cohort_funnel.trialing} base={data.cohort_funnel.signups} />
+              <FunnelRow label="Active subscription" value={data.cohort_funnel.paid} base={data.cohort_funnel.signups} />
               <div className="pt-3 border-t text-xs text-muted-foreground grid grid-cols-2 gap-2">
                 <div>Landing sessions: <span className="font-semibold text-foreground">{data.acquisition.landing_sessions}</span></div>
                 <div>CTA sessions: <span className="font-semibold text-foreground">{data.acquisition.cta_sessions}</span></div>
