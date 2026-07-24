@@ -392,7 +392,7 @@ const Admin = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="users" className="space-y-6">
+        <Tabs defaultValue="launch" className="space-y-6">
           <TabsList className="w-full max-w-full overflow-x-auto justify-start no-scrollbar">
             <TabsTrigger value="launch" onClick={() => loadLaunch(launchDays)}>
               <Rocket className="h-4 w-4 mr-2" />
