@@ -961,7 +961,7 @@ function LaunchDashboardView(props: {
           <Card>
             <CardHeader>
               <CardTitle>Last 14 days</CardTitle>
-              <CardDescription>Signups, projects and completed reports per day</CardDescription>
+              <CardDescription>Accounts created, projects and completed reports per day</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -969,7 +969,7 @@ function LaunchDashboardView(props: {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Day</TableHead>
-                      <TableHead className="text-right">Signups</TableHead>
+                      <TableHead className="text-right">Accounts</TableHead>
                       <TableHead className="text-right">Projects</TableHead>
                       <TableHead className="text-right">Reports</TableHead>
                     </TableRow>
