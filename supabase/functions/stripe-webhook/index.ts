@@ -253,6 +253,12 @@ Deno.serve(async (req) => {
         if (!config) throw new Error("unknown plan in session metadata");
         if (typeof session.customer !== "string") throw new Error("missing customer");
 
+        // Checkout completion grants entitlement (tier/credits/customer) only.
+        // customer.subscription.updated is the sole authority for lifecycle
+        // state (subscription_status, cancel_at_period_end, trial/period
+        // timestamps) and for the trial_started/subscription_activated
+        // conversion events. If subscription.updated arrives first, checkout
+        // completion must not overwrite its state.
         const { data: updatedRows, error: updateErr } = await supabase
           .from("profiles")
           .update({
@@ -260,8 +266,6 @@ Deno.serve(async (req) => {
             ai_credits_monthly: config.credits,
             ai_credits_used: 0,
             stripe_customer_id: session.customer,
-            subscription_status: "trialing",
-            cancel_at_period_end: false,
           })
           .eq("id", userId)
           .select("id");
@@ -269,9 +273,6 @@ Deno.serve(async (req) => {
         if (!updatedRows || updatedRows.length === 0) {
           throw new Error("profile update affected zero rows");
         }
-        // Set trialing state/entitlement here. The authoritative lifecycle
-        // conversion (trial_started / subscription_activated) is emitted from
-        // customer.subscription.updated when the status transition happens.
         break;
       }
 
@@ -372,8 +373,9 @@ Deno.serve(async (req) => {
         const customerId = invoice?.customer;
         let userId: string | null = null;
         if (typeof customerId === "string") {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileErr } = await supabase
             .from("profiles").select("id").eq("stripe_customer_id", customerId).maybeSingle();
+          if (profileErr) throw new Error(`profile lookup failed: ${profileErr.code ?? "unknown"}`);
           userId = (profile?.id as string) ?? null;
           if (userId) {
             const { error: pastDueErr } = await supabase
